@@ -17,6 +17,7 @@
 	"../src/core/Rectangle.js",
 	"../src/core/Sphere.js",
 	"../src/core/Math.js",
+	"../src/core/Intersection.js",
 	"../src/core/Object3D.js",
 	"../src/core/Projector.js",
 	"../src/core/Quaternion.js",
