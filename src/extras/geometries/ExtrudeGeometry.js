@@ -42,7 +42,7 @@ THREE.ExtrudeGeometry = function ( shapes, options ) {
 	this.addShapeList( shapes, options );
 
 	this.computeCentroids();
-	this.computeFaceNormals();
+	//this.computeFaceNormals();
 
 	// can't really use automatic vertex normals
 	// as then front and back sides get smoothed too
@@ -636,7 +636,14 @@ THREE.ExtrudeGeometry.prototype.addShape = function ( shape, options ) {
 		c += shapesOffset;
 
 		// normal, color, material
-		scope.faces.push( new THREE.Face3( a, b, c, null, null, material ) );
+		var normal = THREE.Triangle.normal(
+				scope.vertices[ a ],
+				scope.vertices[ b ],
+				scope.vertices[ c ] );
+
+		var newFace = new THREE.Face3( a, b, c, normal, null, material );
+		newFace.vertexNormals = [ normal, normal, normal ];
+		scope.faces.push( newFace );
 
 		var uvs = isBottom ? uvgen.generateBottomUV( scope, shape, options, a, b, c ) : uvgen.generateTopUV( scope, shape, options, a, b, c );
 
@@ -651,9 +658,15 @@ THREE.ExtrudeGeometry.prototype.addShape = function ( shape, options ) {
 		c += shapesOffset;
 		d += shapesOffset;
 
- 		scope.faces.push( new THREE.Face4( a, b, c, d, null, null, extrudeMaterial ) );
+		var normal = THREE.Triangle.normal(
+				scope.vertices[ a ],
+				scope.vertices[ b ],
+				scope.vertices[ c ] );
+		var newFace = new THREE.Face4( a, b, c, d, normal, null, extrudeMaterial );
+		newFace.vertexNormals = [ normal, normal, normal, normal ];
+ 		scope.faces.push( newFace );
 
- 		var uvs = uvgen.generateSideWallUV( scope, shape, wallContour, options, a, b, c, d,
+		var uvs = uvgen.generateSideWallUV( scope, shape, wallContour, options, a, b, c, d,
  		                                    stepIndex, stepsLength, contourIndex1, contourIndex2 );
  		scope.faceVertexUvs[ 0 ].push( uvs );
 
