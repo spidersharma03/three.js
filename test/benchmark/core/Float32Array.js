@@ -96,13 +96,17 @@ suite.add('Vector3Array-Vector3', function() {
 	}
 });
 
+var chart = new Tee.Benchmark("chart");
+
 suite.on('cycle', function(event, bench) {
   console.log(String(event.target));
+  chart.add(event.target);
 });
 
 suite.on('complete', function() {
   console.log('Fastest is ' + this.filter('fastest').pluck('name'));
   console.log( "Done" );
+  chart.finish();
 });
 
 suite.run(true);
