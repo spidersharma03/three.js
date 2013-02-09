@@ -35,17 +35,17 @@ var outputs = {
 
 };
 
-for( var outputName in outputs ) {
-	console.log('Building ' + outputName + '...');
+var buildOutput = function ( outputName, includeNames ) {
 
-	var outputSettings = outputs[outputName];
-	var includesNames = outputSettings.includes;
+	console.log('Building: ' + outputName );
+
+	console.log('  Reading includes: ' + includeNames.join( ', ' ) );
 
 	var includeSources = [];
 
-	for( var i = 0; i < includesNames.length; i ++ ) {
-		console.log('  Including ' + includesNames[i] + '.');
-		var includePathName = './includes/' + includesNames[i] + '.json';
+	for( var i = 0; i < includeNames.length; i ++ ) {
+
+		var includePathName = './includes/' + includeNames[i] + '.json';
 		var includeData = fs.readFileSync( includePathName, 'utf8' );
 		var sourceFilesNames = JSON.parse( includeData );
 
@@ -57,14 +57,31 @@ for( var outputName in outputs ) {
 		}
 	}
 
-	var outputPathName = '../../build/' + outputName + '.js';		
-	console.log('  Creating output ' + outputPathName + '.');
 	var combinedSource = includeSources.join( '' );
+
+	console.log('  Minifying.' );
+
+	var minifiedResult = uglify.minify( combinedSource, { fromString: true } );
+	var minifiedCombinedSource = minifiedResult.code;
+
+	console.log('  Writing: ' + outputName + '.js' + ' (' + Math.round( combinedSource.length/1024) + ' Kb)' );
+
+	var outputPathName = '../../build/' + outputName + '.js';		
 	fs.writeFile( outputPathName, combinedSource, 'utf8' );
 
+	console.log('  Writing: ' + outputName + '.min.js' + ' (' + Math.round( minifiedCombinedSource.length/1024 ) + ' Kb)' );
+
 	var minifiedOutputPathName = '../../build/' + outputName + '.min.js';		
-	console.log('  Creating output ' + minifiedOutputPathName + '.');
-	var minifiedCombinedSource = uglify.minify( combinedSource, { fromString: true } );
-	fs.writeFile( minifiedOutputPathName, minifiedCombinedSource.source, 'utf8' );
+	fs.writeFile( minifiedOutputPathName, minifiedCombinedSource, 'utf8' );
+
+}
+
+for( var outputName in outputs ) {
+
+	var outputSettings = outputs[ outputName ];
+	
+	console.log();
+
+	buildOutput( outputName, outputSettings.includes );
 
 }
