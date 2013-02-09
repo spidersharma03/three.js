@@ -1,7 +1,7 @@
 {
     "name": "three.js",
     "description": "JavaScript 3D library",
-    "version": "50dev",
+    "version": "0.50.0",
     "homepage" : "http://mrdoob.github.com/three.js/",
     "author": "three.js contributors",
     "help": {
@@ -9,8 +9,7 @@
     },
 
     "devDependencies": {
-    	"uglify-js2": "*",
-    	"argparse" : "*"
+    	"uglify-js2": "*"
     },
     
     "repository" : {
