@@ -62,10 +62,13 @@ def main(argv=None):
 	else:
 
 		externs = ' --externs '.join(args.externs)
-		source = ' '.join(sources)
-		cmd = 'java -jar compiler/compiler.jar --warning_level=VERBOSE --jscomp_off=globalThis --externs %s --jscomp_off=checkTypes --language_in=ECMASCRIPT5_STRICT --js %s --js_output_file %s %s' % (externs, source, output, sourcemapargs)
-		os.system(cmd)
+		#source = ' '.join(sources)
+		cmd = 'java -jar compiler/compiler.jar --warning_level=VERBOSE --jscomp_off=globalThis %s --jscomp_off=checkTypes --language_in=ECMASCRIPT5_STRICT --js %s --js_output_file %s %s' % (externs, path, output, sourcemapargs)
+		
+		print( cmd );
+		result = os.system(cmd)
 
+		print( 'done: ' + string( result) );
 		# header
 
 		with open(output,'r') as f: text = f.read()

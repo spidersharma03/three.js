@@ -99,7 +99,17 @@ buildAll.stderr.on('data', function (data) {
 });
 
 buildAll.on( 'exit', function ( exitCode ) {
-	console.log( "exitCode: " + exitCode );
+
 	buildModule( "three" );
 	buildModule( "three-math" );
+
+	var cmdExe = "cmd.exe";
+	var args = [ "/c", "build_max.bat" ];
+	var opts = { "cwd": "../build" };
+	var buildMax = cp.spawn( cmdExe, args, opts );
+
+	buildMax.on( 'exit', function ( exitCode ) {
+		buildModule( "three-max" );
+	});
+
 });
