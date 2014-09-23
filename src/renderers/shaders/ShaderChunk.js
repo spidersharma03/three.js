@@ -123,20 +123,32 @@ THREE.ShaderChunk = {
 				"cubeColor.xyz *= cubeColor.xyz;",
 
 			"#endif",
+			
+			"#ifdef GLASS",
+					
+				"float cubeOpacity = clamp ( cubeColor.x + cubeColor.y + cubeColor.z ) * 0.3, 0.0, 1.0 );",
+ 
+				"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - cubeOpacity ) + cubeColor.xyz * cubeOpacity",
+ 
+				"gl_FragColor.w = gl_FragColor.w * ( 1.0 - cubeOpacity ) + cubeOpacity",
+ 
+			"#else",
 
-			"if ( combine == 1 ) {",
+				"if ( combine == 1 ) {",
 
-				"gl_FragColor.xyz = mix( gl_FragColor.xyz, cubeColor.xyz, specularStrength * reflectivity );",
+					"gl_FragColor.xyz = mix( gl_FragColor.xyz, cubeColor.xyz, specularStrength * reflectivity );",
 
-			"} else if ( combine == 2 ) {",
+				"} else if ( combine == 2 ) {",
 
-				"gl_FragColor.xyz += cubeColor.xyz * specularStrength * reflectivity;",
+					"gl_FragColor.xyz += cubeColor.xyz * specularStrength * reflectivity;",
 
-			"} else {",
+				"} else {",
 
-				"gl_FragColor.xyz = mix( gl_FragColor.xyz, gl_FragColor.xyz * cubeColor.xyz, specularStrength * reflectivity );",
+					"gl_FragColor.xyz = mix( gl_FragColor.xyz, gl_FragColor.xyz * cubeColor.xyz, specularStrength * reflectivity );",
 
-			"}",
+				"}",
+
+			"#endif",
 
 		"#endif"
 
@@ -1064,6 +1076,16 @@ THREE.ShaderChunk = {
 		"#ifdef METAL",
 
 			"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient + totalSpecular );",
+
+		"#elseif GLASS",
+
+			"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient );",
+
+			"float specularOpacity = clamp ( totalSpecular.x + totalSpecular.y + totalSpecular.z ) * 0.3, 0.0, 1.0 );",
+
+			"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - specularOpacity ) + totalSpecular.xyz * specularOpacity",
+
+			"gl_FragColor.w = gl_FragColor.w * ( 1.0 - specularOpacity ) + specularOpacity",
 
 		"#else",
 
