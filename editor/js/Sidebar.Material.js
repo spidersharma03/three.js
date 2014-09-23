@@ -300,6 +300,26 @@ Sidebar.Material = function ( editor ) {
 
 	container.add( materialWireframeRow );
 
+	// metal
+
+	var materialMetalRow = new UI.Panel();
+	var materialMetal = new UI.Checkbox( false ).onChange( update );
+
+	materialMetalRow.add( new UI.Text( 'Metal' ).setWidth( '90px' ) );
+	materialMetalRow.add( materialMetal );
+
+	container.add( materialMetalRow );
+
+	// glass
+
+	var materialGlassRow = new UI.Panel();
+	var materialGlass = new UI.Checkbox( false ).onChange( update );
+
+	materialGlassRow.add( new UI.Text( 'Glass' ).setWidth( '90px' ) );
+	materialGlassRow.add( materialGlass );
+
+	container.add( materialGlassRow );
+
 
 	//
 
@@ -358,6 +378,18 @@ Sidebar.Material = function ( editor ) {
 			if ( material.shininess !== undefined ) {
 
 				material.shininess = materialShininess.getValue();
+
+			}
+			if ( material.metal !== undefined ) {
+
+					material.metal = materialMetal.getValue();
+				material.needsUpdate = true;
+
+			}
+			if ( material.glass !== undefined ) {
+
+				material.glass = materialGlass.getValue();
+				material.needsUpdate = true;
 
 			}
 

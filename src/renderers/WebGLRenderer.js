@@ -4140,12 +4140,15 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			alphaTest: material.alphaTest,
 			metal: material.metal,
+			glass: material.glass,
 			wrapAround: material.wrapAround,
 			doubleSided: material.side === THREE.DoubleSide,
 			flipSided: material.side === THREE.BackSide
 
 		};
 
+		console.log( 'parameters.metal', parameters.metal );
+		console.log( 'parameters.glass', parameters.glass );
 		material.program = buildProgram( shaderID, material.fragmentShader, material.vertexShader, material.uniforms, material.attributes, material.defines, parameters, material.index0AttributeName );
 
 		var attributes = material.program.attributes;
@@ -5605,6 +5608,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			parameters.metal ? "#define METAL" : "",
 			parameters.glass ? "#define GLASS" : "",
+
 			parameters.wrapAround ? "#define WRAP_AROUND" : "",
 			parameters.doubleSided ? "#define DOUBLE_SIDED" : "",
 			parameters.flipSided ? "#define FLIP_SIDED" : "",
@@ -5619,6 +5623,10 @@ THREE.WebGLRenderer = function ( parameters ) {
 			""
 
 		].join("\n");
+
+
+		console.log( '2 parameters.metal', parameters.metal );
+		console.log( '2 parameters.glass', parameters.glass );
 
 		var glVertexShader = getShader( "vertex", prefix_vertex + vertexShader );
 		var glFragmentShader = getShader( "fragment", prefix_fragment + fragmentShader );

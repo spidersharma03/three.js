@@ -126,7 +126,7 @@ THREE.ShaderChunk = {
 			
 			"#ifdef GLASS",
 					
-				"float cubeOpacity = clamp ( cubeColor.x + cubeColor.y + cubeColor.z ) * 0.3, 0.0, 1.0 );",
+				"float cubeOpacity = clamp( ( cubeColor.x + cubeColor.y + cubeColor.z ) * 0.3, 0.0, 1.0 );",
  
 				"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - cubeOpacity ) + cubeColor.xyz * cubeOpacity",
  
@@ -1077,19 +1077,26 @@ THREE.ShaderChunk = {
 
 			"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient + totalSpecular );",
 
-		"#elseif GLASS",
-
-			"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient );",
-
-			"float specularOpacity = clamp ( totalSpecular.x + totalSpecular.y + totalSpecular.z ) * 0.3, 0.0, 1.0 );",
-
-			"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - specularOpacity ) + totalSpecular.xyz * specularOpacity",
-
-			"gl_FragColor.w = gl_FragColor.w * ( 1.0 - specularOpacity ) + specularOpacity",
-
 		"#else",
 
-			"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient ) + totalSpecular;",
+			"#ifdef GLASS",
+
+				"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient );",
+
+				"float specularOpacity = clamp( ( totalSpecular.x + totalSpecular.y + totalSpecular.z ) * 0.3, 0.0, 1.0 );",
+
+				"specularOpacity = pow( specularOpacity, 4.0 );",
+				//"specularOpacity = clamp( specularOpacity * 2.0 - 1.0, 0.0, 1.0 );",
+
+				"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - specularOpacity ) + vec3(1,1,1);",
+
+				"gl_FragColor.w = ( 1.0 - gl_FragColor.w ) * specularOpacity + gl_FragColor.w;",
+
+			"#else",
+
+				"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient ) + totalSpecular;",
+
+			"#endif",
 
 		"#endif"
 
