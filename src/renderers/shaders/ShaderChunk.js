@@ -311,7 +311,7 @@ THREE.ShaderChunk = {
 
 		"#ifdef USE_LIGHTMAP",
 
-			"gl_FragColor = gl_FragColor * texture2D( lightMap, vUv2 );",
+			//"gl_FragColor = gl_FragColor * texture2D( lightMap, vUv2 );",
 
 		"#endif"
 
@@ -1053,6 +1053,12 @@ THREE.ShaderChunk = {
 			"totalDiffuse += spotDiffuse;",
 			"totalSpecular += spotSpecular;",
 
+		"#endif",
+
+		"#ifdef USE_LIGHTMAP",
+
+			"totalDiffuse += diffuse * texture2D( lightMap, vUv2 ).xyz;",
+	
 		"#endif",
 
 		"#ifdef METAL",
