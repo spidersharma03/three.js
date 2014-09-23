@@ -100,6 +100,19 @@ THREE.Euler.prototype = {
 
 	},
 
+	setFromVector: function ( v, order ) {
+
+		this._x = v.x;
+		this._y = v.y;
+		this._z = v.z;
+		this._order = order || this._order;
+
+		this._updateQuaternion();
+
+		return this;
+
+	},
+
 	copy: function ( euler ) {
 
 		this._x = euler._x;
