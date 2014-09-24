@@ -310,15 +310,15 @@ Sidebar.Material = function ( editor ) {
 
 	container.add( materialMetalRow );
 
-	// glass
+	// gloss
 
-	var materialGlassRow = new UI.Panel();
-	var materialGlass = new UI.Checkbox( false ).onChange( update );
+	var materialGlossRow = new UI.Panel();
+	var materialGloss = new UI.Checkbox( false ).onChange( update );
 
-	materialGlassRow.add( new UI.Text( 'Glass' ).setWidth( '90px' ) );
-	materialGlassRow.add( materialGlass );
+	materialGlossRow.add( new UI.Text( 'Gloss' ).setWidth( '90px' ) );
+	materialGlossRow.add( materialGloss );
 
-	container.add( materialGlassRow );
+	container.add( materialGlossRow );
 
 
 	//
@@ -386,9 +386,9 @@ Sidebar.Material = function ( editor ) {
 				material.needsUpdate = true;
 
 			}
-			if ( material.glass !== undefined ) {
+			if ( material.gloss !== undefined ) {
 
-				material.glass = materialGlass.getValue();
+				material.gloss = materialGloss.getValue();
 				material.needsUpdate = true;
 
 			}
