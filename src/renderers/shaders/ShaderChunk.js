@@ -77,6 +77,18 @@ THREE.ShaderChunk = {
 
 			"#endif",
 
+			"vec4 srcOverBlend2( vec4 F, vec4 B ) {",
+
+				"vec4 result = F;",
+
+				"result.xyz = F.xyz * F.a + (( 1.0 - F.a ) * B.a ) * B.xyz;",
+
+				"result.w = F.a + ( 1.0 - F.a ) * B.a;",
+
+				"return result;",
+
+			"}",
+
 		"#endif"
 
 	].join("\n"),
@@ -126,13 +138,15 @@ THREE.ShaderChunk = {
 			
 			"#ifdef GLASS",
 					
-				"float cubeOpacity = clamp( ( cubeColor.x + cubeColor.y + cubeColor.z ) * 0.3, 0.0, 1.0 ) * specularStrength * reflectivity;",
+				"float cubeOpacity = pow( clamp( ( cubeColor.x + cubeColor.y + cubeColor.z ) * 0.3, 0.0, 1.0 ), 3.0 );",
  
-				"specularOpacity = pow( specularOpacity, 3.0 );",
+				"vec4 specularGlass = vec4( 1.0 );",
 
-				"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - cubeOpacity ) + cubeColor.xyz * specularStrength * reflectivity;",
- 
-				"gl_FragColor.w = ( 1.0 - gl_FragColor.w ) * cubeOpacity + gl_FragColor.w;",
+				"specularGlass.xyz = cubeColor.xyz * specularStrength * reflectivity;",
+
+				"specularGlass.w = cubeOpacity * specularStrength * reflectivity;",
+
+				"gl_FragColor = srcOverBlend2( specularGlass, gl_FragColor );",
 
 			"#else",
 
@@ -785,6 +799,18 @@ THREE.ShaderChunk = {
 
 		"#endif",
 
+		"vec4 srcOverBlend( vec4 F, vec4 B ) {",
+
+			"vec4 result = F;",
+
+			"result.xyz = F.xyz * F.a + (( 1.0 - F.a ) * B.a ) * B.xyz;",
+
+			"result.w = F.a + ( 1.0 - F.a ) * B.a;",
+
+			"return result;",
+
+		"}",
+
 		"varying vec3 vViewPosition;",
 		"varying vec3 vNormal;"
 
@@ -1085,14 +1111,13 @@ THREE.ShaderChunk = {
 
 				"gl_FragColor.xyz = gl_FragColor.xyz * ( emissive + totalDiffuse + ambientLightColor * ambient );",
 
-				"float specularOpacity = clamp( ( totalSpecular.x + totalSpecular.y + totalSpecular.z ) * 0.3, 0.0, 1.0 );",
+				"float specularOpacity = pow( clamp( ( totalSpecular.x + totalSpecular.y + totalSpecular.z ) * 0.3, 0.0, 1.0 ), 3.0 );",
 
-				"specularOpacity = pow( specularOpacity, 3.0 );",
-				//"specularOpacity = clamp( specularOpacity * 2.0 - 1.0, 0.0, 1.0 );",
+				"vec4 specularGlass = vec4( 1.0 );",
 
-				"gl_FragColor.xyz = gl_FragColor.xyz * ( 1.0 - specularOpacity ) + totalSpecular;",
+				"specularGlass.w = specularOpacity;",
 
-				"gl_FragColor.w = ( 1.0 - gl_FragColor.w ) * specularOpacity + gl_FragColor.w;",
+				"gl_FragColor = srcOverBlend( specularGlass, gl_FragColor );",
 
 			"#else",
 
