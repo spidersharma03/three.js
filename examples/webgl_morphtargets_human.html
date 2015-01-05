@@ -34,6 +34,8 @@
 
 		<div id="info">
 		<a href="http://github.com/mrdoob/three.js" target="_blank">three.js</a> webgl - morph targets - human</a>
+			<button id="loseContext">Lose Context</button>
+			<button id="restoreContext">Restore Context</button>
 		</div>
 
 		<script src="../build/three.min.js"></script>
@@ -102,6 +104,18 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
 				container.appendChild( renderer.domElement );
+
+				var loseContextButton = document.getElementById( "loseContext" );
+				var restoreContextButton = document.getElementById( "restoreContext" );
+
+				loseContextButton.addEventListener( 'click', function() {
+					if( renderer.loseContext )
+						renderer.loseContext();
+				} );
+				restoreContextButton.addEventListener( 'click', function() { 
+					if( renderer.restoreContext )
+						renderer.restoreContext();
+				} );
 
 				// CHARACTER
 

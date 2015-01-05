@@ -242,6 +242,12 @@ THREE.WebGLRenderer = function ( parameters ) {
 	extensions.get( 'OES_texture_float_linear' );
 	extensions.get( 'OES_standard_derivatives' );
 
+	var loseContextExt = extensions.get( 'WEBGL_lose_context' );
+	if( loseContextExt ) {
+		this.loseContext = function() { loseContextExt.loseContext() };
+		this.restoreContext = function() { loseContextExt.loseContext() };
+	}
+
 	if ( _logarithmicDepthBuffer ) {
 
 		extensions.get( 'EXT_frag_depth' );
