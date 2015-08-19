@@ -36,10 +36,13 @@ THREE.GeometryLoader.prototype = {
 
 		var geometry = new THREE.Geometry();
 
-		geometry.indices = json.indices;
-		geometry.vertices = json.vertices;
-		geometry.normals = json.normals;
-		geometry.uvs = json.uvs;
+		geometry.name = json.name || geometry.name;
+
+		float scale = 1.0;
+		
+		THREE.JSONLoader.parseModel( geometry, json, scale );		
+		THREE.JSONLoader.parseSkinBonesAnimation( geometry, json );
+		THREE.JSONLoader.parseMorphing( geometry, json, 1.0 );
 
 		var boundingSphere = json.boundingSphere;
 
