@@ -8,11 +8,13 @@
 
 THREE.AnimationAction = function ( clip, startTime, timeScale, weight, loop ) {
 
+	if( clip === undefined ) throw new Error( 'clip is null' );
 	this.clip = clip;
+	this.localRoot = null;
 	this.startTime = startTime || 0;
 	this.timeScale = timeScale || 1;
 	this.weight = weight || 1;
-	this.loop = loop || clip.loop || false;
+	this.loop = loop || clip.loop || true;
 	this.loopCount = 0;
 	this.enabled = true;	// allow for easy disabling of the action.
 
@@ -24,6 +26,14 @@ THREE.AnimationAction = function ( clip, startTime, timeScale, weight, loop ) {
 THREE.AnimationAction.prototype = {
 
 	constructor: THREE.AnimationAction,
+
+	setLocalRoot: function( localRoot ) {
+
+		this.localRoot = localRoot;
+
+		return this;
+		
+	},
 
 	updateTime: function( clipDeltaTime ) {
 
@@ -89,9 +99,18 @@ THREE.AnimationAction.prototype = {
 
 	},
 
+	warpToDuration: function( duration ) {
+
+		this.timeScale = this.clip.duration / duration;
+
+		return this;
+	},
+
 	init: function( time ) {
 
 		this.clipTime = time - this.startTime;
+
+		return this;
 
 	},
 

@@ -23,10 +23,14 @@ THREE.AnimationMixer.prototype = {
 
 	addAction: function( action ) {
 
+		// TODO: check for duplicate action names?  Or provide each action with a UUID?
+
 		this.actions.push( action );
 		action.mixer = this;
 
 		var tracks = action.clip.tracks;
+
+		var root = action.localRoot || this.root;
 
 		for( var i = 0; i < tracks.length; i ++ ) {
 
@@ -38,7 +42,7 @@ THREE.AnimationMixer.prototype = {
 
 			if( j < 0 ) {
 			
-				propertyBinding = new THREE.PropertyBinding( this.root, track.name );
+				propertyBinding = new THREE.PropertyBinding( root, track.name );
 				this.propertyBindings.push( propertyBinding );
 			
 			}
@@ -55,10 +59,11 @@ THREE.AnimationMixer.prototype = {
 
 	},
 
-	getPropertyBindingIndex: function( trackName ) {
+	getPropertyBindingIndex: function( rootNode, trackName ) {
 		
 		for( var k = 0; k < this.propertyBindings.length; k ++ ) {
-			if( this.propertyBindings[k].trackName === trackName ) {
+			if( this.propertyBindings[k].trackName === trackName &&
+				this.propertyBindings[k].rootNode === rootNode ) {
 				return k;
 			}
 		}	
@@ -73,12 +78,14 @@ THREE.AnimationMixer.prototype = {
 
 			var action = this.actions[i];
 
+			var root = action.localRoot || this.root;
+
 			var propertyBindingIndices = [];
 
 			for( var j = 0; j < action.clip.tracks.length; j ++ ) {
 
 				var trackName = action.clip.tracks[j].name;
-				propertyBindingIndices.push( this.getPropertyBindingIndex( trackName ) );
+				propertyBindingIndices.push( this.getPropertyBindingIndex( root, trackName ) );
 			
 			}
 
@@ -143,6 +150,19 @@ THREE.AnimationMixer.prototype = {
 		this.updatePropertyBindingIndices();
 
 		return this;
+
+	},
+
+	// can be optimized if needed
+	findActionByName: function( name ) {
+
+		for( var i = 0; i < this.actions.length; i ++ ) {
+
+			if( this.actions[i].name === name ) return this.actions[i];
+
+		}
+
+		return null;
 
 	},
 
