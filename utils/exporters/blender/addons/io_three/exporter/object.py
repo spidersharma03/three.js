@@ -111,7 +111,7 @@ class Object(base_classes.BaseNode):
 
         lights = (constants.AMBIENT_LIGHT,
                   constants.DIRECTIONAL_LIGHT,
-                  constants.AREA_LIGHT, constants.POINT_LIGHT,
+                  constants.POINT_LIGHT,
                   constants.SPOT_LIGHT, constants.HEMISPHERE_LIGHT)
 
         if self[constants.TYPE] == constants.MESH:
@@ -124,7 +124,12 @@ class Object(base_classes.BaseNode):
         no_anim = (None, False, constants.OFF)
         if self.options.get(constants.KEYFRAMES) not in no_anim:
             logger.info("Export Transform Animation for %s", self.node)
-            self[constants.CLIPS] = api.object.animated_xform(self.node, self.options)
+            if self._scene:
+                # only when exporting scene
+                tracks = api.object.animated_xform(self.node, self.options)
+                merge = self._scene[constants.ANIMATION][0][constants.KEYFRAMES]
+                for track in tracks:
+                    merge.append(track)
 
         if self.options.get(constants.HIERARCHY, False):
             for child in api.object.children(self.node, self.scene.valid_types):

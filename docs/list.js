@@ -37,7 +37,6 @@ var list = {
 
 		"Lights": [
 			[ "AmbientLight", "api/lights/AmbientLight" ],
-			[ "AreaLight", "api/lights/AreaLight" ],
 			[ "DirectionalLight", "api/lights/DirectionalLight" ],
 			[ "HemisphereLight", "api/lights/HemisphereLight" ],
 			[ "Light", "api/lights/Light" ],
@@ -78,7 +77,7 @@ var list = {
 			[ "MeshLambertMaterial", "api/materials/MeshLambertMaterial" ],
 			[ "MeshNormalMaterial", "api/materials/MeshNormalMaterial" ],
 			[ "MeshPhongMaterial", "api/materials/MeshPhongMaterial" ],
-			[ "PointCloudMaterial", "api/materials/PointCloudMaterial" ],
+			[ "PointsMaterial", "api/materials/PointsMaterial" ],
 			[ "RawShaderMaterial", "api/materials/RawShaderMaterial" ],
 			[ "ShaderMaterial", "api/materials/ShaderMaterial" ],
 			[ "SpriteCanvasMaterial", "api/materials/SpriteCanvasMaterial" ],
@@ -114,7 +113,7 @@ var list = {
 			[ "LOD", "api/objects/LOD" ],
 			[ "Mesh", "api/objects/Mesh" ],
 			[ "MorphAnimMesh", "api/objects/MorphAnimMesh" ],
-			[ "PointCloud", "api/objects/PointCloud" ],
+			[ "Points", "api/objects/Points" ],
 			[ "SkinnedMesh", "api/objects/SkinnedMesh" ],
 			[ "Skeleton", "api/objects/Skeleton" ],
 			[ "Sprite", "api/objects/Sprite" ]
@@ -231,7 +230,6 @@ var list = {
 			[ "PointLightHelper", "api/extras/helpers/PointLightHelper" ],
 			[ "SpotLightHelper", "api/extras/helpers/SpotLightHelper" ],
 			[ "VertexNormalsHelper", "api/extras/helpers/VertexNormalsHelper" ],
-			[ "VertexTangentsHelper", "api/extras/helpers/VertexTangentsHelper" ],
 			[ "WireframeHelper", "api/extras/helpers/WireframeHelper" ]
 		],
 
