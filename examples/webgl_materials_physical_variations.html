@@ -70,8 +70,8 @@
 
 				var materials = [];
 
-				var path = "textures/cube/SwedishRoyalCastle/";
-				var format = '.jpg';
+				var path = "textures/cube/pisa/";
+				var format = '.png';
 				var urls = [
 						path + 'px' + format, path + 'nx' + format,
 						path + 'py' + format, path + 'ny' + format,
@@ -93,6 +93,7 @@
 				for( var alpha = 0, alphaIndex = 0; alpha <= 1.0; alpha += stepSize, alphaIndex ++ ) {
 
 					var roughness = 1.0 - alpha;
+					console.log( 'roughness', roughness);
 
 					if( alphaIndex % 2 === 0 ) {
 						localReflectionCube = null;
@@ -100,17 +101,18 @@
 					else {
 						localReflectionCube = reflectionCube;
 					}
-
+					localReflectionCube = reflectionCube;
+					
 					for( var beta = 0; beta <= 1.0; beta += stepSize ) {
 
-						var metalness = beta;
+						var metalness = beta;						
 
 						for( var gamma = 0; gamma <= 1.0; gamma += stepSize ) {
 
 							// basic monochromatic energy preservation
-							var diffuseColor = new THREE.Color( gamma, 0, 0 ).multiplyScalar( 1 - 0.08 );
+							var diffuseColor = new THREE.Color( 1, 1, 0 ).multiplyScalar( gamma ).add( new THREE.Color( 0.5, 0.5, 0.5 ).multiplyScalar( 1 - gamma ) );
 
-							var material = new THREE.MeshPhysicalMaterial( { map: imgTexture, bumpMap: imgTexture, bumpScale: bumpScale, color: diffuseColor, metalness: metalness, roughness: roughness, shading: THREE.SmoothShading, envMap: localReflectionCube } )
+							var material = new THREE.MeshPhysicalMaterial( { map: imgTexture, bumpMap: imgTexture, bumpScale: bumpScale, color: diffuseColor, metalness: metalness, roughness: roughness, shading: THREE.SmoothShading, envMap: localReflectionCube, reflectivity: 1.0 } )
 
 							var mesh = new THREE.Mesh( geometry, material );
 
