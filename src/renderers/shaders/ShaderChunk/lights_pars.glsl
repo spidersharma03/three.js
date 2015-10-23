@@ -108,7 +108,7 @@ uniform vec3 ambientLightColor;
 #if defined( USE_ENVMAP ) && defined( PHYSICAL )
 
 
-	vec3 getDiffuseLightProbeIndirectLightColor( /*const in SpecularLightProbe specularLightProbe,*/ const in GeometricContext geometry, const in float maxLodLevel ) { 
+	vec3 getDiffuseLightProbeIndirectLightColor( /*const in SpecularLightProbe specularLightProbe,*/ const in GeometricContext geometry, const in int maxMIPLevel ) { 
 
 		#ifdef DOUBLE_SIDED
 
@@ -126,11 +126,11 @@ uniform vec3 ambientLightColor;
 
 			#if defined( TEXTURE_CUBE_LOD_EXT )				
 
-				vec4 envMapColor = textureCubeLodEXT( envMap, flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz ), maxLodLevel );
+				vec4 envMapColor = textureCubeLodEXT( envMap, flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz ), float( maxMIPLevel ) );
 
 			#else
 
-				vec4 envMapColor = textureCube( envMap, flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz ), maxLodLevel );
+				vec4 envMapColor = textureCube( envMap, flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz ), float( maxMIPLevel ) );
 
 			#endif
 		#else

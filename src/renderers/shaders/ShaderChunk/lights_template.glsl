@@ -73,18 +73,27 @@ GeometricContext geometry = GeometricContext( -vViewPosition, normalize( normal 
 
 #endif
 
+
+#if defined( USE_ENVMAP )
+
+		// TODO, replace 8 with the real maxMIPLevel
+		indirectDiffuseColor += getDiffuseLightProbeIndirectLightColor( /*lightProbe,*/ geometry, 8 );
+
+#endif
+
 		Material_RE_IndirectDiffuseLight( indirectDiffuseColor, geometry, material, indirectReflectedLight );
 
 	}
 
 #endif
 
+
 #if defined( USE_ENVMAP ) && defined( Material_RE_IndirectSpecularLight )
 
 	{
 
 		// TODO, replace 8 with the real maxMIPLevel
-		vec3 indirectSpecularColor = getSpecularLightProbeIndirectLightColor( /*specularLightProbe,*/ geometry, Material_BlinnShininessExponent( material ), 8 );
+		vec3 indirectSpecularColor = getSpecularLightProbeIndirectLightColor( /*lightProbe,*/ geometry, Material_BlinnShininessExponent( material ), 8 );
 
     	Material_RE_IndirectSpecularLight( indirectSpecularColor, geometry, material, indirectReflectedLight );
 
