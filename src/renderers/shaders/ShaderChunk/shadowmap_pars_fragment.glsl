@@ -1,12 +1,23 @@
 #ifdef USE_SHADOWMAP
 
+	struct ShadowMap {
+
+		sampler2D map;
+		vec2 mapSize;
+		float darkness;
+		float bias;
+
+	};
+
+	uniform ShadowMap shadowMaps[ [ MAX_SHADOWS ];
+	varying vec4 vShadowCoord[ MAX_SHADOWS ];
+
+/*
 	uniform sampler2D shadowMap[ MAX_SHADOWS ];
 	uniform vec2 shadowMapSize[ MAX_SHADOWS ];
 
 	uniform float shadowDarkness[ MAX_SHADOWS ];
-	uniform float shadowBias[ MAX_SHADOWS ];
-
-	varying vec4 vShadowCoord[ MAX_SHADOWS ];
+	uniform float shadowBias[ MAX_SHADOWS ];*/
 
 	float unpackDepth( const in vec4 rgba_depth ) {
 
