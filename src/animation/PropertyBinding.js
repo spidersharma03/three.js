@@ -64,6 +64,8 @@ THREE.PropertyBinding.prototype = {
 
 		}
 
+		console.log( "binding: ", this.node, this.parsedPath );
+
 		// set fail state so we can just 'return' on error
 		this.getValue = this._getValue_unavailable;
 		this.setValue = this._setValue_unavailable;
@@ -123,6 +125,7 @@ THREE.PropertyBinding.prototype = {
 						if ( targetObject[i].name === objectIndex ) {
 
 							objectIndex = i;
+							console.log( "binding: objectIndex found: ", objectIndex, targetObject[i].name );
 							break;
 
 						}
@@ -177,11 +180,14 @@ THREE.PropertyBinding.prototype = {
 		var versioning = this.Versioning.None;
 
 		if ( targetObject.needsUpdate !== undefined ) { // material
-
+			console.log( "binding:  targetObject.needsUpdate !== undefined" );
+				
 			versioning = this.Versioning.NeedsUpdate;
 			this.targetObject = targetObject;
 
 		} else if ( targetObject.matrixWorldNeedsUpdate !== undefined ) { // node transform
+
+			console.log( "binding:  targetObject.matrixWorldNeedsUpdate !== undefined" );
 
 			versioning = this.Versioning.MatrixWorldNeedsUpdate;
 			this.targetObject = targetObject;

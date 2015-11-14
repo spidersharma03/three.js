@@ -253,6 +253,8 @@
 				mixer = new THREE.AnimationMixer( mesh );
 
 				bonesClip = geometry.animations[0];
+
+				console.log( "bonesClip", bonesClip )
 				facesClip = THREE.AnimationClip.CreateFromMorphTargetSequence( 'facialExpressions', mesh.geometry.morphTargets, 3 );
 
 			}

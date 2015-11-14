@@ -116,6 +116,10 @@ THREE.PropertyMixer.prototype = {
 
 		}
 
+	console.log( "PropertyMixer: apply", buffer[stride], buffer[stride], buffer[stride] );
+
+		
+
 		for ( var i = stride, e = stride + stride; i !== e; ++ i ) {
 
 			if ( buffer[ i ] !== buffer[ i + stride ] ) {

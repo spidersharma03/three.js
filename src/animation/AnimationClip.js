@@ -221,6 +221,7 @@ Object.assign( THREE.AnimationClip, {
 
 	// parse the animation.hierarchy format
 	parseAnimation: function( animation, bones, nodeName ) {
+			console.log( 'parseAnimation bones', bones );
 
 		if ( ! animation ) {
 
@@ -232,6 +233,7 @@ Object.assign( THREE.AnimationClip, {
 		var addNonemptyTrack = function(
 				trackType, trackName, animationKeys, propertyName, destTracks ) {
 
+			console.log( 'parseAnimation.addNonEmptyTrack', trackName );
 			// only return track if there are actually keys.
 			if ( animationKeys.length !== 0 ) {
 
@@ -316,6 +318,9 @@ Object.assign( THREE.AnimationClip, {
 				// ...assume skeletal animation
 
 				var boneName = '.bones[' + bones[ h ].name + ']';
+
+			console.log( 'parseAnimation boneName', boneName );
+
 
 				addNonemptyTrack(
 						THREE.VectorKeyframeTrack, boneName + '.position',

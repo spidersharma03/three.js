@@ -25,6 +25,7 @@ THREE.SkinnedMesh = function ( geometry, material, useVertexTexture ) {
 
 		var bone, gbone;
 
+		console.log( 'SkinnedMesh.geometry.bones', geometry.bones );
 		for ( var b = 0, bl = this.geometry.bones.length; b < bl; ++ b ) {
 
 			gbone = this.geometry.bones[ b ];
@@ -54,6 +55,8 @@ THREE.SkinnedMesh = function ( geometry, material, useVertexTexture ) {
 			}
 
 		}
+
+		console.log( 'SkinnedMesh.children', this.children );
 
 	}
 

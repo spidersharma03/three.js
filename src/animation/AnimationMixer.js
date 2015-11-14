@@ -596,6 +596,8 @@ THREE.AnimationMixer._Action.prototype = {
 	_update: function( time, deltaTime, timeDirection, accuIndex ) {
 		// called by the mixer
 
+		console.log( "Mixer._update", time, deltaTime );
+
 		var startTime = this._startTime;
 
 		if ( startTime !== null ) {
@@ -632,6 +634,8 @@ THREE.AnimationMixer._Action.prototype = {
 			var propertyMixers = this._propertyBindings;
 
 			for ( var j = 0, m = interpolants.length; j !== m; ++ j ) {
+
+				console.log( "Mixer._update.interpolants", propertyMixers[ j ] );
 
 				interpolants[ j ].evaluate( clipTime );
 				propertyMixers[ j ].accumulate( accuIndex, weight );
@@ -723,8 +727,8 @@ THREE.AnimationMixer._Action.prototype = {
 	},
 
 	_updateTime: function( deltaTime ) {
-
 		var time = this.time + deltaTime;
+		console.log( "Mixer.updateTime", deltaTime, time );
 
 		if ( deltaTime === 0 ) return time;
 

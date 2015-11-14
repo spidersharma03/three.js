@@ -83,6 +83,7 @@
 
 				scene.fog = new THREE.Fog( 0xffffff, 2000, 10000 );
 
+
 				//scene.add( camera );
 
 				// GROUND
@@ -124,14 +125,51 @@
 				var loader = new THREE.ObjectLoader();
 				loader.load( "models/json/scene-animation.json", function ( loadedScene ) {
 
-					sceneAnimationClip = loadedScene.animations[0];
-					scene = loadedScene;
-					scene.add( camera );
-					scene.fog = new THREE.Fog( 0xffffff, 2000, 10000 );
-		
-					mixer = new THREE.AnimationMixer( scene );
+					//sceneAnimationClip = loadedScene.animations[0];
+
+					var findSkeletonMesh = function( node ) {
+						if( node.type === 'SkinnedMesh' ) {
+							return node;
+						}
+						for( var i = 0; i < i < node.children.length; i ++ ) {
+							var result = findSkeletonMesh( node.children[i] );
+							if( result ) {
+								return result;
+							}
+						}
+						return null;
+					};
+
+					var skeletonModel = findSkeletonMesh( loadedScene );
+					if( skeletonModel ) {
+						var boneAnimation = skeletonModel.geometry.animations[0];
+
+						console.log('skeletonModel', skeletonModel );
+						console.log('boneAnimation', boneAnimation );
+
+						//console.log( loadedScene );
+						//scene = loadedScene;
+						//scene.add( camera );
+						//scene.fog = new THREE.Fog( 0xffffff, 2000, 10000 );
 			
-					mixer.clipAction( sceneAnimationClip ).play();
+						scene.add( skeletonModel );
+						skeletonModel.material.skinning = true;
+						scene.add ( new THREE.AmbientLight( 0x0 ) );
+
+						var light = new THREE.DirectionalLight( 0xffffff, 1.5 );
+						light.position.set( 0, 0, 1000 );
+						scene.add( light );
+						mixer = new THREE.AnimationMixer( skeletonModel );
+
+						helper = new THREE.SkeletonHelper( skeletonModel );
+						helper.material.linewidth = 3;
+						helper.visible = true;
+						skeletonModel.parent.add( helper );
+
+						//mixer.clipAction( sceneAnimationClip ).play();
+						mixer.clipAction( boneAnimation ).play();
+
+					}
 
 				} );
 
@@ -182,6 +220,7 @@
 				if( mixer ) {
 					//console.log( "updating mixer by " + delta );
 					mixer.update( delta );
+					helper.update();
 				}
 
 				renderer.render( scene, camera );
