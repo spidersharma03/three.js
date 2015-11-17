@@ -155,19 +155,19 @@
 				scene.add( planeLeft );
 
 				// lights
-				var mainLight = new THREE.PointLight( 0xcccccc, 1.5, 250 );
+				var mainLight = new THREE.PointLight( 0xcccccc, 1.5 * 2000, 250, 2 );
 				mainLight.position.y = 60;
 				scene.add( mainLight );
 
-				var greenLight = new THREE.PointLight( 0x00ff00, 0.25, 1000 );
+				var greenLight = new THREE.PointLight( 0x00ff00, 0.25 * 2000, 1000, 2 );
 				greenLight.position.set( 550, 50, 0 );
 				scene.add( greenLight );
 
-				var redLight = new THREE.PointLight( 0xff0000, 0.25, 1000 );
+				var redLight = new THREE.PointLight( 0xff0000, 0.25 * 2000, 1000, 2 );
 				redLight.position.set( - 550, 50, 0 );
 				scene.add( redLight );
 
-				var blueLight = new THREE.PointLight( 0x7f7fff, 0.25, 1000 );
+				var blueLight = new THREE.PointLight( 0x7f7fff, 0.25 * 2000, 1000, 2 );
 				blueLight.position.set( 0, 50, 550 );
 				scene.add( blueLight );
 

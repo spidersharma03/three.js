@@ -60,15 +60,15 @@
 
 				scene.add( new THREE.AmbientLight( 0x050505 ) );
 
-				var light = new THREE.PointLight( 0x0011ff, 1, 5500 );
+				var light = new THREE.PointLight( 0x0011ff, 1000000, 5500, 2 );
 				light.position.set( 4000, 0, 0 );
 				scene.add( light );
 
-				var light = new THREE.PointLight( 0xff1100, 1, 5500 );
+				var light = new THREE.PointLight( 0xff1100, 1000000, 5500, 2 );
 				light.position.set( -4000, 0, 0 );
 				scene.add( light );
 
-				var light = new THREE.PointLight( 0xffaa00, 2, 3000 );
+				var light = new THREE.PointLight( 0xffaa00, 1000000, 5500, 2 );
 				light.position.set( 0, 0, 0 );
 				scene.add( light );
 
@@ -83,7 +83,7 @@
 				var reflectionCube = THREE.ImageUtils.loadTextureCube( urls );
 				reflectionCube.format = THREE.RGBFormat;
 
-				var material = new THREE.MeshPhongMaterial( { specular: 0x101010, shininess: 100, envMap: reflectionCube, combine: THREE.MixOperation, reflectivity: 0.1, side: THREE.DoubleSide } );
+				var material = new THREE.MeshStandardMaterial( { color: 0x101010, roughness: 0.25, envMap: reflectionCube, combine: THREE.MixOperation, side: THREE.DoubleSide } );
 
 				var geometry = new THREE.SphereGeometry( 1, 32, 16, 0, Math.PI );
 

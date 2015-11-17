@@ -109,21 +109,25 @@
 				ambientLight = new THREE.AmbientLight( 0x444444 );
 				scene.add( ambientLight );
 
-				pointLight = new THREE.PointLight( 0xffffff, 1.25, 1000 );
+				pointLight = new THREE.PointLight( 0xffffff, 100000, 1000, 2 );
 				pointLight.position.set( 0, 0, 600 );
 
 				scene.add( pointLight );
+
+				var pointLight2 = new THREE.PointLight( 0xffffff, 100000, 1000, 2 );
+				pointLight2.position.set( 200, 200, -600 );
+
+				scene.add( pointLight2 );
 
 				directionalLight = new THREE.DirectionalLight( 0xffffff );
 				directionalLight.position.set( 1, -0.5, -1 );
 				scene.add( directionalLight );
 
-				var material = new THREE.MeshPhongMaterial( {
+				var material = new THREE.MeshStandardMaterial( {
 					color: 0xdddddd,
-					specular: 0x222222,
-					shininess: 35,
+					roughness: 1.0,
 					map: THREE.ImageUtils.loadTexture( "obj/leeperrysmith/Map-COL.jpg" ),
-					specularMap: THREE.ImageUtils.loadTexture( "obj/leeperrysmith/Map-SPEC.jpg" ),
+					roughnessMap: THREE.ImageUtils.loadTexture( "obj/leeperrysmith/Map-ROUGHNESS.jpg" ),
 					normalMap: THREE.ImageUtils.loadTexture( "obj/leeperrysmith/Infinite-Level_02_Tangent_SmoothUV.jpg" ),
 					normalScale: new THREE.Vector2( 0.8, 0.8 )
 				} );

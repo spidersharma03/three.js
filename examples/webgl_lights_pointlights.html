@@ -72,7 +72,7 @@
 
 				var callback = function( geometry ) {
 
-					object = new THREE.Mesh( geometry, new THREE.MeshPhongMaterial( { color: 0x555555, specular: 0x111111, shininess: 50 }  )  );
+					object = new THREE.Mesh( geometry, new THREE.MeshStandardMaterial( { color: 0x555555, roughness: 0.8 }  )  );
 					object.scale.x = object.scale.y = object.scale.z = 0.80;
 					scene.add( object );
 
@@ -82,20 +82,20 @@
 
 				var sphere = new THREE.SphereGeometry( 0.5, 16, 8 );
 
-				light1 = new THREE.PointLight( 0xff0040, 2, 50 );
-				light1.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xff0040 } ) ) );
+				light1 = new THREE.PointLight( 0xff0540, 1000, 50, 2 );
+				light1.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xff0540 } ) ) );
 				scene.add( light1 );
 
-				light2 = new THREE.PointLight( 0x0040ff, 2, 50 );
-				light2.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0x0040ff } ) ) );
+				light2 = new THREE.PointLight( 0x0540ff, 1000, 50, 2 );
+				light2.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0x0540ff } ) ) );
 				scene.add( light2 );
 
-				light3 = new THREE.PointLight( 0x80ff80, 2, 50 );
+				light3 = new THREE.PointLight( 0x80ff80, 1000, 50, 2 );
 				light3.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0x80ff80 } ) ) );
 				scene.add( light3 );
 
-				light4 = new THREE.PointLight( 0xffaa00, 2, 50 );
-				light4.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xffaa00 } ) ) );
+				light4 = new THREE.PointLight( 0xffaa05, 1000, 50, 2 );
+				light4.add( new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0xffaa05 } ) ) );
 				scene.add( light4 );
 
 				renderer = new THREE.WebGLRenderer();

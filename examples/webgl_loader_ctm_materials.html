@@ -134,12 +134,12 @@
 
 				// LIGHTS
 
-				var light = new THREE.PointLight( 0xffffff, 1 );
+				var light = new THREE.PointLight( 0xffffff, 100000, 1000, 2 );
 				light.position.set( 2, 5, 1 );
 				light.position.multiplyScalar( 30 );
 				scene.add( light );
 
-				var light = new THREE.PointLight( 0xffffff, 0.75 );
+				var light = new THREE.PointLight( 0xffffff, 75000, 1000, 2 );
 				light.position.set( -12, 4.6, 2.4 );
 				light.position.multiplyScalar( 30 );
 				scene.add( light );
