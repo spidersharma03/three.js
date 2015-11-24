@@ -215,6 +215,7 @@ THREE.Geometry.prototype = {
 		var attributes = geometry.attributes;
 
 		var vertices = attributes.position.array;
+
 		var normals = attributes.normal !== undefined ? attributes.normal.array : undefined;
 		var colors = attributes.color !== undefined ? attributes.color.array : undefined;
 		var uvs = attributes.uv !== undefined ? attributes.uv.array : undefined;
@@ -311,8 +312,10 @@ THREE.Geometry.prototype = {
 			}
 
 		} else {
-
-			for ( var i = 0; i < vertices.length; i += 3 ) {
+	
+			var numVertices = vertices.length / 3;
+				
+			for ( var i = 0; i < numVertices; i += 3 ) {
 
 				addFace( i, i + 1, i + 2 );
 
