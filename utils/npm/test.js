@@ -15,20 +15,21 @@ var threemath = function () {
 	var a = new THREE.Vector3( 1, 1, 1 );
 	console.log( a );
 
-	for( var i in THREE ) {
-		console.log( i );
-	}
+//	for( var i in THREE ) {
+//		console.log( i );
+//	}
 };
 
 var three = function () {
 	var THREE = require( "three" );
 
+	console.log( "THREE revision: ", THREE.REVISION );
 	var a = new THREE.Vector3( 1, 1, 1 );
 	console.log( a );
 
-	for( var i in THREE ) {
-		console.log( i );
-	}
+//	for( var i in THREE ) {
+//		console.log( i );
+//	}
 };
 
 threemath();
