@@ -68,7 +68,6 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 	}
 
 	this.getParameters = function ( material, lights, fog, object ) {
-
 		var shaderID = shaderIDs[ material.type ];
 		// heuristics to create shader parameters according to lights in the scene
 		// (not to blow over maxLights budget)
@@ -88,12 +87,12 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 
 		}
 
-		var getTextureEncodingFromMap = function( map ) {
-			if( ! map ) { // no texture
-				return false;
-			}
+		var getTextureEncodingFromMap = function( map, gammaOverrideLinear ) {
 			var encoding;
-			if( map instanceof THREE.Texture ) {
+			if( ! map ) {
+				encoding = THREE.LinearEncoding;
+			}
+			else if( map instanceof THREE.Texture ) {
 				encoding = map.encoding;
 			}
 			else if( map instanceof THREE.WebGLRenderTarget ) {
@@ -102,8 +101,7 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 			else {
 				throw new Error( "can not determine texture encoding from map: " + map );
 			}
-			// add backwards compatibility for WebGLRenderer.gammaInput parameter, should probably be removed at some point.
-			if( encoding === THREE.LinearEncoding && renderer.gammaInput ) {
+			if( encoding === THREE.LinearEncoding && gammaOverrideLinear ) { // add backwards compatibility for WebGLRenderer.gammaInput/gammaOutput parameters, should probably be removed at some point.
 				encoding = THREE.GammaEncoding;
 			}
 			return encoding;
@@ -115,18 +113,18 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 
 			precision: precision,
 			supportsVertexTextures: capabilities.vertexTextures,
-
+			outputEncoding: getTextureEncodingFromMap( renderer._currentRenderTarget, renderer.gammaOutput ),
 			map: !! material.map,
-			mapEncoding: getTextureEncodingFromMap( material.map ),
+			mapEncoding: getTextureEncodingFromMap( material.map, renderer.gammaInput ),
 			envMap: !! material.envMap,
 			envMapMode: material.envMap && material.envMap.mapping,
-			envMapEncoding: getTextureEncodingFromMap( material.envMap ),
+			envMapEncoding: getTextureEncodingFromMap( material.envMap, renderer.gammaInput ),
 			envMapCubeUV: (!!material.envMap) && ((material.envMap.mapping === THREE.CubeUVReflectionMapping) ||
 							(material.envMap.mapping === THREE.CubeUVRefractionMapping)),
 			lightMap: !! material.lightMap,
 			aoMap: !! material.aoMap,
 			emissiveMap: !! material.emissiveMap,
-			emissiveMapEncoding: getTextureEncodingFromMap( material.emissiveMap ),
+			emissiveMapEncoding: getTextureEncodingFromMap( material.emissiveMap, renderer.gammaInput ),
 			bumpMap: !! material.bumpMap,
 			normalMap: !! material.normalMap,
 			displacementMap: !! material.displacementMap,
