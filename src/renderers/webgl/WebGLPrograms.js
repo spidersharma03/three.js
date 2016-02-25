@@ -68,6 +68,7 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 	}
 
 	this.getParameters = function ( material, lights, fog, object ) {
+		console.log( "material", material );
 		var shaderID = shaderIDs[ material.type ];
 		// heuristics to create shader parameters according to lights in the scene
 		// (not to blow over maxLights budget)
@@ -170,6 +171,8 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 			flipSided: material.side === THREE.BackSide
 
 		};
+
+		console.log( "parameters", parameters );
 
 		return parameters;
 

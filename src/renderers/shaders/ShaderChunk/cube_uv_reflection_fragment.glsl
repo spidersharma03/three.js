@@ -7,7 +7,7 @@ int getFaceFromDirection(vec3 direction) {
         if(absDirection.x > absDirection.y )
             face = direction.x > 0.0 ? 0 : 3;
         else
-            face = direction.y > 0.0 ? 1 : 4;                            
+            face = direction.y > 0.0 ? 1 : 4;
     }
     else {
         if(absDirection.z > absDirection.y )
@@ -81,7 +81,7 @@ vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel, float textu
     float s2 = (r.z/abs(r.x) + 1.0)*0.5;
     vec2 uv = offset + vec2(s1*scale, s2*scale);
     float min_x = offset.x + texelOffset; float max_x = offset.x + scale - texelOffset;
-    float min_y = offset.y + texelOffset; 
+    float min_y = offset.y + texelOffset;
     float max_y = offset.y + scale - texelOffset;
     float delx = max_x - min_x;
     float dely = max_y - min_y;
@@ -123,10 +123,10 @@ vec4 textureCubeUV(vec3 reflectedDirection, float roughness, float textureSize) 
     vec2 uv_11 = getCubeUV(reflectedDirection, r1, level1, textureSize);
     vec2 uv_20 = getCubeUV(reflectedDirection, r2, level0, textureSize);
     vec2 uv_21 = getCubeUV(reflectedDirection, r2, level1, textureSize);
-    vec4 color10 = texelDecode(texture2D(envMap, uv_10), envMapEncoding);
-    vec4 color11 = texelDecode(texture2D(envMap, uv_11), envMapEncoding);
-    vec4 color20 = texelDecode(texture2D(envMap, uv_20), envMapEncoding);
-    vec4 color21 = texelDecode(texture2D(envMap, uv_21), envMapEncoding);
+    vec4 color10 = envMapTexelToLinear(texture2D(envMap, uv_10));
+    vec4 color11 = envMapTexelToLinear(texture2D(envMap, uv_11));
+    vec4 color20 = envMapTexelToLinear(texture2D(envMap, uv_20));
+    vec4 color21 = envMapTexelToLinear(texture2D(envMap, uv_21));
     vec4 c1 = mix(color10 , color11,  s);
     vec4 c2 = mix(color20 , color21,  s);
     vec4 c3 = mix(c1 , c2,  t);

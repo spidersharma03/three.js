@@ -10,7 +10,7 @@ THREE.HDRCubeMapLoader = function (manager) {
 
 THREE.HDRCubeMapLoader.prototype.load = function(urls, onLoad, onProgress, onError) {
     var texture = new THREE.CubeTexture( [] );
-    texture.encoding = THREE.RGBE;
+    texture.encoding = THREE.RGBEEncoding;
     var scope = this.hdrLoader;
 
     var loaded = 0;
