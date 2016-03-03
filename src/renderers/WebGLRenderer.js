@@ -1718,6 +1718,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 				_gl.uniform1f( p_uniforms.toneMappingWhitePoint, _this.toneMappingWhitePoint );
 
 			}
+
 		}
 
 		// skinning uniforms must be set even if material didn't change
@@ -1909,13 +1910,37 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		}
 
-		uniforms.map.value = material.map;
-		uniforms.specularMap.value = material.specularMap;
-		uniforms.alphaMap.value = material.alphaMap;
+		var supportedMapNames = THREE.Map.SupportedMapNames;
+		for( var i = 0; i < supportedMapNames.length; i ++ ) {
+			var mapName = supportedMapNames[i];
+			var map = material[ mapName + 'Slot' ];
+			if( map ) {
+				uniforms[mapName].value = map.texture;
+				if( map.uvTransform ) {
+					uniforms[mapName +"UVTransformParams"].value.set(
+						map.uvRepeat.x,
+						map.uvRepeat.y,
+						map.uvOffset.x,
+						map.uvOffset.y );
+				}
+				if( map.texelTransform ) {
+					var texelTransform = map.getFlattenedTexelTransform();
+					uniforms[mapName +"TexelTransformParams"].value.set(
+						texelTransform.texelScale,
+						texelTransform.texelOffset );
+				}
+			}
+			else if( material[ mapName ] ) {
+				uniforms[mapName].value = material[mapName];
+			}
+		}
+		//uniforms.map.value = material.map;
+		//uniforms.specularMap.value = material.specularMap;
+		//uniforms.alphaMap.value = material.alphaMap;
 
 		if ( material.aoMap ) {
 
-			uniforms.aoMap.value = material.aoMap;
+			//uniforms.aoMap.value = material.aoMap;
 			uniforms.aoMapIntensity.value = material.aoMapIntensity;
 
 		}
@@ -2880,7 +2905,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	}
 
-	function uploadTexture( textureProperties, texture, slot ) {
+	function uploadTexture( textureProperties, texture, map ) {
 
 		if ( textureProperties.__webglInit === undefined ) {
 
@@ -2894,7 +2919,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		}
 
-		state.activeTexture( _gl.TEXTURE0 + slot );
+		state.activeTexture( _gl.TEXTURE0 + map );
 		state.bindTexture( _gl.TEXTURE_2D, textureProperties.__webglTexture );
 
 		_gl.pixelStorei( _gl.UNPACK_FLIP_Y_WEBGL, texture.flipY );
@@ -3001,7 +3026,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	}
 
-	this.setTexture = function ( texture, slot ) {
+	this.setTexture = function ( texture, map ) {
 
 		var textureProperties = properties.get( texture );
 
@@ -3023,13 +3048,13 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			}
 
-			uploadTexture( textureProperties, texture, slot );
+			uploadTexture( textureProperties, texture, map );
 
 			return;
 
 		}
 
-		state.activeTexture( _gl.TEXTURE0 + slot );
+		state.activeTexture( _gl.TEXTURE0 + map );
 		state.bindTexture( _gl.TEXTURE_2D, textureProperties.__webglTexture );
 
 	};
@@ -3096,7 +3121,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	}
 
-	function setCubeTexture ( texture, slot ) {
+	function setCubeTexture ( texture, map ) {
 
 		var textureProperties = properties.get( texture );
 
@@ -3114,7 +3139,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 				}
 
-				state.activeTexture( _gl.TEXTURE0 + slot );
+				state.activeTexture( _gl.TEXTURE0 + map );
 				state.bindTexture( _gl.TEXTURE_CUBE_MAP, textureProperties.__image__webglTextureCube );
 
 				_gl.pixelStorei( _gl.UNPACK_FLIP_Y_WEBGL, texture.flipY );
@@ -3203,7 +3228,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			} else {
 
-				state.activeTexture( _gl.TEXTURE0 + slot );
+				state.activeTexture( _gl.TEXTURE0 + map );
 				state.bindTexture( _gl.TEXTURE_CUBE_MAP, textureProperties.__image__webglTextureCube );
 
 			}
@@ -3212,9 +3237,9 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	}
 
-	function setCubeTextureDynamic ( texture, slot ) {
+	function setCubeTextureDynamic ( texture, map ) {
 
-		state.activeTexture( _gl.TEXTURE0 + slot );
+		state.activeTexture( _gl.TEXTURE0 + map );
 		state.bindTexture( _gl.TEXTURE_CUBE_MAP, properties.get( texture ).__webglTexture );
 
 	}

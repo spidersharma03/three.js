@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>threejs webgl - inline tone mapping</title>
+		<title>threejs webgl - per-mat per-material uv offset/repeat and texel scale/offset/invert</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -29,7 +29,7 @@
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="http://threejs.org" target="_blank">threejs</a> - Inline Tone Mapping (within a Material's fragment shader) without<br/>using a pre-processing step or float/half buffers by <a href="http://clara.io/" target="_blank">Ben Houston</a>.</div>
+		<div id="info"><a href="http://threejs.org" target="_blank">threejs</a> - Per-Map Per-Material UV Channel, UV Repeat/Offset, and Texel Scale/Offset/Invert<br/>via THREE.Map by <a href="http://clara.io/" target="_blank">Ben Houston</a>.</div>
 
 		<script src="../build/three.min.js"></script>
 		<script src="../examples/js/controls/OrbitControls.js"></script>
@@ -61,24 +61,7 @@
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var container, stats;
-			var params = {
-				opacity: 1.0,
-				roughness: 1.0,
-				bumpScale: 1.0,
-				exposure: 3.0,
-				whitePoint: 5.0,
-				toneMapping: "Uncharted2",
-				renderMode: "Renderer"
-			};
-
-			var toneMappingOptions = {
-				None: THREE.NoToneMapping,
-				Linear: THREE.LinearToneMapping,
-				Reinhard: THREE.ReinhardToneMapping,
-				Uncharted2: THREE.Uncharted2ToneMapping,
-				Cineon: THREE.CineonToneMapping
-			};
-
+			var params;
 			var camera, scene, renderer, controls, objects = [];
 			var composer;
 			var standardMaterial, standardMaterialPremultiplied, floorMaterial;
@@ -92,7 +75,7 @@
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0.0, 40, 40 * 3.5 );
+				camera.position.set( 0.0, 80, 40 * 3.5 );
 
 				scene = new THREE.Scene();
 
@@ -102,62 +85,53 @@
 				standardMaterial = new THREE.MeshStandardMaterial( {
 					bumpScale: - 0.05,
 					color: 0xffffff,
+					emissive: 0xffffff,
 					metalness: 0.9,
 					roughness: 0.8,
+					normalScale: new THREE.Vector2( 1, -1 ),
 					shading: THREE.SmoothShading,
 					transparent: true,
 					blending: THREE.PremultipliedAlphaBlending
 				} );
 
 				var textureLoader = new THREE.TextureLoader();
-				textureLoader.load( "../examples/textures/brick_diffuse.jpg", function( map ) {
+				textureLoader.load( "../examples/textures/planets/earth_atmos_2048.jpg", function( map ) {
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
 					map.anisotropy = 4;
-					map.repeat.set( 9, 0.5 );
 					standardMaterial.map = map;
 					standardMaterial.needsUpdate = true;
 				} );
-				textureLoader.load( "../examples/textures/brick_bump.jpg", function( map ) {
+				textureLoader.load( "../examples/textures/planets/earth_normal_2048.jpg", function( map ) {
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
 					map.anisotropy = 4;
-					map.repeat.set( 9, 0.5 );
-					standardMaterial.bumpMap = map;
+					standardMaterial.normalMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
-				textureLoader.load( "../examples/textures/brick_roughness.jpg", function( map ) {
+				textureLoader.load( "../examples/textures/planets/earth_specular_2048.jpg", function( map ) {
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
 					map.anisotropy = 4;
-					map.repeat.set( 9, 0.5 );
 					standardMaterial.roughnessMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
+				textureLoader.load( "../examples/textures/planets/earth_lights_2048.png", function( map ) {
+					map.wrapS = THREE.RepeatWrapping;
+					map.wrapT = THREE.RepeatWrapping;
+					map.anisotropy = 4;
+					standardMaterial.emissiveMap = map;
+					standardMaterial.needsUpdate = true;
+				} );
 
-				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );;
+
+				var geometry = new THREE.SphereGeometry( 35, 48, 48 );
 				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
 				torusMesh1.position.x = 0.0;
 				torusMesh1.castShadow = true;
 				torusMesh1.receiveShadow = true;
 				scene.add( torusMesh1 );
 				objects.push( torusMesh1 );
-
-				floorMaterial = new THREE.MeshStandardMaterial( {
-					map: null,
-					roughnessMap: null,
-					color: 0xffffff,
-					metalness: 0.0,
-					roughness: 0.0,
-					shading: THREE.SmoothShading
-				} );
-
-				var planeGeometry = new THREE.PlaneBufferGeometry( 200, 200 );
-				var planeMesh1 = new THREE.Mesh( planeGeometry, floorMaterial );
-				planeMesh1.position.y = - 50;
-				planeMesh1.rotation.x = - Math.PI * 0.5;
-				planeMesh1.receiveShadow = true;
-				scene.add( planeMesh1 );
 
 				// Materials
 				var hdrpath = "../examples/textures/cube/hdrPisa/";
@@ -177,13 +151,14 @@
 					pmremCubeUVPacker.update( renderer );
 
 					standardMaterial.envMap = pmremCubeUVPacker.CubeUVRenderTarget;
+					standardMaterial.envMapIntensity = 3;
 					standardMaterial.needsUpdate = true;
 
 				} );
 
 				// Lights
 
-				scene.add( new THREE.AmbientLight( 0x222222 ) );
+				//scene.add( new THREE.AmbientLight( 0x222222 ) );
 
 				var spotLight = new THREE.SpotLight( 0xffffff );
 				spotLight.position.set( 50, 100, 50 );
@@ -197,6 +172,8 @@
 				renderer.shadowMap.enabled = true;
 				container.appendChild( renderer.domElement );
 
+				renderer.toneMapping = THREE.ReinhardToneMapping;
+				renderer.toneMappingExposure = 6;
 				renderer.gammaInput = true;
 				renderer.gammaOutput = true;
 
@@ -224,11 +201,39 @@
 
 				var gui = new dat.GUI();
 
-				gui.add( params, 'toneMapping', Object.keys( toneMappingOptions ) );
-				gui.add( params, 'exposure', 0, 10 );
-				gui.add( params, 'whitePoint', 0, 10 );
-				gui.add( params, 'opacity', 0, 1 );
-				gui.add( params, 'renderMode', [ 'Renderer', 'Composer'] );
+				params = {};
+
+				var mapParams = function( mapName ) {
+					params[ mapName + 'TexelInvert'] = ( mapName === 'rough' );
+					gui.add( params, mapName + 'TexelInvert' );
+					if( mapName === "bump" ) {
+						params[ mapName + 'TexelOffset'] = 0;
+						params[ mapName + 'TexelScale'] = 0.05;
+						gui.add( params, mapName + 'TexelScale', -0.1, 0.1 );
+					}
+					else {
+						params[ mapName + 'TexelOffset'] = ( mapName === 'rough' ) ? 0.4 : 0;
+						if( mapName === 'rough' ) params[ mapName + 'TexelScale'] = 0.6;
+						else if( mapName === 'emissive' ) params[ mapName + 'TexelScale'] = 0.3;
+						else params[ mapName + 'TexelScale'] = 1.0;
+						if( mapName !== "normal" ) {
+							gui.add( params, mapName + 'TexelOffset', -1, 1 );
+							gui.add( params, mapName + 'TexelScale', -1, 1 );
+						}
+					}
+					params[ mapName + 'UVOffsetX'] = 0;
+					gui.add( params, mapName + 'UVOffsetX', 0, 1 );
+					params[ mapName + 'UVOffsetY'] = 0;
+					gui.add( params, mapName + 'UVOffsetY', 0, 1 );
+					params[ mapName + 'UVRepeatX'] = 1;
+					gui.add( params, mapName + 'UVRepeatX', 0.01, 5 );
+					params[ mapName + 'UVRepeatY'] = 1;
+					gui.add( params, mapName + 'UVRepeatY', 0.01, 5 );
+				};
+				mapParams( "map" );
+				mapParams( "normal" );
+				mapParams( "rough" );
+				mapParams( "emissive" );
 				gui.open();
 
 			}
@@ -261,19 +266,22 @@
 
 				if ( standardMaterial !== undefined ) {
 
-
-					standardMaterial.roughness = params.roughness;
-					standardMaterial.bumpScale = - 0.05 * params.bumpScale;
-					standardMaterial.opacity = params.opacity;
-
+					var setSlot = function( map, name ) {
+						map.texelTransform = true;
+						map.texelScale = params[ name + 'TexelScale'];
+						map.texelOffset = params[ name + 'TexelOffset'];
+						map.texelInvert = params[ name + 'TexelInvert'];
+						map.uvTransform = true;
+						map.uvRepeat.x = params[ name + 'UVRepeatX'];
+						map.uvRepeat.y = params[ name + 'UVRepeatY'];
+						map.uvOffset.x = params[ name + 'UVOffsetX'];
+						map.uvOffset.y = params[ name + 'UVOffsetY'];
+					}
+					setSlot( standardMaterial.mapSlot, "map" );
+					setSlot( standardMaterial.normalMapSlot, "normal" );
+					setSlot( standardMaterial.roughnessMapSlot, "rough" );
+					setSlot( standardMaterial.emissiveMapSlot, "emissive" );
 				}
-				if( renderer.toneMapping !== toneMappingOptions[ params.toneMapping ] ) {
-					renderer.toneMapping = toneMappingOptions[ params.toneMapping ];
-					if( standardMaterial ) standardMaterial.needsUpdate = true;
-					if( floorMaterial ) floorMaterial.needsUpdate = true;
-				}
-				renderer.toneMappingExposure = params.exposure;
-				renderer.toneMappingWhitePoint = params.whitePoint;
 
 				var timer = Date.now() * 0.00025;
 
