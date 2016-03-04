@@ -81,12 +81,12 @@ vec4 LogLuvToLinear( in vec4 value ) {
 vec3 NormalToRGB( vec3 normal ) {
 	return 0.5 * normalize( vNormal ) + 0.5;
 }
-
 vec3 RGBToNormal( vec3 color ) {
 	return ( color.xyz - 0.5 ) * 2.0;
 }
 
 // this packs a value between 0 and 1 with linear precision into an RGBA 8-bit per channel buffer
+// Source: http://stackoverflow.com/questions/7059962/how-do-i-convert-a-vec4-rgba-value-to-a-float/7237286#7237286
 highp vec4 Float32ToRGBA(highp float f) {
   highp float e =5.0;
   highp float F = abs(f);
