@@ -27,7 +27,6 @@ THREE.ShaderSkin = {
 			THREE.UniformsLib[ "fog" ],
 			THREE.UniformsLib[ "ambient" ],
 			THREE.UniformsLib[ "lights" ],
-			THREE.UniformsLib[ "shadowmap" ],
 
 			{
 
@@ -246,18 +245,11 @@ THREE.ShaderSkin = {
 
 				"#endif",
 
-				THREE.ShaderChunk[ "shadowmap_fragment" ],
-
-				"totalDiffuseLight *= shadowMask;",
-				"totalSpecularLight *= shadowMask;",
-
 				"outgoingLight += diffuseColor.xyz * ( totalDiffuseLight + ambientLightColor * diffuse ) + totalSpecularLight;",
 
-				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
+				"gl_FragColor = linearToOutputTexel( vec4( outgoingLight, diffuseColor.a ) );",	// TODO, this should be pre-multiplied to allow for bright highlights on very transparent objects
+
 				THREE.ShaderChunk[ "fog_fragment" ],
-
-				"gl_FragColor = vec4( outgoingLight, diffuseColor.a );",	// TODO, this should be pre-multiplied to allow for bright highlights on very transparent objects
-
 
 			"}"
 
@@ -273,6 +265,7 @@ THREE.ShaderSkin = {
 			"varying vec3 vViewPosition;",
 
 			THREE.ShaderChunk[ "common" ],
+			THREE.ShaderChunk[ "lights_pars" ],
 			THREE.ShaderChunk[ "shadowmap_pars_vertex" ],
 
 			"void main() {",
@@ -555,9 +548,9 @@ THREE.ShaderSkin = {
 
 				"}",
 
-				THREE.ShaderChunk[ "fog_fragment" ],
-
 				"gl_FragColor = vec4( outgoingLight, diffuseColor.a );",	// TODO, this should be pre-multiplied to allow for bright highlights on very transparent objects
+
+				THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 

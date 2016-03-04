@@ -1693,7 +1693,7 @@ THREE.MMDLoader.prototype.createMesh = function ( model, texturePath, onProgress
 
 	var scope = this;
 	var geometry = new THREE.Geometry();
-        var material = new THREE.MeshFaceMaterial();
+        var material = new THREE.MultiMaterial();
 	var helper = new THREE.MMDLoader.DataCreationHelper();
 
 	var initVartices = function () {
@@ -2534,7 +2534,7 @@ THREE.MMDLoader.prototype.createMesh = function ( model, texturePath, onProgress
 			var bodyB = rigidBodies[ p.rigidBodyIndex2 ];
 
 			/*
-			 * Refer http://www20.atpages.jp/katwat/wp/?p=4135 
+			 * Refer http://www20.atpages.jp/katwat/wp/?p=4135
 			 * for what this is for
 			 */
 			if ( bodyA.type !== 0 && bodyB.type === 2 ) {
@@ -2606,13 +2606,18 @@ THREE.MMDLoader.prototype.createAnimation = function ( mesh, vmd, name ) {
 
 	var initMotionAnimations = function () {
 
+		if ( vmd.metadata.motionCount === 0 ) {
+
+			return;
+
+		}
+
 		var bones = mesh.geometry.bones;
 		var orderedMotions = helper.createOrderedMotionArrays( bones, vmd.motions, 'boneName' );
 
 		var animation = {
 			name: name === undefined ? THREE.Math.generateUUID() : name,
 			fps: 30,
-			length: 0.0,
 			hierarchy: []
 		};
 
@@ -2626,8 +2631,6 @@ THREE.MMDLoader.prototype.createAnimation = function ( mesh, vmd, name ) {
 			);
 
 		}
-
-		var maxTime = 0.0;
 
 		for ( var i = 0; i < orderedMotions.length; i++ ) {
 
@@ -2645,17 +2648,7 @@ THREE.MMDLoader.prototype.createAnimation = function ( mesh, vmd, name ) {
 
 			}
 
-			if ( keys.length > 0 ) {
-
-				maxTime = Math.max( keys[ keys.length - 1 ].time, maxTime );
-
-			}
-
 		}
-
-		// add 2 secs as afterglow
-		maxTime += 2.0;
-		animation.length = maxTime;
 
 		for ( var i = 0; i < orderedMotions.length; i++ ) {
 
@@ -2666,25 +2659,34 @@ THREE.MMDLoader.prototype.createAnimation = function ( mesh, vmd, name ) {
 
 		}
 
-//		mesh.geometry.animation = animation;
-
 		if ( mesh.geometry.animations === undefined ) {
 
 			mesh.geometry.animations = [];
 
 		}
 
-		mesh.geometry.animations.push( THREE.AnimationClip.parseAnimation( animation, mesh.geometry.bones ) );
+		var clip = THREE.AnimationClip.parseAnimation( animation, mesh.geometry.bones );
+
+		if ( clip !== null ) {
+
+			mesh.geometry.animations.push( clip );
+
+		}
 
 	};
 
 	var initMorphAnimations = function () {
 
+		if ( vmd.metadata.morphCount === 0 ) {
+
+			return;
+
+		}
+
 		var orderedMorphs = helper.createOrderedMotionArrays( mesh.geometry.morphTargets, vmd.morphs, 'morphName' );
 
 		var morphAnimation = {
 			fps: 30,
-			length: 0.0,
 			hierarchy: []
 		};
 
@@ -2693,8 +2695,6 @@ THREE.MMDLoader.prototype.createAnimation = function ( mesh, vmd, name ) {
 			morphAnimation.hierarchy.push( { keys: [] } );
 
 		}
-
-		var maxTime = 0.0;
 
 		for ( var i = 0; i < orderedMorphs.length; i++ ) {
 
@@ -2710,43 +2710,37 @@ THREE.MMDLoader.prototype.createAnimation = function ( mesh, vmd, name ) {
 
 			}
 
-			if ( keys.length > 0 ) {
-
-				maxTime = Math.max( keys[ keys.length - 1 ].time, maxTime );
-
-			}
-
-		}
-
-		// add 2 secs as afterglow
-		maxTime += 2.0;
-		morphAnimation.length = maxTime;
-
-		for ( var i = 0; i < orderedMorphs.length; i++ ) {
-
-			var keys = morphAnimation.hierarchy[ i ].keys;
-			helper.insertAnimationKeyAtTimeZero( keys, 0.0 );
-			helper.insertStartAnimationKey( keys );
-
-		}
-
-//		geometry.morphAnimation = morphAnimation;
-
-		if ( mesh.geometry.morphAnimations === undefined ) {
-
-			mesh.geometry.morphAnimations = [];
-
 		}
 
 		var tracks = [];
 
 		for ( var i = 0; i < orderedMorphs.length; i++ ) {
 
-			tracks.push( helper.generateTrackFromAnimationKeys( morphAnimation.hierarchy[ i ].keys, 'NumberKeyframeTrackEx', '.morphTargetInfluences[' + i + ']' ) );
+			var keys = morphAnimation.hierarchy[ i ].keys;
+
+			if ( keys.length === 0 ) {
+
+				continue;
+
+			}
+
+			tracks.push( helper.generateTrackFromAnimationKeys( keys, 'NumberKeyframeTrackEx', '.morphTargetInfluences[' + i + ']' ) );
 
 		}
 
-		mesh.geometry.morphAnimations.push( new THREE.AnimationClip( name === undefined ? THREE.Math.generateUUID() : name + 'Morph', -1, tracks ) );
+		var clip = new THREE.AnimationClip( name === undefined ? THREE.Math.generateUUID() : name + 'Morph', -1, tracks );
+
+		if ( clip !== null ) {
+
+			if ( mesh.geometry.morphAnimations === undefined ) {
+
+				mesh.geometry.morphAnimations = [];
+
+			}
+
+			mesh.geometry.morphAnimations.push( clip );
+
+		}
 
 	};
 
@@ -3217,7 +3211,6 @@ THREE.MMDLoader.VectorKeyframeTrackEx = function ( name, times, values, interpol
 THREE.MMDLoader.VectorKeyframeTrackEx.prototype = Object.create( THREE.VectorKeyframeTrack.prototype );
 THREE.MMDLoader.VectorKeyframeTrackEx.prototype.constructor = THREE.MMDLoader.VectorKeyframeTrackEx;
 THREE.MMDLoader.VectorKeyframeTrackEx.prototype.TimeBufferType = Float64Array;
-THREE.MMDLoader.VectorKeyframeTrackEx.prototype.ValueBufferType = Float64Array;
 
 THREE.MMDLoader.NumberKeyframeTrackEx = function ( name, times, values, interpolation ) {
 
@@ -3228,7 +3221,6 @@ THREE.MMDLoader.NumberKeyframeTrackEx = function ( name, times, values, interpol
 THREE.MMDLoader.NumberKeyframeTrackEx.prototype = Object.create( THREE.NumberKeyframeTrack.prototype );
 THREE.MMDLoader.NumberKeyframeTrackEx.prototype.constructor = THREE.MMDLoader.NumberKeyframeTrackEx;
 THREE.MMDLoader.NumberKeyframeTrackEx.prototype.TimeBufferType = Float64Array;
-THREE.MMDLoader.NumberKeyframeTrackEx.prototype.ValueBufferType = Float64Array;
 
 THREE.MMDLoader.DataView = function ( buffer, littleEndian ) {
 
@@ -3644,7 +3636,6 @@ THREE.ShaderLib[ 'mmd' ] = {
 		THREE.UniformsLib[ "fog" ],
 		THREE.UniformsLib[ "ambient" ],
 		THREE.UniformsLib[ "lights" ],
-		THREE.UniformsLib[ "shadowmap" ],
 
 		{
 			"emissive" : { type: "c", value: new THREE.Color( 0x000000 ) },
@@ -3830,12 +3821,9 @@ THREE.ShaderLib[ 'mmd' ] = {
 			THREE.ShaderChunk[ "normal_fragment" ],
 			THREE.ShaderChunk[ "emissivemap_fragment" ],
 
-			THREE.ShaderChunk[ "shadowmap_fragment" ],
-
 			// accumulation
 			THREE.ShaderChunk[ "lights_phong_fragment" ],
 			THREE.ShaderChunk[ "lights_template" ],
-			THREE.ShaderChunk[ "lightmap_fragment" ],
 
 			// modulation
 			THREE.ShaderChunk[ "aomap_fragment" ],
@@ -4094,7 +4082,9 @@ THREE.MMDHelper.prototype = {
 	 * TODO: touching private properties ( ._actions and ._clip ) so consider better way
 	 *       to access them for safe and modularity.
 	 */
-	unifyAnimationDuration: function () {
+	unifyAnimationDuration: function ( params ) {
+
+		params = params === undefined ? {} : params;
 
 		var max = 0.0;
 
@@ -4138,6 +4128,12 @@ THREE.MMDHelper.prototype = {
 		if ( audioManager !== null ) {
 
 			max = Math.max( max, audioManager.duration );
+
+		}
+
+		if ( params.afterglow !== undefined ) {
+
+			max += params.afterglow;
 
 		}
 
@@ -4293,8 +4289,13 @@ THREE.MMDHelper.prototype = {
 
 	renderOutline: function ( scene, camera ) {
 
+		var tmpEnabled = this.renderer.shadowMap.enabled;
+		this.renderer.shadowMap.enabled = false;
+
 		this.setupOutlineRendering();
 		this.renderer.render( scene, camera );
+
+		this.renderer.shadowMap.enabled = tmpEnabled;
 
 	},
 
@@ -4511,4 +4512,3 @@ THREE.MMDHelper.prototype = {
 	}
 
 };
-

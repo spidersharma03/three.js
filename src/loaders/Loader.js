@@ -137,7 +137,8 @@ THREE.Loader.prototype = {
 						json.blending = THREE[ value ];
 						break;
 					case 'colorAmbient':
-						console.warn( 'THREE.Loader.createMaterial: colorAmbient is no longer supported' );
+					case 'mapAmbient':
+						console.warn( 'THREE.Loader.createMaterial:', name, 'is no longer supported.' );
 						break;
 					case 'colorDiffuse':
 						json.color = color.fromArray( value ).getHex();
@@ -229,8 +230,6 @@ THREE.Loader.prototype = {
 						break;
 					case 'depthTest':
 					case 'depthWrite':
-					case 'stencilTest':
-					case 'stencilWrite':
 					case 'colorWrite':
 					case 'opacity':
 					case 'reflectivity':

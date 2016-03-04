@@ -30,9 +30,6 @@ THREE.Material = function () {
 	this.depthTest = true;
 	this.depthWrite = true;
 
-	this.stencilTest = false;
-	this.stencilWrite = false;
-
 	this.colorWrite = true;
 
 	this.precision = null; // override the renderer's default precision for this material
@@ -145,7 +142,7 @@ THREE.Material.prototype = {
 		if ( this.color instanceof THREE.Color ) data.color = this.color.getHex();
 
 		if ( this.roughness !== 0.5 ) data.roughness = this.roughness;
-		if ( this.metalness > 0 ) data.metalness = this.metalness;
+		if ( this.metalness !== 0.5 ) data.metalness = this.metalness;
 
 		if ( this.emissive instanceof THREE.Color ) data.emissive = this.emissive.getHex();
 		if ( this.specular instanceof THREE.Color ) data.specular = this.specular.getHex();
@@ -259,9 +256,6 @@ THREE.Material.prototype = {
 		this.depthFunc = source.depthFunc;
 		this.depthTest = source.depthTest;
 		this.depthWrite = source.depthWrite;
-
-		this.stencilTest = source.stencilTest;
-		this.stencilWrite = source.stencilWrite;
 
 		this.colorWrite = source.colorWrite;
 

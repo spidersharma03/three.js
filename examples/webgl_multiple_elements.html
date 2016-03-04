@@ -159,6 +159,7 @@
 
 				renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true } );
 				renderer.setClearColor( 0xffffff, 1 );
+				renderer.setPixelRatio( window.devicePixelRatio );
 
 			}
 
@@ -169,7 +170,7 @@
 
 				if ( canvas.width !== width || canvas.height != height ) {
 
-					renderer.setSize ( width, height, false );
+					renderer.setSize( width, height, false );
 
 				}
 
@@ -187,9 +188,10 @@
 				updateSize();
 
 				renderer.setClearColor( 0xffffff );
+				renderer.setScissorTest( false );
 				renderer.clear();
-				renderer.setClearColor( 0xe0e0e0 );
 
+				renderer.setClearColor( 0xe0e0e0 );
 				renderer.setScissorTest( true );
 
 				scenes.forEach( function( scene ) {
@@ -231,8 +233,6 @@
 					renderer.render( scene, camera );
 
 				} );
-
-				renderer.setScissorTest( false );
 
 			}
 

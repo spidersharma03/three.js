@@ -119,8 +119,15 @@ THREE.ColladaLoader.prototype = {
 		function parseAsset( xml ) {
 
 			return {
+				unit: parseAssetUnit( getElementsByTagName( xml, 'unit' )[ 0 ] ),
 				upAxis: parseAssetUpAxis( getElementsByTagName( xml, 'up_axis' )[ 0 ] )
 			};
+
+		}
+
+		function parseAssetUnit( xml ) {
+
+			return xml !== undefined ? parseFloat( xml.getAttribute( 'meter' ) ) : 1;
 
 		}
 
@@ -379,7 +386,8 @@ THREE.ColladaLoader.prototype = {
 					case 'emission':
 					case 'diffuse':
 					case 'specular':
-					case 'transparent':
+					case 'shininess':
+					case 'transparency':
 						data[ child.nodeName ] = parseEffectParameter( child );
 						break;
 
@@ -407,8 +415,92 @@ THREE.ColladaLoader.prototype = {
 						data[ child.nodeName ] = parseFloats( child.textContent );
 						break;
 
+					case 'float':
+						data[ child.nodeName ] = parseFloat( child.textContent );
+						break;
+
 					case 'texture':
-						data[ child.nodeName ] = child.getAttribute( 'texture' );
+						data[ child.nodeName ] = { id: child.getAttribute( 'texture' ), extra: parseEffectParameterTexture( child ) };
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
+		function parseEffectParameterTexture( xml ) {
+
+			var data = {};
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'extra':
+						data = parseEffectParameterTextureExtra( child );
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
+		function parseEffectParameterTextureExtra( xml ) {
+
+			var data = {};
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'technique':
+						data[ child.nodeName ] = parseEffectParameterTextureExtraTechnique( child );
+						break;
+
+				}
+
+			}
+
+			return data;
+
+		}
+
+		function parseEffectParameterTextureExtraTechnique( xml ) {
+
+			var data = {};
+
+			for ( var i = 0, l = xml.childNodes.length; i < l; i ++ ) {
+
+				var child = xml.childNodes[ i ];
+
+				if ( child.nodeType !== 1 ) continue;
+
+				switch ( child.nodeName ) {
+
+					case 'repeatU':
+					case 'repeatV':
+					case 'offsetU':
+					case 'offsetV':
+						data[ child.nodeName ] = parseFloat( child.textContent );
+						break;
+
+					case 'wrapU':
+					case 'wrapV':
+						data[ child.nodeName ] = parseInt( child.textContent );
 						break;
 
 				}
@@ -485,17 +577,39 @@ THREE.ColladaLoader.prototype = {
 
 			material.name = data.name;
 
-			function getTexture( sid ) {
+			function getTexture( textureObject ) {
 
-				var sampler = effect.profile.samplers[ sid ];
-				var surface = effect.profile.surfaces[ sampler.source ];
+				var sampler = effect.profile.samplers[ textureObject.id ];
 
-				var texture = new THREE.Texture( getImage( surface.init_from ) );
-				texture.wrapS = THREE.RepeatWrapping;
-				texture.wrapT = THREE.RepeatWrapping;
-				texture.needsUpdate = true;
+				if ( sampler !== undefined ) {
 
-				return texture;
+					var surface = effect.profile.surfaces[ sampler.source ];
+
+					var texture = new THREE.Texture( getImage( surface.init_from ) );
+
+					var extra = textureObject.extra;
+
+					if ( extra !== undefined && extra.technique !== undefined ) {
+
+						var technique = extra.technique;
+
+						texture.wrapS = technique.wrapU ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+						texture.wrapT = technique.wrapV ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+
+						texture.offset.set( technique.offsetU, technique.offsetV );
+						texture.repeat.set( technique.repeatU, technique.repeatV );
+
+					}
+
+					texture.needsUpdate = true;
+
+					return texture;
+
+				}
+
+				console.error( 'ColladaLoder: Undefined sampler', textureObject.id );
+
+				return null;
 
 			}
 
@@ -514,9 +628,19 @@ THREE.ColladaLoader.prototype = {
 						if ( parameter.color && material.specular )
 							material.specular.fromArray( parameter.color );
 						break;
+					case 'shininess':
+						if ( parameter.float && material.shininess )
+							material.shininess = parameter.float;
+						break;
 					case 'emission':
 						if ( parameter.color && material.emissive )
 							material.emissive.fromArray( parameter.color );
+						break;
+					case 'transparency':
+						if ( parameter.float )
+							material.opacity = parameter.float;
+						if ( parameter.float !== 1 )
+							material.transparent = true;
 						break;
 				}
 
@@ -1036,20 +1160,13 @@ THREE.ColladaLoader.prototype = {
 			function pushVector( i ) {
 
 				var index = indices[ i + offset ] * sourceStride;
+				var length = index + sourceStride;
 
-				/*
-				if ( asset.upAxis === 'Z_UP' ) {
+				for ( ; index < length; index ++ ) {
 
-					array.push( sourceArray[ index + 0 ], sourceArray[ index + 2 ], - sourceArray[ index + 1 ] );
-
-				} else {
-
-					array.push( sourceArray[ index + 0 ], sourceArray[ index + 1 ], sourceArray[ index + 2 ] );
+					array.push( sourceArray[ index ] );
 
 				}
-				*/
-
-				array.push( sourceArray[ index + 0 ], sourceArray[ index + 1 ], sourceArray[ index + 2 ] );
 
 			}
 
@@ -1450,6 +1567,14 @@ THREE.ColladaLoader.prototype = {
 		// console.log( library );
 
 		var scene = parseScene( getElementsByTagName( collada, 'scene' )[ 0 ] );
+
+		if ( asset.upAxis === 'Z_UP' ) {
+
+			scene.rotation.x = - Math.PI / 2;
+
+		}
+
+		scene.scale.multiplyScalar( asset.unit );
 
 		console.timeEnd( 'ColladaLoader' );
 

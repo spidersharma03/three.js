@@ -19,12 +19,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 	_stencil = parameters.stencil !== undefined ? parameters.stencil : true,
 	_antialias = parameters.antialias !== undefined ? parameters.antialias : false,
 	_premultipliedAlpha = parameters.premultipliedAlpha !== undefined ? parameters.premultipliedAlpha : true,
-	_preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false,
-
-	_clearColor = new THREE.Color( 0x000000 ),
-	_clearAlpha = 0,
-
-	_pixelRatio = 1;
+	_preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false;
 
 	var lights = [];
 
@@ -34,7 +29,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 	var transparentObjectsLastIndex = - 1;
 
 	var morphInfluences = new Float32Array( 8 );
-
 
 	var sprites = [];
 	var lensFlares = [];
@@ -60,6 +54,12 @@ THREE.WebGLRenderer = function ( parameters ) {
 	this.gammaFactor = 2.0;	// for backwards compatibility
 	this.gammaInput = false;
 	this.gammaOutput = false;
+
+	// tone mapping
+
+	this.toneMapping = THREE.LinearToneMapping;
+	this.toneMappingExposure = 1.0;
+	this.toneMappingWhitePoint = 1.0;
 
 	// morphs
 
@@ -92,16 +92,26 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	_usedTextureUnits = 0,
 
-	_scissor = new THREE.Vector4( 0, 0, _canvas.width, _canvas.height ),
+	//
+
+	_clearColor = new THREE.Color( 0x000000 ),
+	_clearAlpha = 0,
+
+	_width = _canvas.width,
+	_height = _canvas.height,
+
+	_pixelRatio = 1,
+
+	_scissor = new THREE.Vector4( 0, 0, _width, _height ),
 	_scissorTest = false,
 
-	_viewport = new THREE.Vector4( 0, 0, _canvas.width, _canvas.height ),
+	_viewport = new THREE.Vector4( 0, 0, _width, _height ),
 
 	// frustum
 
 	_frustum = new THREE.Frustum(),
 
-	 // camera matrices cache
+	// camera matrices cache
 
 	_projScreenMatrix = new THREE.Matrix4(),
 
@@ -115,8 +125,14 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		ambient: [ 0, 0, 0 ],
 		directional: [],
-		point: [],
+		directionalShadowMap: [],
+		directionalShadowMatrix: [],
 		spot: [],
+		spotShadowMap: [],
+		spotShadowMatrix: [],
+		point: [],
+		pointShadowMap: [],
+		pointShadowMatrix: [],
 		hemi: [],
 
 		shadows: [],
@@ -234,7 +250,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		}
 
-		_gl.clearColor( r, g, b, a );
+		state.clearColor( r, g, b, a );
 
 	}
 
@@ -352,13 +368,16 @@ THREE.WebGLRenderer = function ( parameters ) {
 	this.getSize = function () {
 
 		return {
-			width: _canvas.width / _pixelRatio,
-			height: _canvas.height / _pixelRatio
+			width: _width,
+			height: _height
 		};
 
 	};
 
 	this.setSize = function ( width, height, updateStyle ) {
+
+		_width = width;
+		_height = height;
 
 		_canvas.width = width * _pixelRatio;
 		_canvas.height = height * _pixelRatio;
@@ -376,19 +395,19 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	this.setViewport = function ( x, y, width, height ) {
 
-		_viewport.set( x, y, width, height );
+		state.viewport( _viewport.set( x, y, width, height ) );
 
 	};
 
 	this.setScissor = function ( x, y, width, height ) {
 
-		_scissor.set( x, y, width, height );
+		state.scissor( _scissor.set( x, y, width, height ) );
 
 	};
 
 	this.setScissorTest = function ( boolean ) {
 
-		_scissorTest = boolean;
+		state.setScissorTest( _scissorTest = boolean );
 
 	};
 
@@ -438,19 +457,19 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	this.clearColor = function () {
 
-		_gl.clear( _gl.COLOR_BUFFER_BIT );
+		this.clear( true, false, false );
 
 	};
 
 	this.clearDepth = function () {
 
-		_gl.clear( _gl.DEPTH_BUFFER_BIT );
+		this.clear( false, true, false );
 
 	};
 
 	this.clearStencil = function () {
 
-		_gl.clear( _gl.STENCIL_BUFFER_BIT );
+		this.clear( false, false, true );
 
 	};
 
@@ -882,9 +901,13 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		}
 
-		if ( geometry instanceof THREE.InstancedBufferGeometry && geometry.maxInstancedCount > 0 ) {
+		if ( geometry instanceof THREE.InstancedBufferGeometry ) {
 
-			renderer.renderInstances( geometry, drawStart, drawCount );
+			if ( geometry.maxInstancedCount > 0 ) {
+
+				renderer.renderInstances( geometry, drawStart, drawCount );
+
+			}
 
 		} else {
 
@@ -1189,12 +1212,10 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		}
 
-		// Ensure buffer writing is enabled so they can be cleared on next render
+		// Ensure depth buffer writing is enabled so it can be cleared on next render
 
 		state.setDepthTest( true );
 		state.setDepthWrite( true );
-		state.setStencilTest( true );
-		state.setStencilWrite( true );
 		state.setColorWrite( true );
 
 		// _gl.finish();
@@ -1515,9 +1536,16 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			uniforms.ambientLightColor.value = _lights.ambient;
 			uniforms.directionalLights.value = _lights.directional;
-			uniforms.pointLights.value = _lights.point;
 			uniforms.spotLights.value = _lights.spot;
+			uniforms.pointLights.value = _lights.point;
 			uniforms.hemisphereLights.value = _lights.hemi;
+
+			uniforms.directionalShadowMap.value = _lights.directionalShadowMap;
+			uniforms.directionalShadowMatrix.value = _lights.directionalShadowMatrix;
+			uniforms.spotShadowMap.value = _lights.spotShadowMap;
+			uniforms.spotShadowMatrix.value = _lights.spotShadowMatrix;
+			uniforms.pointShadowMap.value = _lights.pointShadowMap;
+			uniforms.pointShadowMatrix.value = _lights.pointShadowMatrix;
 
 		}
 
@@ -1557,8 +1585,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 		state.setDepthFunc( material.depthFunc );
 		state.setDepthTest( material.depthTest );
 		state.setDepthWrite( material.depthWrite );
-		state.setStencilTest( material.stencilTest );
-		state.setStencilWrite( material.stencilWrite );
 		state.setColorWrite( material.colorWrite );
 		state.setPolygonOffset( material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits );
 
@@ -1677,6 +1703,19 @@ THREE.WebGLRenderer = function ( parameters ) {
 					_gl.uniformMatrix4fv( p_uniforms.viewMatrix, false, camera.matrixWorldInverse.elements );
 
 				}
+
+			}
+
+
+			if ( p_uniforms.toneMappingExposure !== undefined ) {
+
+				_gl.uniform1f( p_uniforms.toneMappingExposure, _this.toneMappingExposure );
+
+			}
+
+			if ( p_uniforms.toneMappingWhitePoint !== undefined ) {
+
+				_gl.uniform1f( p_uniforms.toneMappingWhitePoint, _this.toneMappingWhitePoint );
 
 			}
 
@@ -1811,16 +1850,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			}
 
-			if ( shadowMap.enabled ) {
-
-				if ( object.receiveShadow && ! material._shadowPass ) {
-
-					refreshUniformsShadow( m_uniforms, camera );
-
-				}
-
-			}
-
 			// load common uniforms
 
 			loadUniformsGeneric( materialProperties.uniformsList );
@@ -1877,7 +1906,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		if ( material.emissive ) {
 
-			uniforms.emissive.value = material.emissive;
+			uniforms.emissive.value.copy( material.emissive ).multiplyScalar( material.emissiveIntensity );
 
 		}
 
@@ -1982,8 +2011,8 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		uniforms.diffuse.value = material.color;
 		uniforms.opacity.value = material.opacity;
-		uniforms.size.value = material.size;
-		uniforms.scale.value = _canvas.height / 2.0; // TODO: Cache this.
+		uniforms.size.value = material.size * _pixelRatio;
+		uniforms.scale.value = _canvas.clientHeight / 2.0; // TODO: Cache this.
 
 		uniforms.map.value = material.map;
 
@@ -2027,7 +2056,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 		if ( material.emissiveMap ) {
 
 			uniforms.emissiveMap.value = material.emissiveMap;
-			uniforms.emissiveMapIntensity.value = material.emissiveMapIntensity;
 
 		}
 
@@ -2048,7 +2076,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 		if ( material.emissiveMap ) {
 
 			uniforms.emissiveMap.value = material.emissiveMap;
-			uniforms.emissiveMapIntensity.value = material.emissiveMapIntensity;
 
 		}
 
@@ -2103,7 +2130,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 		if ( material.emissiveMap ) {
 
 			uniforms.emissiveMap.value = material.emissiveMap;
-			uniforms.emissiveMapIntensity.value = material.emissiveMapIntensity;
 
 		}
 
@@ -2148,44 +2174,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 		uniforms.pointLights.needsUpdate = value;
 		uniforms.spotLights.needsUpdate = value;
 		uniforms.hemisphereLights.needsUpdate = value;
-
-	}
-
-	function refreshUniformsShadow ( uniforms, camera ) {
-
-		if ( uniforms.shadowMatrix ) {
-
-			var shadows = _lights.shadows;
-
-			for ( var i = 0, l = shadows.length; i < l; i ++ ) {
-
-				var light = shadows[ i ];
-				var shadow = light.shadow;
-
-				if ( light instanceof THREE.PointLight ) {
-
-					// for point lights we set the shadow matrix to be a translation-only matrix
-					// equal to inverse of the light's position
-					_vector3.setFromMatrixPosition( light.matrixWorld ).negate();
-					shadow.matrix.identity().setPosition( _vector3 );
-
-					// for point lights we set the sign of the shadowDarkness uniform to be negative
-					uniforms.shadowDarkness.value[ i ] = - shadow.darkness;
-
-				} else {
-
-					uniforms.shadowDarkness.value[ i ] = shadow.darkness;
-
-				}
-
-				uniforms.shadowBias.value[ i ] = shadow.bias;
-				uniforms.shadowMap.value[ i ] = shadow.map;
-				uniforms.shadowMapSize.value[ i ] = shadow.mapSize;
-				uniforms.shadowMatrix.value[ i ] = shadow.matrix;
-
-			}
-
-		}
 
 	}
 
@@ -2234,362 +2222,388 @@ THREE.WebGLRenderer = function ( parameters ) {
 			var value = uniform.value;
 			var location = uniforms[ j ][ 1 ];
 
-			switch ( type ) {
+			if ( type === '1i' ) {
 
-				case '1i':
-					_gl.uniform1i( location, value );
-					break;
+				_gl.uniform1i( location, value );
 
-				case '1f':
-					_gl.uniform1f( location, value );
-					break;
+			} else if ( type === '1f' ) {
 
-				case '2f':
-					_gl.uniform2f( location, value[ 0 ], value[ 1 ] );
-					break;
+				_gl.uniform1f( location, value );
 
-				case '3f':
-					_gl.uniform3f( location, value[ 0 ], value[ 1 ], value[ 2 ] );
-					break;
+			} else if ( type === '2f' ) {
 
-				case '4f':
-					_gl.uniform4f( location, value[ 0 ], value[ 1 ], value[ 2 ], value[ 3 ] );
-					break;
+				_gl.uniform2f( location, value[ 0 ], value[ 1 ] );
 
-				case '1iv':
-					_gl.uniform1iv( location, value );
-					break;
+			} else if ( type === '3f' ) {
 
-				case '3iv':
-					_gl.uniform3iv( location, value );
-					break;
+				_gl.uniform3f( location, value[ 0 ], value[ 1 ], value[ 2 ] );
 
-				case '1fv':
-					_gl.uniform1fv( location, value );
-					break;
+			} else if ( type === '4f' ) {
 
-				case '2fv':
-					_gl.uniform2fv( location, value );
-					break;
+				_gl.uniform4f( location, value[ 0 ], value[ 1 ], value[ 2 ], value[ 3 ] );
 
-				case '3fv':
-					_gl.uniform3fv( location, value );
-					break;
+			} else if ( type === '1iv' ) {
 
-				case '4fv':
-					_gl.uniform4fv( location, value );
-					break;
+				_gl.uniform1iv( location, value );
 
-				case 'Matrix2fv':
-					_gl.uniformMatrix2fv( location, false, value );
-					break;
+			} else if ( type === '3iv' ) {
 
-				case 'Matrix3fv':
-					_gl.uniformMatrix3fv( location, false, value );
-					break;
+				_gl.uniform3iv( location, value );
 
-				case 'Matrix4fv':
-					_gl.uniformMatrix4fv( location, false, value );
-					break;
+			} else if ( type === '1fv' ) {
 
-				//
+				_gl.uniform1fv( location, value );
 
-				case 'i':
+			} else if ( type === '2fv' ) {
 
-					// single integer
-					_gl.uniform1i( location, value );
+				_gl.uniform2fv( location, value );
 
-					break;
+			} else if ( type === '3fv' ) {
 
-				case 'f':
+				_gl.uniform3fv( location, value );
 
-					// single float
-					_gl.uniform1f( location, value );
+			} else if ( type === '4fv' ) {
 
-					break;
+				_gl.uniform4fv( location, value );
 
-				case 'v2':
+			} else if ( type === 'Matrix2fv' ) {
 
-					// single THREE.Vector2
-					_gl.uniform2f( location, value.x, value.y );
+				_gl.uniformMatrix2fv( location, false, value );
 
-					break;
+			} else if ( type === 'Matrix3fv' ) {
 
-				case 'v3':
+				_gl.uniformMatrix3fv( location, false, value );
 
-					// single THREE.Vector3
-					_gl.uniform3f( location, value.x, value.y, value.z );
+			} else if ( type === 'Matrix4fv' ) {
 
-					break;
+				_gl.uniformMatrix4fv( location, false, value );
 
-				case 'v4':
+			//
 
-					// single THREE.Vector4
-					_gl.uniform4f( location, value.x, value.y, value.z, value.w );
+			} else if ( type === 'i' ) {
 
-					break;
+				// single integer
+				_gl.uniform1i( location, value );
 
-				case 'c':
+			} else if ( type === 'f' ) {
 
-					// single THREE.Color
-					_gl.uniform3f( location, value.r, value.g, value.b );
+				// single float
+				_gl.uniform1f( location, value );
 
-					break;
+			} else if ( type === 'v2' ) {
 
-				/*
-				case 's':
+				// single THREE.Vector2
+				_gl.uniform2f( location, value.x, value.y );
 
-					// TODO: Optimize this.
-					for( var propertyName in uniform.properties ) {
+			} else if ( type === 'v3' ) {
 
-						var property = uniform.properties[ propertyName ];
-						var locationProperty =  location[ propertyName ];
-						var valueProperty = value[ propertyName ];
+				// single THREE.Vector3
+				_gl.uniform3f( location, value.x, value.y, value.z );
 
-						switch( property.type ) {
-							case 'i':
-								_gl.uniform1i( locationProperty, valueProperty );
-								break;
-							case 'f':
-								_gl.uniform1f( locationProperty, valueProperty );
-								break;
-							case 'v2':
-								_gl.uniform2f( locationProperty, valueProperty.x, valueProperty.y );
-								break;
-							case 'v3':
-								_gl.uniform3f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z );
-								break;
-							case 'v4':
-								_gl.uniform4f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z, valueProperty.w );
-								break;
-							case 'c':
-								_gl.uniform3f( locationProperty, valueProperty.r, valueProperty.g, valueProperty.b );
-								break;
-						};
+			} else if ( type === 'v4' ) {
+
+				// single THREE.Vector4
+				_gl.uniform4f( location, value.x, value.y, value.z, value.w );
+
+			} else if ( type === 'c' ) {
+
+				// single THREE.Color
+				_gl.uniform3f( location, value.r, value.g, value.b );
+
+			/*
+			} else if ( type === 's' ) {
+
+				// TODO: Optimize this
+
+				for ( var propertyName in uniform.properties ) {
+
+					var property = uniform.properties[ propertyName ];
+					var locationProperty =  location[ propertyName ];
+					var valueProperty = value[ propertyName ];
+
+					type = property.type;
+
+					if ( type === 'i' ) {
+
+						_gl.uniform1i( locationProperty, valueProperty );
+
+					} else if ( type === 'f' ) {
+
+						_gl.uniform1f( locationProperty, valueProperty );
+
+					} else if ( type === 'v2' ) {
+
+						_gl.uniform2f( locationProperty, valueProperty.x, valueProperty.y );
+
+					} else if ( type === 'v3' ) {
+
+						_gl.uniform3f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z );
+
+					} else if ( type === 'v4' ) {
+
+						_gl.uniform4f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z, valueProperty.w );
+
+					} else if ( type === 'c' ) {
+
+						_gl.uniform3f( locationProperty, valueProperty.r, valueProperty.g, valueProperty.b );
 
 					}
 
-					break;
-				*/
+				}
 
-				case 'sa':
 
-					// TODO: Optimize this.
-					for ( var i = 0; i < value.length; i ++ ) {
+			*/
 
-						for ( var propertyName in uniform.properties ) {
+			} else if ( type === 'sa' ) {
 
-							var property = uniform.properties[ propertyName ];
-							var locationProperty =  location[ i ][ propertyName ];
-							var valueProperty = value[ i ][ propertyName ];
+				// TODO: Optimize this
 
-							switch ( property.type ) {
-								case 'i':
-									_gl.uniform1i( locationProperty, valueProperty );
-									break;
-								case 'f':
-									_gl.uniform1f( locationProperty, valueProperty );
-									break;
-								case 'v2':
-									_gl.uniform2f( locationProperty, valueProperty.x, valueProperty.y );
-									break;
-								case 'v3':
-									_gl.uniform3f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z );
-									break;
-								case 'v4':
-									_gl.uniform4f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z, valueProperty.w );
-									break;
-								case 'c':
-									_gl.uniform3f( locationProperty, valueProperty.r, valueProperty.g, valueProperty.b );
-									break;
-							}
+				for ( var i = 0; i < value.length; i ++ ) {
+
+					for ( var propertyName in uniform.properties ) {
+
+						var property = uniform.properties[ propertyName ];
+						var locationProperty =  location[ i ][ propertyName ];
+						var valueProperty = value[ i ][ propertyName ];
+
+						type = property.type;
+
+						if ( type === 'i' ) {
+
+							_gl.uniform1i( locationProperty, valueProperty );
+
+						} else if ( type === 'f' ) {
+
+							_gl.uniform1f( locationProperty, valueProperty );
+
+						} else if ( type === 'v2' ) {
+
+							_gl.uniform2f( locationProperty, valueProperty.x, valueProperty.y );
+
+						} else if ( type === 'v3' ) {
+
+							_gl.uniform3f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z );
+
+						} else if ( type === 'v4' ) {
+
+							_gl.uniform4f( locationProperty, valueProperty.x, valueProperty.y, valueProperty.z, valueProperty.w );
+
+						} else if ( type === 'c' ) {
+
+							_gl.uniform3f( locationProperty, valueProperty.r, valueProperty.g, valueProperty.b );
+
+						} else if ( type === 'm4' ) {
+
+							_gl.uniformMatrix4fv( locationProperty, false, valueProperty.elements );
 
 						}
 
 					}
 
-					break;
+				}
 
-				case 'iv1':
+			} else if ( type === 'iv1' ) {
 
-					// flat array of integers (JS or typed array)
-					_gl.uniform1iv( location, value );
+				// flat array of integers (JS or typed array)
+				_gl.uniform1iv( location, value );
 
-					break;
+			} else if ( type === 'iv' ) {
 
-				case 'iv':
+				// flat array of integers with 3 x N size (JS or typed array)
+				_gl.uniform3iv( location, value );
 
-					// flat array of integers with 3 x N size (JS or typed array)
-					_gl.uniform3iv( location, value );
+			} else if ( type === 'fv1' ) {
 
-					break;
+				// flat array of floats (JS or typed array)
+				_gl.uniform1fv( location, value );
 
-				case 'fv1':
+			} else if ( type === 'fv' ) {
 
-					// flat array of floats (JS or typed array)
-					_gl.uniform1fv( location, value );
+				// flat array of floats with 3 x N size (JS or typed array)
+				_gl.uniform3fv( location, value );
 
-					break;
+			} else if ( type === 'v2v' ) {
 
-				case 'fv':
+				// array of THREE.Vector2
 
-					// flat array of floats with 3 x N size (JS or typed array)
-					_gl.uniform3fv( location, value );
+				if ( uniform._array === undefined ) {
 
-					break;
+					uniform._array = new Float32Array( 2 * value.length );
 
-				case 'v2v':
+				}
 
-					// array of THREE.Vector2
+				for ( var i = 0, i2 = 0, il = value.length; i < il; i ++, i2 += 2 ) {
 
-					if ( uniform._array === undefined ) {
+					uniform._array[ i2 + 0 ] = value[ i ].x;
+					uniform._array[ i2 + 1 ] = value[ i ].y;
 
-						uniform._array = new Float32Array( 2 * value.length );
+				}
 
-					}
+				_gl.uniform2fv( location, uniform._array );
 
-					for ( var i = 0, i2 = 0, il = value.length; i < il; i ++, i2 += 2 ) {
+			} else if ( type === 'v3v' ) {
 
-						uniform._array[ i2 + 0 ] = value[ i ].x;
-						uniform._array[ i2 + 1 ] = value[ i ].y;
+				// array of THREE.Vector3
 
-					}
+				if ( uniform._array === undefined ) {
 
-					_gl.uniform2fv( location, uniform._array );
+					uniform._array = new Float32Array( 3 * value.length );
 
-					break;
+				}
 
-				case 'v3v':
+				for ( var i = 0, i3 = 0, il = value.length; i < il; i ++, i3 += 3 ) {
 
-					// array of THREE.Vector3
+					uniform._array[ i3 + 0 ] = value[ i ].x;
+					uniform._array[ i3 + 1 ] = value[ i ].y;
+					uniform._array[ i3 + 2 ] = value[ i ].z;
 
-					if ( uniform._array === undefined ) {
+				}
 
-						uniform._array = new Float32Array( 3 * value.length );
+				_gl.uniform3fv( location, uniform._array );
 
-					}
+			} else if ( type === 'v4v' ) {
 
-					for ( var i = 0, i3 = 0, il = value.length; i < il; i ++, i3 += 3 ) {
+				// array of THREE.Vector4
 
-						uniform._array[ i3 + 0 ] = value[ i ].x;
-						uniform._array[ i3 + 1 ] = value[ i ].y;
-						uniform._array[ i3 + 2 ] = value[ i ].z;
+				if ( uniform._array === undefined ) {
 
-					}
+					uniform._array = new Float32Array( 4 * value.length );
 
-					_gl.uniform3fv( location, uniform._array );
+				}
 
-					break;
+				for ( var i = 0, i4 = 0, il = value.length; i < il; i ++, i4 += 4 ) {
 
-				case 'v4v':
+					uniform._array[ i4 + 0 ] = value[ i ].x;
+					uniform._array[ i4 + 1 ] = value[ i ].y;
+					uniform._array[ i4 + 2 ] = value[ i ].z;
+					uniform._array[ i4 + 3 ] = value[ i ].w;
 
-					// array of THREE.Vector4
+				}
 
-					if ( uniform._array === undefined ) {
+				_gl.uniform4fv( location, uniform._array );
 
-						uniform._array = new Float32Array( 4 * value.length );
+			} else if ( type === 'm2' ) {
 
-					}
+				// single THREE.Matrix2
+				_gl.uniformMatrix2fv( location, false, value.elements );
 
-					for ( var i = 0, i4 = 0, il = value.length; i < il; i ++, i4 += 4 ) {
+			} else if ( type === 'm3' ) {
 
-						uniform._array[ i4 + 0 ] = value[ i ].x;
-						uniform._array[ i4 + 1 ] = value[ i ].y;
-						uniform._array[ i4 + 2 ] = value[ i ].z;
-						uniform._array[ i4 + 3 ] = value[ i ].w;
+				// single THREE.Matrix3
+				_gl.uniformMatrix3fv( location, false, value.elements );
 
-					}
+			} else if ( type === 'm3v' ) {
 
-					_gl.uniform4fv( location, uniform._array );
+				// array of THREE.Matrix3
 
-					break;
+				if ( uniform._array === undefined ) {
 
-				case 'm2':
+					uniform._array = new Float32Array( 9 * value.length );
 
-					// single THREE.Matrix2
-					_gl.uniformMatrix2fv( location, false, value.elements );
+				}
 
-					break;
+				for ( var i = 0, il = value.length; i < il; i ++ ) {
 
-				case 'm3':
+					value[ i ].flattenToArrayOffset( uniform._array, i * 9 );
 
-					// single THREE.Matrix3
-					_gl.uniformMatrix3fv( location, false, value.elements );
+				}
 
-					break;
+				_gl.uniformMatrix3fv( location, false, uniform._array );
 
-				case 'm3v':
+			} else if ( type === 'm4' ) {
 
-					// array of THREE.Matrix3
+				// single THREE.Matrix4
+				_gl.uniformMatrix4fv( location, false, value.elements );
 
-					if ( uniform._array === undefined ) {
+			} else if ( type === 'm4v' ) {
 
-						uniform._array = new Float32Array( 9 * value.length );
+				// array of THREE.Matrix4
 
-					}
+				if ( uniform._array === undefined ) {
 
-					for ( var i = 0, il = value.length; i < il; i ++ ) {
+					uniform._array = new Float32Array( 16 * value.length );
 
-						value[ i ].flattenToArrayOffset( uniform._array, i * 9 );
+				}
 
-					}
+				for ( var i = 0, il = value.length; i < il; i ++ ) {
 
-					_gl.uniformMatrix3fv( location, false, uniform._array );
+					value[ i ].flattenToArrayOffset( uniform._array, i * 16 );
 
-					break;
+				}
 
-				case 'm4':
+				_gl.uniformMatrix4fv( location, false, uniform._array );
 
-					// single THREE.Matrix4
-					_gl.uniformMatrix4fv( location, false, value.elements );
+			} else if ( type === 't' ) {
 
-					break;
+				// single THREE.Texture (2d or cube)
 
-				case 'm4v':
+				texture = value;
+				textureUnit = getTextureUnit();
 
-					// array of THREE.Matrix4
+				_gl.uniform1i( location, textureUnit );
 
-					if ( uniform._array === undefined ) {
+				if ( ! texture ) continue;
 
-						uniform._array = new Float32Array( 16 * value.length );
+				if ( texture instanceof THREE.CubeTexture ||
+					 ( Array.isArray( texture.image ) && texture.image.length === 6 ) ) {
 
-					}
+					// CompressedTexture can have Array in image :/
 
-					for ( var i = 0, il = value.length; i < il; i ++ ) {
+					setCubeTexture( texture, textureUnit );
 
-						value[ i ].flattenToArrayOffset( uniform._array, i * 16 );
+				} else if ( texture instanceof THREE.WebGLRenderTargetCube ) {
 
-					}
+					setCubeTextureDynamic( texture.texture, textureUnit );
 
-					_gl.uniformMatrix4fv( location, false, uniform._array );
+				} else if ( texture instanceof THREE.WebGLRenderTarget ) {
 
-					break;
+					_this.setTexture( texture.texture, textureUnit );
 
-				case 't':
+				} else {
 
-					// single THREE.Texture (2d or cube)
+					_this.setTexture( texture, textureUnit );
 
-					texture = value;
-					textureUnit = getTextureUnit();
+				}
 
-					_gl.uniform1i( location, textureUnit );
+			} else if ( type === 'tv' ) {
+
+				// array of THREE.Texture (2d or cube)
+
+				if ( uniform._array === undefined ) {
+
+					uniform._array = [];
+
+				}
+
+				for ( var i = 0, il = uniform.value.length; i < il; i ++ ) {
+
+					uniform._array[ i ] = getTextureUnit();
+
+				}
+
+				_gl.uniform1iv( location, uniform._array );
+
+				for ( var i = 0, il = uniform.value.length; i < il; i ++ ) {
+
+					texture = uniform.value[ i ];
+					textureUnit = uniform._array[ i ];
 
 					if ( ! texture ) continue;
 
 					if ( texture instanceof THREE.CubeTexture ||
-						 ( Array.isArray( texture.image ) && texture.image.length === 6 ) ) {
+						 ( texture.image instanceof Array && texture.image.length === 6 ) ) {
 
 						// CompressedTexture can have Array in image :/
 
 						setCubeTexture( texture, textureUnit );
 
-					} else if ( texture instanceof THREE.WebGLRenderTargetCube ) {
-
-						setCubeTextureDynamic( texture.texture, textureUnit );
-
 					} else if ( texture instanceof THREE.WebGLRenderTarget ) {
 
 						_this.setTexture( texture.texture, textureUnit );
+
+					} else if ( texture instanceof THREE.WebGLRenderTargetCube ) {
+
+						setCubeTextureDynamic( texture.texture, textureUnit );
 
 					} else {
 
@@ -2597,61 +2611,11 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 					}
 
-					break;
+				}
 
-				case 'tv':
+			} else {
 
-					// array of THREE.Texture (2d or cube)
-
-					if ( uniform._array === undefined ) {
-
-						uniform._array = [];
-
-					}
-
-					for ( var i = 0, il = uniform.value.length; i < il; i ++ ) {
-
-						uniform._array[ i ] = getTextureUnit();
-
-					}
-
-					_gl.uniform1iv( location, uniform._array );
-
-					for ( var i = 0, il = uniform.value.length; i < il; i ++ ) {
-
-						texture = uniform.value[ i ];
-						textureUnit = uniform._array[ i ];
-
-						if ( ! texture ) continue;
-
-						if ( texture instanceof THREE.CubeTexture ||
-							 ( texture.image instanceof Array && texture.image.length === 6 ) ) {
-
-							// CompressedTexture can have Array in image :/
-
-							setCubeTexture( texture, textureUnit );
-
-						} else if ( texture instanceof THREE.WebGLRenderTarget ) {
-
-							_this.setTexture( texture.texture, textureUnit );
-
-						} else if ( texture instanceof THREE.WebGLRenderTargetCube ) {
-
-							setCubeTextureDynamic( texture.texture, textureUnit );
-
-						} else {
-
-							_this.setTexture( texture, textureUnit );
-
-						}
-
-					}
-
-					break;
-
-				default:
-
-					console.warn( 'THREE.WebGLRenderer: Unknown uniform type: ' + type );
+				console.warn( 'THREE.WebGLRenderer: Unknown uniform type: ' + type );
 
 			}
 
@@ -2696,51 +2660,27 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 				var uniforms = lightCache.get( light );
 
+				uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
 				uniforms.direction.setFromMatrixPosition( light.matrixWorld );
 				_vector3.setFromMatrixPosition( light.target.matrixWorld );
 				uniforms.direction.sub( _vector3 );
 				uniforms.direction.transformDirection( viewMatrix );
-				uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
+
+				uniforms.shadow = light.castShadow;
 
 				if ( light.castShadow ) {
 
-					uniforms.shadow = shadowsLength;
+					uniforms.shadowBias = light.shadow.bias;
+					uniforms.shadowRadius = light.shadow.radius;
+					uniforms.shadowMapSize = light.shadow.mapSize;
 
 					_lights.shadows[ shadowsLength ++ ] = light;
 
-				} else {
-
-					uniforms.shadow = - 1;
-
 				}
 
+				_lights.directionalShadowMap[ directionalLength ] = light.shadow.map;
+				_lights.directionalShadowMatrix[ directionalLength ] = light.shadow.matrix;
 				_lights.directional[ directionalLength ++ ] = uniforms;
-
-			} else if ( light instanceof THREE.PointLight ) {
-
-				var uniforms = lightCache.get( light );
-
-				uniforms.position.setFromMatrixPosition( light.matrixWorld );
-				uniforms.position.applyMatrix4( viewMatrix );
-
-				uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
-				uniforms.distance = light.distance;
-				uniforms.decay = ( light.distance === 0 ) ? 0.0 : light.decay;
-
-				if ( light.castShadow ) {
-
-					uniforms.shadow = shadowsLength;
-
-					_lights.shadows[ shadowsLength ++ ] = light;
-					_lights.shadowsPointLight ++;
-
-				} else {
-
-					uniforms.shadow = - 1;
-
-				}
-
-				_lights.point[ pointLength ++ ] = uniforms;
 
 			} else if ( light instanceof THREE.SpotLight ) {
 
@@ -2757,23 +2697,63 @@ THREE.WebGLRenderer = function ( parameters ) {
 				uniforms.direction.sub( _vector3 );
 				uniforms.direction.transformDirection( viewMatrix );
 
-				uniforms.angleCos = Math.cos( light.angle );
-				uniforms.exponent = light.exponent;
+				uniforms.coneCos = Math.cos( light.angle );
+				uniforms.penumbraCos = Math.cos( light.angle * ( 1 - light.penumbra ) );
 				uniforms.decay = ( light.distance === 0 ) ? 0.0 : light.decay;
+
+				uniforms.shadow = light.castShadow;
 
 				if ( light.castShadow ) {
 
-					uniforms.shadow = shadowsLength;
+					uniforms.shadowBias = light.shadow.bias;
+					uniforms.shadowRadius = light.shadow.radius;
+					uniforms.shadowMapSize = light.shadow.mapSize;
 
 					_lights.shadows[ shadowsLength ++ ] = light;
 
-				} else {
+				}
 
-					uniforms.shadow = - 1;
+				_lights.spotShadowMap[ spotLength ] = light.shadow.map;
+				_lights.spotShadowMatrix[ spotLength ] = light.shadow.matrix;
+				_lights.spot[ spotLength ++ ] = uniforms;
+
+			} else if ( light instanceof THREE.PointLight ) {
+
+				var uniforms = lightCache.get( light );
+
+				uniforms.position.setFromMatrixPosition( light.matrixWorld );
+				uniforms.position.applyMatrix4( viewMatrix );
+
+				uniforms.color.copy( light.color ).multiplyScalar( light.intensity );
+				uniforms.distance = light.distance;
+				uniforms.decay = ( light.distance === 0 ) ? 0.0 : light.decay;
+
+				uniforms.shadow = light.castShadow;
+
+				if ( light.castShadow ) {
+
+					uniforms.shadowBias = light.shadow.bias;
+					uniforms.shadowRadius = light.shadow.radius;
+					uniforms.shadowMapSize = light.shadow.mapSize;
+
+					_lights.shadows[ shadowsLength ++ ] = light;
 
 				}
 
-				_lights.spot[ spotLength ++ ] = uniforms;
+				_lights.pointShadowMap[ pointLength ] = light.shadow.map;
+
+				if ( _lights.pointShadowMatrix[ pointLength ] === undefined ) {
+
+					_lights.pointShadowMatrix[ pointLength ] = new THREE.Matrix4();
+
+				}
+
+				// for point lights we set the shadow matrix to be a translation-only matrix
+				// equal to inverse of the light's position
+				_vector3.setFromMatrixPosition( light.matrixWorld ).negate();
+				_lights.pointShadowMatrix[ pointLength ].identity().setPosition( _vector3 );
+
+				_lights.point[ pointLength ++ ] = uniforms;
 
 			} else if ( light instanceof THREE.HemisphereLight ) {
 
@@ -2797,8 +2777,8 @@ THREE.WebGLRenderer = function ( parameters ) {
 		_lights.ambient[ 2 ] = b;
 
 		_lights.directional.length = directionalLength;
-		_lights.point.length = pointLength;
 		_lights.spot.length = spotLength;
+		_lights.point.length = pointLength;
 		_lights.hemi.length = hemiLength;
 
 		_lights.shadows.length = shadowsLength;
@@ -2849,11 +2829,11 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	// Textures
 
-	function setTextureParameters ( textureType, texture, isImagePowerOfTwo ) {
+	function setTextureParameters ( textureType, texture, isPowerOfTwoImage ) {
 
 		var extension;
 
-		if ( isImagePowerOfTwo ) {
+		if ( isPowerOfTwoImage ) {
 
 			_gl.texParameteri( textureType, _gl.TEXTURE_WRAP_S, paramThreeToGL( texture.wrapS ) );
 			_gl.texParameteri( textureType, _gl.TEXTURE_WRAP_T, paramThreeToGL( texture.wrapT ) );
@@ -2922,20 +2902,19 @@ THREE.WebGLRenderer = function ( parameters ) {
 		_gl.pixelStorei( _gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha );
 		_gl.pixelStorei( _gl.UNPACK_ALIGNMENT, texture.unpackAlignment );
 
-		texture.image = clampToMaxSize( texture.image, capabilities.maxTextureSize );
+		var image = clampToMaxSize( texture.image, capabilities.maxTextureSize );
 
-		if ( textureNeedsPowerOfTwo( texture ) && isPowerOfTwo( texture.image ) === false ) {
+		if ( textureNeedsPowerOfTwo( texture ) && isPowerOfTwo( image ) === false ) {
 
-			texture.image = makePowerOfTwo( texture.image );
+			image = makePowerOfTwo( image );
 
 		}
 
-		var image = texture.image,
-		isImagePowerOfTwo = isPowerOfTwo( image ),
+		var isPowerOfTwoImage = isPowerOfTwo( image ),
 		glFormat = paramThreeToGL( texture.format ),
 		glType = paramThreeToGL( texture.type );
 
-		setTextureParameters( _gl.TEXTURE_2D, texture, isImagePowerOfTwo );
+		setTextureParameters( _gl.TEXTURE_2D, texture, isPowerOfTwoImage );
 
 		var mipmap, mipmaps = texture.mipmaps;
 
@@ -2945,7 +2924,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 			// if there are no manual mipmaps
 			// set 0 level mipmap and then use GL to generate other mipmap levels
 
-			if ( mipmaps.length > 0 && isImagePowerOfTwo ) {
+			if ( mipmaps.length > 0 && isPowerOfTwoImage ) {
 
 				for ( var i = 0, il = mipmaps.length; i < il; i ++ ) {
 
@@ -2996,7 +2975,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 			// if there are no manual mipmaps
 			// set 0 level mipmap and then use GL to generate other mipmap levels
 
-			if ( mipmaps.length > 0 && isImagePowerOfTwo ) {
+			if ( mipmaps.length > 0 && isPowerOfTwoImage ) {
 
 				for ( var i = 0, il = mipmaps.length; i < il; i ++ ) {
 
@@ -3009,13 +2988,13 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			} else {
 
-				state.texImage2D( _gl.TEXTURE_2D, 0, glFormat, glFormat, glType, texture.image );
+				state.texImage2D( _gl.TEXTURE_2D, 0, glFormat, glFormat, glType, image );
 
 			}
 
 		}
 
-		if ( texture.generateMipmaps && isImagePowerOfTwo ) _gl.generateMipmap( _gl.TEXTURE_2D );
+		if ( texture.generateMipmaps && isPowerOfTwoImage ) _gl.generateMipmap( _gl.TEXTURE_2D );
 
 		textureProperties.__version = texture.version;
 
@@ -3161,11 +3140,11 @@ THREE.WebGLRenderer = function ( parameters ) {
 				}
 
 				var image = cubeImage[ 0 ],
-				isImagePowerOfTwo = isPowerOfTwo( image ),
+				isPowerOfTwoImage = isPowerOfTwo( image ),
 				glFormat = paramThreeToGL( texture.format ),
 				glType = paramThreeToGL( texture.type );
 
-				setTextureParameters( _gl.TEXTURE_CUBE_MAP, texture, isImagePowerOfTwo );
+				setTextureParameters( _gl.TEXTURE_CUBE_MAP, texture, isPowerOfTwoImage );
 
 				for ( var i = 0; i < 6; i ++ ) {
 
@@ -3213,7 +3192,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 				}
 
-				if ( texture.generateMipmaps && isImagePowerOfTwo ) {
+				if ( texture.generateMipmaps && isPowerOfTwoImage ) {
 
 					_gl.generateMipmap( _gl.TEXTURE_CUBE_MAP );
 
@@ -3382,6 +3361,12 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	}
 
+	this.getCurrentRenderTarget = function() {
+
+		return _currentRenderTarget;
+
+	}
+
 	this.setRenderTarget = function ( renderTarget ) {
 
 		_currentRenderTarget = renderTarget;
@@ -3425,10 +3410,9 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		}
 
-		if ( framebuffer !== _currentFramebuffer ) {
+		if ( _currentFramebuffer !== framebuffer ) {
 
 			_gl.bindFramebuffer( _gl.FRAMEBUFFER, framebuffer );
-
 			_currentFramebuffer = framebuffer;
 
 		}
@@ -3621,6 +3605,14 @@ THREE.WebGLRenderer = function ( parameters ) {
 			if ( p === THREE.RGB_PVRTC_2BPPV1_Format ) return extension.COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
 			if ( p === THREE.RGBA_PVRTC_4BPPV1_Format ) return extension.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
 			if ( p === THREE.RGBA_PVRTC_2BPPV1_Format ) return extension.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+
+		}
+
+		extension = extensions.get( 'WEBGL_compressed_texture_etc1' );
+
+		if ( extension !== null ) {
+
+			if ( p === THREE.RGB_ETC1_Format ) return extension.COMPRESSED_RGB_ETC1_WEBGL;
 
 		}
 
