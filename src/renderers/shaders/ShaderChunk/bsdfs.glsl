@@ -46,9 +46,9 @@ float G_GGX_Smith( const in float alpha, const in float dotNL, const in float do
 
 	float a2 = alpha * alpha;
 
-	float gl = dotNL + pow( a2 + ( 1.0 - a2 ) * dotNL * dotNL, 0.5 );
+	float gl = dotNL + sqrt( a2 + ( 1.0 - a2 ) * dotNL * dotNL );
 
-	float gv = dotNV + pow( a2 + ( 1.0 - a2 ) * dotNV * dotNV, 0.5 );
+	float gv = dotNV + sqrt( a2 + ( 1.0 - a2 ) * dotNV * dotNV );
 
 	return 1.0 / ( gl * gv );
 
