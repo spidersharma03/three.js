@@ -237,8 +237,9 @@ var files = {
 	],
 	"webvr": [
 		"webvr_cubes",
-		"webvr_video",
-		"webvr_stereo_pano"
+		"webvr_rollercoaster",
+		"webvr_stereo_pano",
+		"webvr_video"
 	],
 	"css3d": [
 		"css3d_molecules",
