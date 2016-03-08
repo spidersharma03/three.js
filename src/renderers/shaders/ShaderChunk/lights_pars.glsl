@@ -148,7 +148,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		float dotNL = dot( geometry.normal, hemiLight.direction );
 		float hemiDiffuseWeight = 0.5 * dotNL + 0.5;
 
-	#if defined( PHYSICALLY_CORRECT )
+	#if defined( PHYSICALLY_CORRECT_LIGHTS )
 
 		return mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
 
