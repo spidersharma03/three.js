@@ -148,15 +148,15 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		float dotNL = dot( geometry.normal, hemiLight.direction );
 		float hemiDiffuseWeight = 0.5 * dotNL + 0.5;
 
-	#if defined( PHYSICALLY_CORRECT_LIGHTS )
+		vec3 irradiance = mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
 
-		return mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
+		#ifndef PHYSICALLY_CORRECT_LIGHTS
 
-	#else
+			irradiance *= PI;
 
-		return PI * mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
+		#endif
 
-	#endif
+		return irradiance;
 
 	}
 
@@ -218,10 +218,10 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 	float getSpecularMIPLevel( const in float blinnShininessExponent, const in int maxMIPLevel ) {
 
 		//float envMapWidth = pow( 2.0, maxMIPLevelScalar );
-		//float desiredMIPLevel = log2( envMapWidth * sqrt( 3.0 ) ) - 0.5 * log2( square( blinnShininessExponent ) + 1.0 );
+		//float desiredMIPLevel = log2( envMapWidth * sqrt( 3.0 ) ) - 0.5 * log2( pow2( blinnShininessExponent ) + 1.0 );
 
 		float maxMIPLevelScalar = float( maxMIPLevel );
-		float desiredMIPLevel = maxMIPLevelScalar - 0.79248 - 0.5 * log2( square( blinnShininessExponent ) + 1.0 );
+		float desiredMIPLevel = maxMIPLevelScalar - 0.79248 - 0.5 * log2( pow2( blinnShininessExponent ) + 1.0 );
 
 		// clamp to allowable LOD ranges.
 		return clamp( desiredMIPLevel, 0.0, maxMIPLevelScalar );
