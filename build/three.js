@@ -19081,9 +19081,10 @@ THREE.ObjectLoader.prototype = {
 						break;
 
 					case 'BoxGeometry':
+					case 'BoxBufferGeometry':
 					case 'CubeGeometry': // backwards compatible
 
-						geometry = new THREE.BoxGeometry(
+						geometry = new THREE[ data.type ](
 							data.width,
 							data.height,
 							data.depth,
@@ -19094,20 +19095,10 @@ THREE.ObjectLoader.prototype = {
 
 						break;
 
+					case 'CircleGeometry':
 					case 'CircleBufferGeometry':
 
-						geometry = new THREE.CircleBufferGeometry(
-							data.radius,
-							data.segments,
-							data.thetaStart,
-							data.thetaLength
-						);
-
-						break;
-
-					case 'CircleGeometry':
-
-						geometry = new THREE.CircleGeometry(
+						geometry = new THREE[ data.type ](
 							data.radius,
 							data.segments,
 							data.thetaStart,
@@ -19117,8 +19108,9 @@ THREE.ObjectLoader.prototype = {
 						break;
 
 					case 'CylinderGeometry':
+					case 'CylinderBufferGeometry':
 
-						geometry = new THREE.CylinderGeometry(
+						geometry = new THREE[ data.type ](
 							data.radiusTop,
 							data.radiusBottom,
 							data.height,
@@ -19132,22 +19124,9 @@ THREE.ObjectLoader.prototype = {
 						break;
 
 					case 'SphereGeometry':
-
-						geometry = new THREE.SphereGeometry(
-							data.radius,
-							data.widthSegments,
-							data.heightSegments,
-							data.phiStart,
-							data.phiLength,
-							data.thetaStart,
-							data.thetaLength
-						);
-
-						break;
-
 					case 'SphereBufferGeometry':
 
-						geometry = new THREE.SphereBufferGeometry(
+						geometry = new THREE[ data.type ](
 							data.radius,
 							data.widthSegments,
 							data.heightSegments,
@@ -19209,8 +19188,9 @@ THREE.ObjectLoader.prototype = {
 						break;
 
 					case 'TorusGeometry':
+					case 'TorusBufferGeometry':
 
-						geometry = new THREE.TorusGeometry(
+						geometry = new THREE[ data.type ](
 							data.radius,
 							data.tube,
 							data.radialSegments,
@@ -19608,7 +19588,7 @@ THREE.ObjectLoader.prototype = {
 
 			return object;
 
-		}
+		};
 
 	}()
 
@@ -23485,7 +23465,7 @@ THREE.ShaderChunk[ 'common' ] = "#define PI 3.14159\n#define PI2 6.28318\n#defin
 
 // File:src/renderers/shaders/ShaderChunk/cube_uv_reflection_fragment.glsl
 
-THREE.ShaderChunk[ 'cube_uv_reflection_fragment' ] = "#ifdef ENVMAP_TYPE_CUBE_UV\nint getFaceFromDirection(vec3 direction) {\n    vec3 absDirection = abs(direction);\n    int face = -1;\n    if( absDirection.x > absDirection.z ) {\n        if(absDirection.x > absDirection.y )\n            face = direction.x > 0.0 ? 0 : 3;\n        else\n            face = direction.y > 0.0 ? 1 : 4;\n    }\n    else {\n        if(absDirection.z > absDirection.y )\n            face = direction.z > 0.0 ? 2 : 5;\n        else\n            face = direction.y > 0.0 ? 1 : 4;\n    }\n    return face;\n}\nvec2 MipLevelInfo( vec3 vec, float textureSize, float roughnessLevel, float roughness ) {\n    float s = log2(textureSize*0.25) - 1.0;\n    float scale = pow(2.0, s - roughnessLevel);\n    float dxRoughness = dFdx(roughness);\n    float dyRoughness = dFdy(roughness);\n    vec3 dx = dFdx( vec * scale * dxRoughness );\n    vec3 dy = dFdy( vec * scale * dyRoughness );\n    float d = max( dot( dx, dx ), dot( dy, dy ) );\n    float rangeClamp = pow(2.0, (6.0 - 1.0) * 2.0);\n    d = clamp(d, 1.0, rangeClamp);\n    float mipLevel = 0.5 * log2(d);\n    return vec2(floor(mipLevel), fract(mipLevel));\n}\nvec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel, float textureSize) {\n    float maxLods =  log2(textureSize*0.25) - 2.0;\n    mipLevel = roughnessLevel > maxLods - 3.0 ? 0.0 : mipLevel;\n    float a = 16.0/textureSize;\n    float powScale = pow(2.0,roughnessLevel + mipLevel);\n    float scale = 1.0/pow(2.0,roughnessLevel + 2.0 + mipLevel);\n    float mipOffset = 0.75*(1.0 - 1.0/pow(2.0, mipLevel))/pow(2.0,roughnessLevel);\n    bool bRes = mipLevel == 0.0;\n    scale =  bRes && (scale < a) ? a : scale;\n    vec3 r;\n    vec2 offset;\n    int face = getFaceFromDirection(direction);\n    if( face == 0) {\n        r = vec3(direction.x, -direction.z, direction.y);\n        offset = vec2(0.0+mipOffset,0.75/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;\n    }\n    else if( face == 1) {\n        r = vec3(direction.y, direction.x, direction.z);\n        offset = vec2(scale+mipOffset, 0.75/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;\n    }\n    else if( face == 2) {\n        r = vec3(direction.z, direction.x, direction.y);\n        offset = vec2(2.0*scale+mipOffset, 0.75/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;\n    }\n    else if( face == 3) {\n        r = vec3(direction.x, direction.z, direction.y);\n        offset = vec2(0.0+mipOffset,0.5/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;\n    }\n    else if( face == 4) {\n        r = vec3(direction.y, direction.x, -direction.z);\n        offset = vec2(scale+mipOffset, 0.5/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;\n    }\n    else {\n        r = vec3(direction.z, -direction.x, direction.y);\n        offset = vec2(2.0*scale+mipOffset, 0.5/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;\n    }\n    r = normalize(r);\n    float texelOffset = 0.5/textureSize;\n    float s1 = (r.y/abs(r.x) + 1.0)*0.5;\n    float s2 = (r.z/abs(r.x) + 1.0)*0.5;\n    vec2 uv = offset + vec2(s1*scale, s2*scale);\n    float min_x = offset.x + texelOffset; float max_x = offset.x + scale - texelOffset;\n    float min_y = offset.y + texelOffset;\n    float max_y = offset.y + scale - texelOffset;\n    float delx = max_x - min_x;\n    float dely = max_y - min_y;\n    uv.x = min_x + s1*delx;\n    uv.y = min_y + s2*dely;\n    return uv;\n}\nvec4 textureCubeUV(vec3 reflectedDirection, float roughness, float textureSize) {\n    float maxLods =  log2(textureSize*0.25) - 3.0;\n    float roughnessVal = roughness*maxLods;\n    float r1 = floor(roughnessVal);\n    float r2 = r1 + 1.0;\n    float t = fract(roughnessVal);\n    vec2 mipInfo = MipLevelInfo(reflectedDirection, textureSize, r1, roughness);\n    float s = mipInfo.y;\n    float level0 = mipInfo.x;\n    float level1 = level0 + 1.0;\n    level1 = level1 > 5.0 ? 5.0 : level1;\n    vec2 uv_10 = getCubeUV(reflectedDirection, r1, level0, textureSize);\n    vec2 uv_11 = getCubeUV(reflectedDirection, r1, level1, textureSize);\n    vec2 uv_20 = getCubeUV(reflectedDirection, r2, level0, textureSize);\n    vec2 uv_21 = getCubeUV(reflectedDirection, r2, level1, textureSize);\n    vec4 color10 = envMapTexelToLinear(texture2D(envMap, uv_10));\n    vec4 color11 = envMapTexelToLinear(texture2D(envMap, uv_11));\n    vec4 color20 = envMapTexelToLinear(texture2D(envMap, uv_20));\n    vec4 color21 = envMapTexelToLinear(texture2D(envMap, uv_21));\n    vec4 c1 = mix(color10 , color11,  s);\n    vec4 c2 = mix(color20 , color21,  s);\n    vec4 c3 = mix(c1 , c2,  t);\n    return vec4(c3.rgb, 1.0);\n}\n#endif\n";
+THREE.ShaderChunk[ 'cube_uv_reflection_fragment' ] = "#ifdef ENVMAP_TYPE_CUBE_UV\nint getFaceFromDirection(vec3 direction) {\n    vec3 absDirection = abs(direction);\n    int face = -1;\n    if( absDirection.x > absDirection.z ) {\n        if(absDirection.x > absDirection.y )\n            face = direction.x > 0.0 ? 0 : 3;\n        else\n            face = direction.y > 0.0 ? 1 : 4;\n    }\n    else {\n        if(absDirection.z > absDirection.y )\n            face = direction.z > 0.0 ? 2 : 5;\n        else\n            face = direction.y > 0.0 ? 1 : 4;\n    }\n    return face;\n}\nvec2 MipLevelInfo( vec3 vec, float textureSize, float roughnessLevel, float roughness ) {\n    float s = log2(textureSize*0.25) - 1.0;\n    float scale = pow(2.0, s - roughnessLevel);\n    float dxRoughness = dFdx(roughness);\n    float dyRoughness = dFdy(roughness);\n    vec3 dx = dFdx( vec * scale );\n    vec3 dy = dFdy( vec * scale );\n    float d = max( dot( dx, dx ), dot( dy, dy ) );\n    float rangeClamp = pow(2.0, (6.0 - 1.0) * 2.0);\n    d = clamp(d, 1.0, rangeClamp);\n    float mipLevel = 0.5 * log2(d);\n    return vec2(floor(mipLevel), fract(mipLevel));\n}\nvec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel, float textureSize) {\n    float maxLods =  log2(textureSize*0.25) - 2.0;\n    mipLevel = roughnessLevel > maxLods - 3.0 ? 0.0 : mipLevel;\n    float a = 16.0/textureSize;\n    float powScale = pow(2.0,roughnessLevel + mipLevel);\n    float scale = 1.0/pow(2.0,roughnessLevel + 2.0 + mipLevel);\n    float mipOffset = 0.75*(1.0 - 1.0/pow(2.0, mipLevel))/pow(2.0,roughnessLevel);\n    bool bRes = mipLevel == 0.0;\n    scale =  bRes && (scale < a) ? a : scale;\n    vec3 r;\n    vec2 offset;\n    int face = getFaceFromDirection(direction);\n    if( face == 0) {\n        r = vec3(direction.x, -direction.z, direction.y);\n        offset = vec2(0.0+mipOffset,0.75/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;\n    }\n    else if( face == 1) {\n        r = vec3(direction.y, direction.x, direction.z);\n        offset = vec2(scale+mipOffset, 0.75/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;\n    }\n    else if( face == 2) {\n        r = vec3(direction.z, direction.x, direction.y);\n        offset = vec2(2.0*scale+mipOffset, 0.75/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;\n    }\n    else if( face == 3) {\n        r = vec3(direction.x, direction.z, direction.y);\n        offset = vec2(0.0+mipOffset,0.5/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;\n    }\n    else if( face == 4) {\n        r = vec3(direction.y, direction.x, -direction.z);\n        offset = vec2(scale+mipOffset, 0.5/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;\n    }\n    else {\n        r = vec3(direction.z, -direction.x, direction.y);\n        offset = vec2(2.0*scale+mipOffset, 0.5/powScale);\n        offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;\n    }\n    r = normalize(r);\n    float texelOffset = 0.5/textureSize;\n    float s1 = (r.y/abs(r.x) + 1.0)*0.5;\n    float s2 = (r.z/abs(r.x) + 1.0)*0.5;\n    vec2 uv = offset + vec2(s1*scale, s2*scale);\n    float min_x = offset.x + texelOffset; float max_x = offset.x + scale - texelOffset;\n    float min_y = offset.y + texelOffset;\n    float max_y = offset.y + scale - texelOffset;\n    float delx = max_x - min_x;\n    float dely = max_y - min_y;\n    uv.x = min_x + s1*delx;\n    uv.y = min_y + s2*dely;\n    return uv;\n}\nvec4 textureCubeUV(vec3 reflectedDirection, float roughness, float textureSize) {\n    float maxLods =  log2(textureSize*0.25) - 3.0;\n    float roughnessVal = roughness*maxLods;\n    float r1 = floor(roughnessVal);\n    float r2 = r1 + 1.0;\n    float t = fract(roughnessVal);\n    vec2 mipInfo = MipLevelInfo(reflectedDirection, textureSize, r1, roughness);\n    float s = mipInfo.y;\n    float level0 = mipInfo.x;\n    float level1 = level0 + 1.0;\n    level1 = level1 > 5.0 ? 5.0 : level1;\n    vec2 uv_10 = getCubeUV(reflectedDirection, r1, level0, textureSize);\n    vec2 uv_11 = getCubeUV(reflectedDirection, r1, level1, textureSize);\n    vec2 uv_20 = getCubeUV(reflectedDirection, r2, level0, textureSize);\n    vec2 uv_21 = getCubeUV(reflectedDirection, r2, level1, textureSize);\n    vec4 color10 = envMapTexelToLinear(texture2D(envMap, uv_10));\n    vec4 color11 = envMapTexelToLinear(texture2D(envMap, uv_11));\n    vec4 color20 = envMapTexelToLinear(texture2D(envMap, uv_20));\n    vec4 color21 = envMapTexelToLinear(texture2D(envMap, uv_21));\n    vec4 c1 = mix(color10 , color11,  s);\n    vec4 c2 = mix(color20 , color21,  s);\n    vec4 c3 = mix(c1 , c2,  t);\n    return vec4(c3.rgb, 1.0);\n}\n#endif\n";
 
 // File:src/renderers/shaders/ShaderChunk/defaultnormal_vertex.glsl
 
@@ -35531,7 +35511,7 @@ THREE.BoxBufferGeometry = function ( width, height, depth, widthSegments, height
 	var indexCount = ( vertexCount / 4 ) * 6;
 
 	// buffers
-	var indices = new ( vertexCount > 65535 ? Uint32Array : Uint16Array )( indexCount );
+	var indices = new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount );
 	var vertices = new Float32Array( vertexCount * 3 );
 	var normals = new Float32Array( vertexCount * 3 );
 	var uvs = new Float32Array( vertexCount * 2 );
@@ -37585,7 +37565,7 @@ THREE.TorusBufferGeometry = function ( radius, tube, radialSegments, tubularSegm
 	var indexCount = radialSegments * tubularSegments * 2 * 3;
 
 	// buffers
-	var indices = new ( vertexCount > 65535 ? Uint32Array : Uint16Array )( indexCount );
+	var indices = new ( indexCount > 65535 ? Uint32Array : Uint16Array )( indexCount );
 	var vertices = new Float32Array( vertexCount * 3 );
 	var normals = new Float32Array( vertexCount * 3 );
 	var uvs = new Float32Array( vertexCount * 2 );
