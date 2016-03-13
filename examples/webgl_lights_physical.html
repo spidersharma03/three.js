@@ -69,25 +69,25 @@
 			};
 
 			// ref for solar irradiances: https://en.wikipedia.org/wiki/Lux
-			var hemiLuminousIrradiances = {
-				"0.0001 lx (Moonless Night)": 0.0001,
-				"0.002 lx (Night Airglow)": 0.002,
-				"0.5 lx (Full Moon)": 0.5,
-				"3.4 lx (City Twilight)": 3.4,
-				"50 lx (Living Room)": 50,
-				"100 lx (Very Overcast)": 100,
-				"350 lx (Office Room)": 350,
-				"400 lx (Sunrise/Sunset)": 400,
-				"1000 lx (Overcast)": 1000,
-				"18000 lx (Daylight)": 18000,
-				"50000 lx (Direct Sun)": 50000,
+			var hemiLuminousRadiances = {
+				"0.00003 cd (Moonless Night)": 0.00003,
+				"0.0006 cd (Night Airglow)": 0.0006,
+				"0.16 cd (Full Moon)": 0.16,
+				"1.0 cd (City Twilight)": 1.0,
+				"16 cd (Living Room)": 16,
+				"32 cd (Very Overcast)": 32,
+				"110 cd (Office Room)": 110,
+				"130 cd (Sunrise/Sunset)": 130,
+				"320 cd (Overcast)": 320,
+				"5730 cd (Daylight)": 5730,
+				"16000 cd (Direct Sun)": 16000,
 			};
 
 			var params = {
 				shadows: true,
 				exposure: 0.68,
 				bulbPower: Object.keys( bulbLuminousPowers )[2],
-				hemiIrradiance: Object.keys( hemiLuminousIrradiances )[0]
+				hemiRadiance: Object.keys( hemiLuminousRadiances )[0]
 			};
 
 
@@ -256,7 +256,7 @@
 
 				var gui = new dat.GUI();
 
-				gui.add( params, 'hemiIrradiance', Object.keys( hemiLuminousIrradiances ) );
+				gui.add( params, 'hemiRadiance', Object.keys( hemiLuminousRadiances ) );
 				gui.add( params, 'bulbPower', Object.keys( bulbLuminousPowers ) );
 				gui.add( params, 'exposure', 0, 1 );
 				gui.add( params, 'shadows' );
@@ -298,7 +298,7 @@
 				bulbLight.power = bulbLuminousPowers[ params.bulbPower ];
 				bulbMat.emissiveIntensity = bulbLight.intensity / Math.pow( 0.02, 2.0 ); // convert from intensity to irradiance at bulb surface
 
-				hemiLight.intensity = hemiLuminousIrradiances[ params.hemiIrradiance ];
+				hemiLight.intensity = hemiLuminousRadiances[ params.hemiRadiance ];
 				var time = Date.now() * 0.0005;
 				var delta = clock.getDelta();
 
