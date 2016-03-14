@@ -243,5 +243,7 @@
 	"src/renderers/webgl/WebGLState.js",
 	"src/renderers/webgl/plugins/LensFlarePlugin.js",
 	"src/renderers/webgl/plugins/SpritePlugin.js",
-	"src/Three.Legacy.js"
+	"src/Three.Legacy.js",
+	"examples/js/pmrem/PMREMGenerator.js",
+	"examples/js/pmrem/PMREMCubeUVPacker.js"
 ]
