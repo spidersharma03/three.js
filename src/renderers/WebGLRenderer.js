@@ -73,6 +73,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 	// flags
 
 	this.autoScaleCubemaps = true;
+	this.autoResizeTextures = false;
 
 	// internal properties
 
@@ -2894,7 +2895,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		var image = clampToMaxSize( texture.image, capabilities.maxTextureSize );
 
-		if ( textureNeedsPowerOfTwo( texture ) && isPowerOfTwo( image ) === false ) {
+		if ( _this.autoResizeTextures && textureNeedsPowerOfTwo( texture ) && isPowerOfTwo( image ) === false ) {
 
 			image = makePowerOfTwo( image );
 
