@@ -15,10 +15,9 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 	};
 
 	var parameterNames = [
-		"precision", "supportsVertexTextures", "map", "mapEncoding", "envMap", "envMapMode", "envMapEncoding",
-		"lightMap", "aoMap", "emissiveMap", "emissiveMapEncoding", "bumpMap", "normalMap", "displacementMap", "specularMap",
-		"roughnessMap", "metalnessMap",
-		"alphaMap", "combine", "vertexColors", "fog", "useFog", "fogExp",
+		"precision", "supportsVertexTextures", "mapEncoding", "envMap", "envMapMode", "envMapEncoding",
+		"emissiveMapEncoding",
+		"combine", "vertexColors", "fog", "useFog", "fogExp",
 		"flatShading", "sizeAttenuation", "logarithmicDepthBuffer", "skinning",
 		"maxBones", "useVertexTexture", "morphTargets", "morphNormals",
 		"maxMorphTargets", "maxMorphNormals", "premultipliedAlpha",
@@ -28,6 +27,14 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 		"alphaTest", "doubleSided", "flipSided"
 	];
 
+	var supportedMaps = THREE.Map.SupportedMapNames;
+	for( var i = 0; i < supportedMaps.length; i ++ ) {
+		var name = supportedMaps[i];
+		parameterNames.push( name );
+		parameterNames.push( name + 'UVChannel' );
+		parameterNames.push( name + 'UVTransform' );
+		parameterNames.push( name + 'TexelTransform' );
+	}
 
 	function allocateBones ( object ) {
 
@@ -125,23 +132,12 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 			precision: precision,
 			supportsVertexTextures: capabilities.vertexTextures,
 			outputEncoding: getTextureEncodingFromMap( renderer.getCurrentRenderTarget(), renderer.gammaOutput ),
-			map: !! material.map,
 			mapEncoding: getTextureEncodingFromMap( material.map, renderer.gammaInput ),
-			envMap: !! material.envMap,
+			envMap: !!material.envMap,
 			envMapMode: material.envMap && material.envMap.mapping,
 			envMapEncoding: getTextureEncodingFromMap( material.envMap, renderer.gammaInput ),
 			envMapCubeUV: ( !! material.envMap ) && ( ( material.envMap.mapping === THREE.CubeUVReflectionMapping ) || ( material.envMap.mapping === THREE.CubeUVRefractionMapping ) ),
-			lightMap: !! material.lightMap,
-			aoMap: !! material.aoMap,
-			emissiveMap: !! material.emissiveMap,
 			emissiveMapEncoding: getTextureEncodingFromMap( material.emissiveMap, renderer.gammaInput ),
-			bumpMap: !! material.bumpMap,
-			normalMap: !! material.normalMap,
-			displacementMap: !! material.displacementMap,
-			roughnessMap: !! material.roughnessMap,
-			metalnessMap: !! material.metalnessMap,
-			specularMap: !! material.specularMap,
-			alphaMap: !! material.alphaMap,
 
 			combine: material.combine,
 
@@ -185,6 +181,20 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 			flipSided: material.side === THREE.BackSide
 
 		};
+
+		var supportedMapNames = THREE.Map.SupportedMapNames;
+
+		for( var i = 0; i < supportedMapNames.length; i ++ ) {
+			var mapName = supportedMapNames[i];
+			// backwards compatibility
+			parameters[mapName] = !! material[ mapName ];
+
+			// new functional for slot-based maps
+			var map = material[ mapName + 'Slot' ];
+			parameters[mapName + "UVChannel" ] = ( map !== undefined ) ? map.uvChannel : 0;
+			parameters[mapName + "UVTransform" ] = ( map !== undefined ) ? map.uvTransform : false;
+			parameters[mapName + "TexelTransform" ] = ( map !== undefined ) ? map.texelTransform : false;
+		}
 
 		return parameters;
 
