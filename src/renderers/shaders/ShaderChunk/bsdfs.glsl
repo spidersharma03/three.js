@@ -4,7 +4,7 @@ bool testLightInRange( const in float lightDistance, const in float cutoffDistan
 
 }
 
-float punctualLightIntensityToIrradianceFactor( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
+/*float punctualLightIntensityToIrradianceFactor( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
 
 		if( decayExponent > 0.0 ) {
 
@@ -28,6 +28,27 @@ float punctualLightIntensityToIrradianceFactor( const in float lightDistance, co
 		}
 
 		return 1.0;
+}*/
+
+float punctualLightIntensityToIrradianceFactor( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
+
+	if ( decayExponent > 0.0 && cutoffDistance > 0.0 ) {
+		return pow( saturate( -lightDistance / cutoffDistance + 1.0 ), decayExponent );
+	}
+	else if ( decayExponent < 0.0 ) {
+		// this is based upon UE4 light fall as described on page 11 of:
+		//  https://de45xmedrsdbp.cloudfront.net/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf
+		float maxDistanceCutoffFactor = 1.0;
+		if( cutoffDistance > 0.0 ) {
+			maxDistanceCutoffFactor = pow2( saturate( 1.0 - pow4( lightDistance / cutoffDistance ) ) );
+		}
+		float distanceFalloff = 1.0 / max( pow2( lightDistance ), 0.01 );
+
+		return maxDistanceCutoffFactor * distanceFalloff;
+	}
+	else {
+		return 1.0;
+	}
 }
 
 vec3 BRDF_Diffuse_Lambert( const in vec3 diffuseColor ) {
