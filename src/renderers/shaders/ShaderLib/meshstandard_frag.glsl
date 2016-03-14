@@ -1,3 +1,5 @@
+precision highp float;
+
 #define STANDARD
 
 uniform vec3 diffuse;
