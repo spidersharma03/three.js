@@ -20,10 +20,18 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 	this.numLods = numLods;
 	var size = cubeTextureLods[ 0 ].width * 4;
 
-	this.CubeUVRenderTarget = new THREE.WebGLRenderTarget( size, size,
-	{ format: THREE.RGBAFormat, magFilter: THREE.LinearFilter, minFilter: THREE.LinearFilter, type: cubeTextureLods[ 0 ].texture.type } );
-	this.CubeUVRenderTarget.texture.generateMipmaps = false;
-  this.CubeUVRenderTarget.mapping = THREE.CubeUVReflectionMapping;
+	var sourceTexture = cubeTextureLods[ 0 ].texture;
+	var params = {
+		format: sourceTexture.format,
+		magFilter: sourceTexture.magFilter,
+		minFilter: sourceTexture.minFilter,
+		type: sourceTexture.type,
+		generateMipmaps: sourceTexture.generateMipmaps,
+		anisotropy: sourceTexture.anisotropy,
+		encoding: sourceTexture.encoding
+	};
+	this.CubeUVRenderTarget = new THREE.WebGLRenderTarget( size, size, params );
+	this.CubeUVRenderTarget.mapping = THREE.CubeUVReflectionMapping;
 	this.camera = new THREE.OrthographicCamera( - size * 0.5, size * 0.5, - size * 0.5, size * 0.5, 0.0, 1000 );
 
 	this.scene = new THREE.Scene();
@@ -102,7 +110,7 @@ THREE.PMREMCubeUVPacker.prototype = {
     renderer.gammaInput = false;
     renderer.gammaOutput = false;
 
-		renderer.render( this.scene, this.camera, this.CubeUVRenderTarget, true );
+		renderer.render( this.scene, this.camera, this.CubeUVRenderTarget, false );
 
     renderer.gammaInput = renderer.gammaInput;
     renderer.gammaOutput = renderer.gammaOutput;
@@ -159,10 +167,11 @@ THREE.PMREMCubeUVPacker.prototype = {
               sampleDirection = normalize(vec3(-uv.x, uv.y, -1.0));\
           }\
           vec4 color = envMapTexelToLinear( textureCube( envMap, sampleDirection ) );\
-          gl_FragColor = linearToOutputTexel( color * vec4(testColor, 1.0) );\
+          gl_FragColor = linearToOutputTexel( color );\
         }",
 
 			blending: THREE.CustomBlending,
+			premultipliedAlpha: false,
 			blendSrc: THREE.OneFactor,
 			blendDst: THREE.ZeroFactor,
 			blendSrcAlpha: THREE.OneFactor,
