@@ -210,7 +210,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
 
 			vec3 queryVec = flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz );
-			vec4 envMapColor = textureCubeUV( queryVec, 1.0 );
+			vec4 envMapColor = PI * textureCubeUV( queryVec, 1.0 );
 
 		#else
 
