@@ -9,14 +9,18 @@
   },
 
   "scripts": {
-  "build": "node build.js --include common --include extras",
-  "watch": "chokidar \"../../src/**/*.js\" -c \"npm run build\""
+    "build": "node build.js --include common --include extras",
+    "watch": "chokidar \"../../src/**/*.js\" --initial -c \"npm run build\"",
+    "serve": "http-server -c-1 \"../../\"",
+    "watch-serve": "npm-run-all --parallel serve watch"
   },
 
   "devDependencies": {
     "argparse": "*",
     "temp-path": "1.0.0",
     "chokidar-cli": "1.2.0",
+    "npm-run-all": "1.5.3",
+    "http-server": "0.9.0",
     "google-closure-compiler": "20160208.7.0"
   },
 
