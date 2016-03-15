@@ -69,6 +69,8 @@ THREE.MeshStandardMaterial = function ( parameters ) {
 	//this.map = null;
 	this.mapSlot = new THREE.Map( "map", 0, false, false );
 
+	this.reflectivity = 0.5;
+
 	this.roughness = 0.5;
 	//this.roughnessMap = null;
 	this.roughnessMapSlot = new THREE.Map( "roughnessMap", 0, false, false );
@@ -264,6 +266,8 @@ THREE.MeshStandardMaterial.prototype.copy = function ( source ) {
 
 	this.color.copy( source.color );
 	this.mapSlot.copy( source.mapSlot );
+
+	this.reflectivity = source.reflectivity;
 
 	this.roughness = source.roughness;
 	this.roughnessMapSlot.copy( source.roughnessMapSlot );
