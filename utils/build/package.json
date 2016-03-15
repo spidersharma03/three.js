@@ -10,7 +10,8 @@
 
   "scripts": {
     "build": "node build.js --include common --include extras --output ../../build/three.min.js",
-    "watch": "chokidar \"../../src/**/*.*\" --initial -c \"npm run build\"",
+    "build-debug": "node build.js --include common --include extras --output ../../build/three.js",
+    "watch": "chokidar \"../../src/**/*.*\" --initial -c \"npm-run-all --parallel build build-debug\"",
     "serve": "http-server -c-1 \"../../\"",
     "watch-serve": "npm-run-all --parallel serve watch"
   },
