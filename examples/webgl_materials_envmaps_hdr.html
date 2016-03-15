@@ -63,6 +63,7 @@
 				envMap: "HDR",
 				projection: 'normal',
 				roughness: 1.0,
+				reflectivity: 0.5,
 				bumpScale: 0.3,
 				background: false,
 				exposure: 1.0,
@@ -219,6 +220,7 @@
 
 				gui.add( params, 'envMap', [ 'None', 'LDR', 'HDR', 'RGBM16' ] );
 				gui.add( params, 'roughness', 0, 1 );
+				gui.add( params, 'reflectivity', 0, 1 );
 				gui.add( params, 'bumpScale', - 1, 1 );
 				gui.add( params, 'exposure', 0.1, 2 );
 				gui.open();
@@ -254,6 +256,7 @@
 				if ( standardMaterial !== undefined ) {
 
 					standardMaterial.roughness = params.roughness;
+					standardMaterial.reflectivity = params.reflectivity;
 					standardMaterial.bumpScale = - 0.05 * params.bumpScale;
 					var newEnvMap = standardMaterial.envMap;
 					switch( params.envMap ) {
