@@ -107,6 +107,25 @@ THREE.PMREMGenerator.prototype = {
 
 	},
 
+  createCubeTextureWithMipMaps: function( renderer, renderTargetLevel ) {
+
+    var cubeTexture = new THREE.CubeTexture();
+    for(var i = 0; i < 6; i ++) {
+      var dataTexture = new THREE.DataTexture();
+      cubeTexture.image[i] = dataTexture;
+      for(var j = 0; j < this.numLods; j ++) {
+        var renderTarget = this.cubeLods[j];
+        renderTarget.activeCubeFace = i;
+        renderer.setRenderTarget( renderTarget );
+        var buffer = new Uint8Array(4 * renderTarget.width * renderTarget.height);
+        renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
+        dataTexture.mipmaps[j] = { data:buffer, width:renderTarget.width, height:renderTarget.height };
+      }
+    }
+    return cubeTexture;
+    
+  },
+
   getShader: function() {
 
     return new THREE.ShaderMaterial( {
