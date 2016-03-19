@@ -46,7 +46,7 @@
     renderTarget.texture.minFilter = this.sourceTexture.minFilter;
     renderTarget.texture.magFilter = this.sourceTexture.magFilter;
 		this.cubeLods.push( renderTarget );
-		size = Math.max( 16, size / 2 );
+		size = Math.max( 8, size / 2 );
 	}
 
 	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0.0, 1000 );
@@ -113,17 +113,43 @@ THREE.PMREMGenerator.prototype = {
     for(var i = 0; i < 6; i ++) {
       var dataTexture = new THREE.DataTexture();
       cubeTexture.image[i] = dataTexture;
-      for(var j = 0; j < this.numLods; j ++) {
-        var renderTarget = this.cubeLods[j];
+      var colors = [];
+      colors.push(new THREE.Vector4(255,0,0,255));
+      colors.push(new THREE.Vector4(0,255,0,255));
+      colors.push(new THREE.Vector4(0,0,255,255));
+      colors.push(new THREE.Vector4(255,255,0,255));
+      colors.push(new THREE.Vector4(255,0,255,255));
+      colors.push(new THREE.Vector4(0,255,255,255));
+      colors.push(new THREE.Vector4(155,80,110,255));
+      colors.push(new THREE.Vector4(155,0,110,255));
+      colors.push(new THREE.Vector4(155,110,0,255));
+      var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
+      var size = this.cubeLods[0].width;
+      for(var j = 0; j < numMipLevels; j ++) {
+        var renderTarget = j < this.numLods ? this.cubeLods[j] : this.cubeLods[this.numLods-1];
         renderTarget.activeCubeFace = i;
         renderer.setRenderTarget( renderTarget );
-        var buffer = new Uint8Array(4 * renderTarget.width * renderTarget.height);
-        renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
-        dataTexture.mipmaps[j] = { data:buffer, width:renderTarget.width, height:renderTarget.height };
+        var buffer = new Uint8Array(4 * size * size);
+        // for(var k=0; k<buffer.length; k+=4) {
+        //   buffer[k] = colors[j].x;
+        //   buffer[k+1] = colors[j].y;
+        //   buffer[k+2] = colors[j].z;
+        //   buffer[k+3] = colors[j].w;
+        // }
+        if(j < this.numLods) {
+          renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
+        }
+        dataTexture.mipmaps[j] = { data:buffer, width:size, height:size };
+        size /= 2;
       }
     }
+    cubeTexture.format = THREE.RGBAFormat;
+    cubeTexture.minFilter = THREE.LinearMipMapLinearFilter;
+    cubeTexture.magFilter = THREE.LinearFilter;
+    cubeTexture.generateMipmaps = false;
+    cubeTexture.anisotropy = 0;
     return cubeTexture;
-    
+
   },
 
   getShader: function() {

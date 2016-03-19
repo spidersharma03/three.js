@@ -3120,13 +3120,13 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 							var mipmap, mipmaps = texture.image[ i ].mipmaps;
 
-							if( mipmaps !== undefined ) {
+							if( mipmaps.length !== 0 && mipmaps !== undefined ) {
 
 								for ( var j = 0, jl = mipmaps.length; j < jl; j ++ ) {
 
 									mipmap = mipmaps[ j ];
 
-									state.texImage2D( _gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, glFormat, mipmap.width, mipmap.height, 0, glFormat, glType, mipmap.data );
+									state.texImage2D( _gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, j, glFormat, mipmap.width, mipmap.height, 0, glFormat, glType, mipmap.data );
 
 								}
 
@@ -3424,6 +3424,12 @@ THREE.WebGLRenderer = function ( parameters ) {
 		}
 
 		var framebuffer = properties.get( renderTarget ).__webglFramebuffer;
+
+		if( renderTarget instanceof THREE.WebGLRenderTargetCube === true ) {
+
+			framebuffer = framebuffer[renderTarget.activeCubeFace];
+
+		}
 
 		if ( framebuffer ) {
 
