@@ -405,6 +405,35 @@ THREE.Matrix4.prototype = {
 
 	},
 
+	multiplyList: function ( listOfMatrices ) {
+
+		for (var i = 0, il = listOfMatrices.length; i < il ; i++) {
+		  this.multiplyMatrices( this, listOfMatrices[ i ] );
+		}
+
+		return this;
+
+	},
+
+	multiplyMatricesList: function ( listOfMatrices ) {
+
+		if( listOfMatrices.length > 0 ) {
+
+			this.copy( listOfMatrices[0] );
+
+			this.multiplyList( listOfMatrices.slice( 1 ) );
+
+		}
+		else {
+
+			this.identity();
+
+		}
+
+		return this;
+
+	},
+
 	multiplyToArray: function ( a, b, r ) {
 
 		var te = this.elements;
