@@ -1,6 +1,6 @@
 #ifdef ENVMAP_TYPE_CUBE_UV
 
-const float cubeUV_textureSize = 1024.0;
+float cubeUV_textureSize = 1024.0;
 
 int getFaceFromDirection(vec3 direction) {
     vec3 absDirection = abs(direction);
@@ -19,8 +19,8 @@ int getFaceFromDirection(vec3 direction) {
     }
     return face;
 }
-const float cubeUV_maxLods1 = log2(cubeUV_textureSize*0.25) - 1.0;
-const float cubeUV_rangeClamp = exp2((6.0 - 1.0) * 2.0);
+float cubeUV_maxLods1 = log2(cubeUV_textureSize*0.25) - 1.0;
+float cubeUV_rangeClamp = exp2((6.0 - 1.0) * 2.0);
 
 vec2 MipLevelInfo( vec3 vec, float roughnessLevel, float roughness ) {
     float scale = exp2(cubeUV_maxLods1 - roughnessLevel);
@@ -35,8 +35,8 @@ vec2 MipLevelInfo( vec3 vec, float roughnessLevel, float roughness ) {
     return vec2(floor(mipLevel), fract(mipLevel));
 }
 
-const float cubeUV_maxLods2 = log2(cubeUV_textureSize*0.25) - 2.0;
-const float cubeUV_rcpTextureSize = 1.0 / cubeUV_textureSize;
+float cubeUV_maxLods2 = log2(cubeUV_textureSize*0.25) - 2.0;
+float cubeUV_rcpTextureSize = 1.0 / cubeUV_textureSize;
 
 vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel) {
     mipLevel = roughnessLevel > cubeUV_maxLods2 - 3.0 ? 0.0 : mipLevel;
