@@ -3120,7 +3120,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 							var mipmap, mipmaps = texture.image[ i ].mipmaps;
 
-							if( mipmaps.length !== 0 && mipmaps !== undefined ) {
+							if( mipmaps !== undefined && mipmaps.length !== 0 ) {
 
 								for ( var j = 0, jl = mipmaps.length; j < jl; j ++ ) {
 
@@ -3425,7 +3425,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		var framebuffer = properties.get( renderTarget ).__webglFramebuffer;
 
-		if( renderTarget instanceof THREE.WebGLRenderTargetCube === true ) {
+		if( renderTarget instanceof THREE.WebGLRenderTargetCube ) {
 
 			framebuffer = framebuffer[renderTarget.activeCubeFace];
 

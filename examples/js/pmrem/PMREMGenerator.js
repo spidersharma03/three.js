@@ -38,6 +38,8 @@
   var params = { format: this.sourceTexture.format, magFilter: this.sourceTexture.magFilter, minFilter: this.sourceTexture.minFilter, type: this.sourceTexture.type };
 
 	this.numLods = Math.log2( size ) - 2;
+  var minLodSize = 8;
+
   for ( var i = 0; i < this.numLods; i ++ ) {
 		var renderTarget = new THREE.WebGLRenderTargetCube( size, size, params );
 		renderTarget.texture.generateMipmaps = this.sourceTexture.generateMipmaps;
@@ -46,7 +48,7 @@
     renderTarget.texture.minFilter = this.sourceTexture.minFilter;
     renderTarget.texture.magFilter = this.sourceTexture.magFilter;
 		this.cubeLods.push( renderTarget );
-		size = Math.max( 8, size / 2 );
+		size = Math.max( minLodSize, size / 2 );
 	}
 
 	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0.0, 1000 );
@@ -113,16 +115,16 @@ THREE.PMREMGenerator.prototype = {
     for(var i = 0; i < 6; i ++) {
       var dataTexture = new THREE.DataTexture();
       cubeTexture.image[i] = dataTexture;
-      var colors = [];
-      colors.push(new THREE.Vector4(255,0,0,255));
-      colors.push(new THREE.Vector4(0,255,0,255));
-      colors.push(new THREE.Vector4(0,0,255,255));
-      colors.push(new THREE.Vector4(255,255,0,255));
-      colors.push(new THREE.Vector4(255,0,255,255));
-      colors.push(new THREE.Vector4(0,255,255,255));
-      colors.push(new THREE.Vector4(155,80,110,255));
-      colors.push(new THREE.Vector4(155,0,110,255));
-      colors.push(new THREE.Vector4(155,110,0,255));
+      // var colors = [];
+      // colors.push(new THREE.Vector4(255,0,0,255));
+      // colors.push(new THREE.Vector4(0,255,0,255));
+      // colors.push(new THREE.Vector4(0,0,255,255));
+      // colors.push(new THREE.Vector4(255,255,0,255));
+      // colors.push(new THREE.Vector4(255,0,255,255));
+      // colors.push(new THREE.Vector4(0,255,255,255));
+      // colors.push(new THREE.Vector4(155,80,110,255));
+      // colors.push(new THREE.Vector4(155,0,110,255));
+      // colors.push(new THREE.Vector4(155,110,0,255));
       var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
       var size = this.cubeLods[0].width;
       for(var j = 0; j < numMipLevels; j ++) {
@@ -143,11 +145,12 @@ THREE.PMREMGenerator.prototype = {
         size /= 2;
       }
     }
-    cubeTexture.format = THREE.RGBAFormat;
+    cubeTexture.format = this.sourceTexture.format;
     cubeTexture.minFilter = THREE.LinearMipMapLinearFilter;
     cubeTexture.magFilter = THREE.LinearFilter;
     cubeTexture.generateMipmaps = false;
-    cubeTexture.anisotropy = 0;
+    cubeTexture.anisotropy = this.sourceTexture.anisotropy;
+    cubeTexture.encoding = this.sourceTexture.encoding;
     return cubeTexture;
 
   },
