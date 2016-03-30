@@ -83,7 +83,7 @@
             void main() {
                     vec3 viewVector = normalize(vecPos - cameraPosition);
                     vec3 Normal = normalize(worldNormal);
-                    vec3 reflectedDirection = fixSeams(reflect(viewVector, Normal), 16.0);
+                    vec3 reflectedDirection = fixSeams(reflect(viewVector, Normal), 8.0);
                     vec4 colorRefl = textureCubeLodEXT( cubeTexture, reflectedDirection, 5.0);
                     gl_FragColor = colorRefl;
             }
