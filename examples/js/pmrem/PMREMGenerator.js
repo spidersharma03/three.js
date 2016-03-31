@@ -30,6 +30,7 @@ THREE.PMREMGenerator = function( sourceTexture ) {
 
   // how many LODs fit in the given CubeUV Texture.
 	this.numLods = Math.log2( size ) - 2;
+	var minLodSize = 8;
   for ( var i = 0; i < this.numLods; i ++ ) {
 		var renderTarget = new THREE.WebGLRenderTargetCube( size, size, params );
 		renderTarget.texture.generateMipmaps = this.sourceTexture.generateMipmaps;
@@ -38,7 +39,7 @@ THREE.PMREMGenerator = function( sourceTexture ) {
     renderTarget.texture.minFilter = this.sourceTexture.minFilter;
     renderTarget.texture.magFilter = this.sourceTexture.magFilter;
 		this.cubeLods.push( renderTarget );
-		size = Math.max( 16, size / 2 );
+		size = Math.max( minLodSize, size / 2 );
 	}
 
 	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0.0, 1000 );
@@ -111,6 +112,36 @@ THREE.PMREMGenerator.prototype = {
 		renderer.render( this.scene, this.camera, renderTarget, true );
 
 	},
+
+	createCubeTextureWithMipMaps: function( renderer, renderTargetLevel ) {
+
+    var cubeTexture = new THREE.CubeTexture();
+    for(var i = 0; i < 6; i ++) {
+      var dataTexture = new THREE.DataTexture();
+      cubeTexture.image[i] = dataTexture;
+      var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
+      var size = this.cubeLods[0].width;
+      for(var j = 0; j < numMipLevels; j ++) {
+        var renderTarget = j < this.numLods ? this.cubeLods[j] : this.cubeLods[this.numLods-1];
+        renderTarget.activeCubeFace = i;
+        renderer.setRenderTarget( renderTarget );
+        var buffer = new Uint8Array(4 * size * size);
+        if(j < this.numLods) {
+          renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
+        }
+        dataTexture.mipmaps[j] = { data:buffer, width:size, height:size };
+        size /= 2;
+      }
+    }
+    cubeTexture.format = this.sourceTexture.format;
+    cubeTexture.minFilter = THREE.LinearMipMapLinearFilter;
+    cubeTexture.magFilter = THREE.LinearFilter;
+    cubeTexture.generateMipmaps = false;
+    cubeTexture.anisotropy = this.sourceTexture.anisotropy;
+    cubeTexture.encoding = this.sourceTexture.encoding;
+    return cubeTexture;
+
+  },
 
   getShader: function() {
 

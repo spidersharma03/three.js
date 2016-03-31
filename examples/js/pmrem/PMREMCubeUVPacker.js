@@ -45,12 +45,13 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 	var offset2 = 0;
 	var c = 4.0;
 	this.numLods = Math.log2( cubeTextureLods[ 0 ].width ) - 2;
+	var minLodSize = 8;
 	for ( var i = 0; i < this.numLods; i ++ ) {
 
 		var offset1 = ( textureResolution - textureResolution / c ) * 0.5;
-		if ( size > 16 )
+		if ( size > minLodSize )
 		c *= 2;
-		var nMips = size > 16 ? 6 : 1;
+		var nMips = size > minLodSize ? 6 : 1;
 		var mipOffsetX = 0;
 		var mipOffsetY = 0;
 		var mipSize = size;
@@ -84,7 +85,7 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 
 		}
 		offset2 += 2 * size;
-		if ( size > 16 )
+		if ( size > minLodSize )
 		size /= 2;
 
 	}
