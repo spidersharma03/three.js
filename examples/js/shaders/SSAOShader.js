@@ -105,13 +105,7 @@ THREE.SSAOShader = {
 
 		"float readDepth( const in vec2 coord ) {",
 
-			"float cameraFarPlusNear = cameraFar + cameraNear;",
-			"float cameraFarMinusNear = cameraFar - cameraNear;",
-			"float cameraCoef = 2.0 * cameraNear;",
-
-			// "return ( 2.0 * cameraNear ) / ( cameraFar + cameraNear - unpackDepth( texture2D( tDepth, coord ) ) * ( cameraFar - cameraNear ) );",
-			"return cameraCoef / ( cameraFarPlusNear - unpackRGBAToLinearUnit( texture2D( tDepth, coord ) ) * cameraFarMinusNear );",
-
+			"return invClipZToViewZ( unpackRGBAToLinearUnit( texture2D( tDepth, coord ) ), cameraNear, cameraFar );",
 
 		"}",
 
@@ -168,9 +162,13 @@ THREE.SSAOShader = {
 		"void main() {",
 
 			"vec2 noise = rand( vUv );",
-			"float depth = readDepth( vUv );",
+			"float depth = ( readDepth( vUv ) - cameraNear ) / ( cameraFar - cameraNear );",
 
-			"float tt = clamp( depth, aoClamp, 1.0 );",
+			"gl_FragColor = vec4( vec3( depth, 0.5, 0.0 ), 1.0 );",
+
+			"return;",
+
+			"float tt = depth;",
 
 			"float w = ( 1.0 / size.x )  / tt + ( noise.x * ( 1.0 - noise.x ) );",
 			"float h = ( 1.0 / size.y ) / tt + ( noise.y * ( 1.0 - noise.y ) );",
