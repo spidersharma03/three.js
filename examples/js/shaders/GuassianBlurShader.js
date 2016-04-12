@@ -6,7 +6,30 @@
 
  */
 
-THREE.BlendShader = {
+THREE.GaussianBlurShader = {
+
+  getTapOffets: function( numTaps, direction ) {
+    var tapOffsets = [];
+    for( var i = 0; i < numTaps; i ++ ) {
+      tapOffsets.push( direction.clone().multiplyScalar( i - ( numTaps - 1 )*0.5 ) );
+    }
+    return tapOffsets;
+  },
+
+  getGaussianTapWeights: function( numTaps ) {
+    var tapWeights = [];
+    var tapWeightSum = 0;
+    for( var i = 0; i < numTaps; i ++ ) {
+      var tapWeight = THREE.Math.gaussian( i - ( numTaps - 1 ) * 0.5, numTaps * 0.25 ); // should sigma be 2?
+      tapWeightSum += tapWeight;
+      tapWeights.push( tapWeight );
+    }
+    // normalize weights
+    for( var i = 0; i < numTaps; i ++ ) {
+      tapWeights[i] /= tapWeightSum;
+    }
+    return tapWeights;
+  },
 
   defines: {
 
@@ -47,7 +70,8 @@ THREE.BlendShader = {
 
     "uniform sampler2D tDiffuse;",
     "uniform vec2 size;",
-    "uniform float kernelWeights[ KERNEL_RADIUS ];",
+    "uniform float tapWeights[ TAP_COUNT ];",
+    "uniform vec2 tapPixelOffsets[ TAP_COUNT ];",
 
     "#ifdef DEPTH_LIMITED",
 

@@ -51,6 +51,13 @@ THREE.Math = {
 
 	},
 
+	// https://en.wikipedia.org/wiki/Gaussian_blur
+	gaussian: function ( x, sigma ) {
+
+		return Math.exp( - ( x * x ) / ( 2.0 * sigma * sigma ) ) / ( Math.sqrt( 2 * Math.PI ) * sigma );
+
+	}
+
 	// compute euclidian modulo of m % n
 	// https://en.wikipedia.org/wiki/Modulo_operation
 
