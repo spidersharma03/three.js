@@ -36,6 +36,7 @@
 		<script src="../build/three.js"></script>
 
 		<script src="js/shaders/SAOShader.js"></script>
+		<script src="js/shaders/NormalFromDepthShader.js"></script>
 		<script src="js/shaders/CopyShader.js"></script>
 
 		<script src="js/postprocessing/EffectComposer.js"></script>
@@ -61,10 +62,22 @@
 			var saoPass;
 			var group;
 			var depthScale = 1.0;
-			var postprocessing = { enabled : true, renderMode: 0 }; // renderMode: 0('framebuffer'), 1('onlyAO')
+
+			var params = {
+				mode: 'beauty+sao'
+			};
 
 			init();
 			animate();
+			initGui();
+
+			// Init gui
+			function initGui() {
+
+				var gui = new dat.GUI();
+				gui.add( params, 'mode', [ 'beauty+sao', 'beauty', 'sao', 'depth', 'normal' ] );
+
+			}
 
 			function init() {
 
@@ -77,7 +90,7 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
 
-				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 100, 700 );
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 150, 650 );
 				camera.position.z = 500;
 
 				scene = new THREE.Scene();
@@ -113,21 +126,10 @@
 
 				// Init gui
 				var gui = new dat.GUI();
-				gui.add( postprocessing, "enabled" ).onChange();
+				gui.add( params, "mode" ).onChange();
 			//	gui.add( postprocessing, "renderMode", { framebuffer: 0, onlyAO: 1 } ).onChange( renderModeChange ).listen();
 
 				window.addEventListener( 'resize', onWindowResize, false );
-			}
-
-			function renderModeChange( value ) {
-
-				if ( value == 0 ) { // framebuffer
-					saoPass.uniforms[ 'onlyAO' ].value = false;
-				} else if ( value == 1 ) {  // onlyAO
-					saoPass.uniforms[ 'onlyAO' ].value = true;
-				} else {
-					console.error( "Not define renderModeChange type: " + value );
-				}
 			}
 
 			function onWindowResize() {
@@ -162,6 +164,10 @@
 				depthMaterial.depthPacking = THREE.RGBADepthPacking;
 				depthMaterial.blending = THREE.NoBlending;
 
+				normalPass = new THREE.ShaderPass( THREE.NormalFromDepthShader );
+				normalPass.renderToScreen = true;
+				normalPass.uniforms[ "tDepth" ].value = depthRenderTarget;
+
 				var pars = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
 				depthRenderTarget = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
 
@@ -176,10 +182,19 @@
 				saoPass.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
 				saoPass.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
 
+				depthPass = new THREE.ShaderPass( THREE.CopyShader );
+
+				normalPass.uniforms[ 'cameraNear' ].value = camera.near;
+				normalPass.uniforms[ 'cameraFar' ].value = camera.far;
+				normalPass.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
+				normalPass.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
+
 				// Add pass to effect composer
 				effectComposer = new THREE.EffectComposer( renderer );
 				effectComposer.addPass( renderPass );
 				effectComposer.addPass( saoPass );
+				effectComposer.addPass( depthPass );
+				effectComposer.addPass( normalPass );
 			}
 
 			function animate() {
@@ -195,23 +210,27 @@
 				group.rotation.x = timer * 0.0002;
 				group.rotation.y = timer * 0.0001;
 
-				if ( postprocessing.enabled ) {
-
-					saoPass.uniforms[ 'randomSeed' ].value = Math.random();
-
-					// Render depth into depthRenderTarget
-					scene.overrideMaterial = depthMaterial;
-					renderer.setClearColor( 0xffffff );
-					renderer.render( scene, camera, depthRenderTarget, true );
-
-					// Render renderPass and SSAO shaderPass
-					scene.overrideMaterial = null;
-					renderer.setClearColor( 0xa0a0a0 );
-					effectComposer.render();
-
-				} else {
-					renderer.render( scene, camera );
+				var aoOnly = saoPass.defines['AO_ONLY'];
+				switch( params.mode ) {
+					case 'beauty': saoPass = false; depthPass = false; normalPass = false; aoOnly = false; break;
+					case 'beauty+sao': saoPass = true; depthPass = false; normalPass = false; aoOnly = false; break;
+					case 'sao': saoPass = true; depthPass = false; normalPass = false; aoOnly = true; break;
+					case 'depth': saoPass = false; depthPass = true; normalPass = false; aoOnly = true; break;
+					case 'normal': saoPass = false; depthPass = false; normalPass = true; aoOnly = true; break;
 				}
+
+				saoPass.uniforms[ 'randomSeed' ].value = Math.random();
+
+				// Render depth into depthRenderTarget
+				scene.overrideMaterial = depthMaterial;
+				renderer.setClearColor( 0xffffff );
+				renderer.render( scene, camera, depthRenderTarget, true );
+
+				// Render renderPass and SSAO shaderPass
+				scene.overrideMaterial = null;
+				renderer.setClearColor( 0xa0a0a0 );
+				effectComposer.render();
+
 			}
 
 		</script>
