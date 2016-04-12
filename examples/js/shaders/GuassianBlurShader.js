@@ -64,7 +64,11 @@ THREE.BlendShader = {
 
       "vec2 pixelToUvScale = 1.0 / size;"
 
-			"float centerViewZ = perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, vUv ) ) );",
+      "#ifdef DEPTH_LIMITED",
+
+			   "float centerViewZ = perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, vUv ) ) );",
+
+      "#endif",
 
       "vec4 colorSum = vec4( 0.0 );",
       "float weightSum = 0.0;",
@@ -74,14 +78,23 @@ THREE.BlendShader = {
         "vec2 tapUvOffset = pixelToUvScale * tapPixelOffsets[ i ];",
         "vec2 tapUv = vUv + tapUvOffset;",
 
-        "float tapViewZ = perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, tapUv ) ) );",
-        "float depthSlope = fabs( centerViewZ - tapViewZ ) / length( tapOffset );",
-        "if( depthSlope <= depthSlopeLimit ) {",
+        "#ifdef DEPTH_LIMITED",
+
+          "float tapViewZ = perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, tapUv ) ) );",
+          "float depthSlope = fabs( centerViewZ - tapViewZ ) / length( tapOffset );",
+          "if( depthSlope <= depthSlopeLimit ) {",
+
+            "colorSum += texture2D( tDiffuse, tapUv ) * tapWeights[ i ];",
+            "weightSum += tapWeights[ i ];",
+
+          "}",
+
+        "#else",
 
           "colorSum += texture2D( tDiffuse, tapUv ) * tapWeights[ i ];",
           "weightSum += tapWeights[ i ];",
 
-        "}",
+        "#endif",
 
       "}",
 
