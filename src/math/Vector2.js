@@ -20,7 +20,7 @@ THREE.Vector2 = function ( x, y ) {
 
 	}
 
-	this.offset = THREE.BlockAllocator.getFloat32( 2 );
+	this.offset = THREE.BlockAllocator.getFloat32( 4 );
 	this.array = THREE.BlockAllocator.activeBuffer;
 
 	if( x !== undefined ) this.set( x, y );
