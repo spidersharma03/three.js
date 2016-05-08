@@ -31,7 +31,7 @@
 		<div id="info"><a href="http://threejs.org" target="_blank">threejs</a> - High dynamic range (RGBE) Image-based Lighting (IBL)<br />using run-time generated pre-filtered roughness mipmaps (PMREM)<br/>
 			Created by Prashant Sharma and <a href="http://clara.io/" target="_blank">Ben Houston</a>.</div>
 
-		<script src="../build/three.min.js"></script>
+		<script src="../build/three.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/RGBELoader.js"></script>
 		<script src="js/loaders/HDRCubeTextureLoader.js"></script>
@@ -95,8 +95,8 @@
 					map: null,
 					bumpScale: - 0.05,
 					color: 0xffffff,
-					metalness: 0.9,
-					roughness: 0.5,
+					metalness: 1.0,
+					roughness: 1.0,
 					shading: THREE.SmoothShading
 				} );
 
@@ -153,6 +153,7 @@
 					pmremCubeUVPacker.update( renderer );
 
 					hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+
 				} );
 
 				var ldrUrls = genCubeUrls( "./textures/cube/pisa/", ".png" );
@@ -167,6 +168,7 @@
 					pmremCubeUVPacker.update( renderer );
 
 					ldrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+
 				} );
 
 
@@ -182,6 +184,7 @@
 					pmremCubeUVPacker.update( renderer );
 
 					rgbmCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+
 				} );
 
 				// Lights
@@ -205,10 +208,7 @@
 				renderer.gammaOutput = true;
 
 				stats = new Stats();
-				stats.domElement.style.position = 'absolute';
-				stats.domElement.style.top = '0px';
-
-				container.appendChild( stats.domElement );
+				container.appendChild( stats.dom );
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 				controls.target.set( 0, 0, 0 );
@@ -258,20 +258,26 @@
 					standardMaterial.roughness = params.roughness;
 					standardMaterial.reflectivity = params.reflectivity;
 					standardMaterial.bumpScale = - 0.05 * params.bumpScale;
+
 					var newEnvMap = standardMaterial.envMap;
+
 					switch( params.envMap ) {
+
 						case 'None': newEnvMap = null; break;
-						case 'LDR': newEnvMap = ldrCubeRenderTarget; break;
-						case 'HDR': newEnvMap = hdrCubeRenderTarget; break;
-						case 'RGBM16': newEnvMap = rgbmCubeRenderTarget; break;
+						case 'LDR': newEnvMap = ldrCubeRenderTarget ? ldrCubeRenderTarget.texture : null; break;
+						case 'HDR': newEnvMap = hdrCubeRenderTarget ? hdrCubeRenderTarget.texture : null; break;
+						case 'RGBM16': newEnvMap = rgbmCubeRenderTarget ? rgbmCubeRenderTarget.texture : null; break;
+
 					}
+
 					if( newEnvMap !== standardMaterial.envMap ) {
+
 						standardMaterial.envMap = newEnvMap;
 						standardMaterial.needsUpdate = true;
 						floorMaterial.emissive = new THREE.Color( 1, 1, 1 );
 						floorMaterial.emissiveMap = newEnvMap;
 						floorMaterial.needsUpdate = true;
-						console.log( 'standardMat', standardMaterial );
+
 					}
 				}
 

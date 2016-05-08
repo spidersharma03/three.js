@@ -37,14 +37,18 @@ var list = {
 		"Lights": [
 			[ "AmbientLight", "api/lights/AmbientLight" ],
 			[ "DirectionalLight", "api/lights/DirectionalLight" ],
+			[ "DirectionalLightShadow", "api/lights/DirectionalLightShadow" ],
 			[ "HemisphereLight", "api/lights/HemisphereLight" ],
 			[ "Light", "api/lights/Light" ],
+			[ "LightShadow", "api/lights/LightShadow" ],
 			[ "PointLight", "api/lights/PointLight" ],
-			[ "SpotLight", "api/lights/SpotLight" ]
+			[ "SpotLight", "api/lights/SpotLight" ],
+			[ "SpotLightShadow", "api/lights/SpotLightShadow" ]
 		],
 
 
 		"Loaders": [
+			[ "AudioLoader", "api/loaders/AudioLoader" ],
 			[ "BabylonLoader", "api/loaders/BabylonLoader" ],
 			[ "BufferGeometryLoader", "api/loaders/BufferGeometryLoader" ],
 			[ "Cache", "api/loaders/Cache" ],
@@ -139,7 +143,6 @@ var list = {
 
 		"Renderers / WebGL / Plugins": [
 			[ "LensFlarePlugin", "api/renderers/webgl/plugins/LensFlarePlugin" ],
-			[ "ShadowMapPlugin", "api/renderers/webgl/plugins/ShadowMapPlugin" ],
 			[ "SpritePlugin", "api/renderers/webgl/plugins/SpritePlugin" ]
 		],
 
@@ -157,7 +160,6 @@ var list = {
 		],
 
 		"Extras": [
-			[ "GeometryUtils", "api/extras/GeometryUtils" ],
 			[ "SceneUtils", "api/extras/SceneUtils" ]
 		],
 
@@ -170,7 +172,6 @@ var list = {
 		"Extras / Core": [
 			[ "Curve", "api/extras/core/Curve" ],
 			[ "CurvePath", "api/extras/core/CurvePath" ],
-			[ "Gyroscope", "api/extras/core/Gyroscope" ],
 			[ "Path", "api/extras/core/Path" ],
 			[ "Shape", "api/extras/core/Shape" ]
 		],
@@ -197,6 +198,8 @@ var list = {
 			[ "CircleGeometry", "api/extras/geometries/CircleGeometry" ],
 			[ "CylinderBufferGeometry", "api/extras/geometries/CylinderBufferGeometry" ],
 			[ "CylinderGeometry", "api/extras/geometries/CylinderGeometry" ],
+			[ "ConeBufferGeometry", "api/extras/geometries/ConeBufferGeometry" ],
+			[ "ConeGeometry", "api/extras/geometries/ConeGeometry" ],
 			[ "DodecahedronGeometry", "api/extras/geometries/DodecahedronGeometry" ],
 			[ "ExtrudeGeometry", "api/extras/geometries/ExtrudeGeometry" ],
 			[ "IcosahedronGeometry", "api/extras/geometries/IcosahedronGeometry" ],
