@@ -90,7 +90,7 @@ THREE.EffectRenderer.renderCopyPass = function( renderer, source, opacity, rende
 	if( ! self.copyShader ) {
 		if ( THREE.CopyShader === undefined )
 			console.error( "THREE.EffectRenderer relies on THREE.CopyShader" );
-			
+
 		self.copyShader = new THREE.ShaderMaterial( THREE.CopyShader );
 	}
 

@@ -493,6 +493,8 @@ THREE.WebGLRenderer = function ( parameters ) {
 		if ( depth === undefined || depth ) bits |= _gl.DEPTH_BUFFER_BIT;
 		if ( stencil === undefined || stencil ) bits |= _gl.STENCIL_BUFFER_BIT;
 
+		console.log( "clearing", color, depth, stencil );
+
 		_gl.clear( bits );
 
 	};

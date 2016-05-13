@@ -10,18 +10,17 @@
 *
 */
 
-THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
-
-	THREE.Pass.call( this );
-
-	this.scene = scene;
-	this.camera = camera;
-
-	this.sampleLevel = 4; // specified as n, where the number of samples is 2^n, so sampleLevel = 4, is 2^4 samples, 16.
+THREE.MSAAEffect = function ( params ) {
 
 	this.params = params || { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat };
 	this.params.minFilter = THREE.NearestFilter;
 	this.params.maxFilter = THREE.NearestFilter;
+
+  if ( ! this.sampleRenderTarget ) {
+
+    this.sampleRenderTarget = new THREE.WebGLRenderTarget( 256, 256, this.params );
+
+  }
 
 	if ( THREE.CompositeShader === undefined ) {
 
@@ -30,8 +29,6 @@ THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
 	}
 
 	var compositeShader = THREE.CompositeShader;
-	this.compositeUniforms = THREE.UniformsUtils.clone( compositeShader.uniforms );
-
 	this.materialComposite = new THREE.ShaderMaterial(	{
 
 		uniforms: this.compositeUniforms,
@@ -49,18 +46,11 @@ THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
 
 	} );
 
-	this.camera2 = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-	this.scene2	= new THREE.Scene();
-	this.quad2 = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), this.materialComposite );
-	this.scene2.add( this.quad2 );
-
 };
 
-THREE.ManualMSAARenderPass.prototype = Object.create( THREE.Pass.prototype );
+THREE.MSAAEffect.prototype = {
 
-THREE.ManualMSAARenderPass.prototype = {
-
-	constructor: THREE.ManualMSAARenderPass,
+	constructor: THREE.MSAAEffect,
 
 	dispose: function() {
 
@@ -80,62 +70,15 @@ THREE.ManualMSAARenderPass.prototype = {
 
 	},
 
-	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
-
-		var camera = ( this.camera || this.scene.camera );
-		var jitterOffsets = THREE.ManualMSAARenderPass.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
-
-		if( jitterOffsets.length === 1 ) {
-
-			renderer.render( this.scene, camera, writeBuffer, true );
-			return;
-
-		}
-
-		if ( ! this.sampleRenderTarget ) {
-
-			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height, this.params );
-
-		}
-
-		var autoClear = renderer.autoClear;
-		renderer.autoClear = false;
-
-		this.compositeUniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
-		this.compositeUniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
-
-		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
-		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
-
-			// only jitters perspective cameras.	TODO: add support for jittering orthogonal cameras
-			var jitterOffset = jitterOffsets[i];
-			if ( camera.setViewOffset ) {
-				camera.setViewOffset( readBuffer.width, readBuffer.height,
-					jitterOffset[ 0 ] * 0.0625, jitterOffset[ 1 ] * 0.0625,   // 0.0625 = 1 / 16
-					readBuffer.width, readBuffer.height );
-			}
-
-			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			renderer.render( this.scene2, this.camera2, writeBuffer, ( i === 0 ) );
-
-		}
-
-		// reset jitter to nothing.	TODO: add support for orthogonal cameras
-		if ( camera.setViewOffset ) camera.setViewOffset( undefined, undefined, undefined, undefined, undefined, undefined );
-
-		renderer.autoClear = true;
-
-	},
-
 	renderPass: function( renderer, scene, camera, renderTarget, sampleLevel ) {
 
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = true;
 
-		var jitterOffsets = THREE.ManualMSAARenderPass.JitterVectors[ Math.max( 0, Math.min( sampleLevel, 5 ) ) ];
+		var jitterOffsets = THREE.MSAAEffect.JitterVectors[ Math.max( 0, Math.min( sampleLevel, 5 ) ) ];
 
-		this.compositeUniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
-		this.compositeUniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+		this.materialComposite.uniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
+		this.materialComposite.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
@@ -166,7 +109,7 @@ THREE.ManualMSAARenderPass.prototype = {
 // before being used, thus these integers need to be scaled by 1/16.
 //
 // Sample patterns reference: https://msdn.microsoft.com/en-us/library/windows/desktop/ff476218%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
-THREE.ManualMSAARenderPass.JitterVectors = [
+THREE.MSAAEffect.JitterVectors = [
 	[
 		[ 0, 0 ]
 	],
