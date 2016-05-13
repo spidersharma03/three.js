@@ -58,7 +58,7 @@ THREE.UniformsLib = {
 	bumpmap: {
 
 		"bumpMap": { type: "t", value: null },
-		"bumpScale": { type: "1f", value: 1 }
+		"bumpScale": { type: "1f", value: 1 },
 		"bumpMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
 		"bumpMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
 
