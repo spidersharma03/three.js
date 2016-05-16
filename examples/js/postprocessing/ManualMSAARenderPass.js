@@ -30,10 +30,11 @@ THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
 	}
 
 	var compositeShader = THREE.CompositeShader;
+	this.compositeUniforms = THREE.UniformsUtils.clone( compositeShader.uniforms );
 
-	this.compositeMaterial = new THREE.ShaderMaterial(	{
+	this.materialComposite = new THREE.ShaderMaterial(	{
 
-		uniforms: compositeShader.uniforms,
+		uniforms: this.compositeUniforms,
 		vertexShader: compositeShader.vertexShader,
 		fragmentShader: compositeShader.fragmentShader,
 		premultipliedAlpha: true,
@@ -46,7 +47,7 @@ THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
 
 	this.camera2 = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
 	this.scene2	= new THREE.Scene();
-	this.quad2 = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), this.compositeMaterial );
+	this.quad2 = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), this.materialComposite );
 	this.scene2.add( this.quad2 );
 
 };
@@ -77,6 +78,7 @@ THREE.ManualMSAARenderPass.prototype = {
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
+		var camera = ( this.camera || this.scene.camera );
 		var jitterOffsets = THREE.ManualMSAARenderPass.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
 
 		if ( ! this.sampleRenderTarget ) {
@@ -88,36 +90,31 @@ THREE.ManualMSAARenderPass.prototype = {
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-	//	console.log( this.sampleLevel, jitterOffsets.length );
-
-		this.compositeMaterial.uniforms[ "scale" ].value = 0.0 / jitterOffsets.length;
-		this.compositeMaterial.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+		this.compositeUniforms[ "scale" ].value = 1.0 / jitterOffsets.length;
+		this.compositeUniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
 
 			// only jitters perspective cameras.	TODO: add support for jittering orthogonal cameras
 			var jitterOffset = jitterOffsets[i];
-			if ( this.camera.setViewOffset ) {
-				this.camera.setViewOffset( readBuffer.width, readBuffer.height,
+			if ( camera.setViewOffset ) {
+				camera.setViewOffset( readBuffer.width, readBuffer.height,
 					jitterOffset[ 0 ] * 0.0625, jitterOffset[ 1 ] * 0.0625,   // 0.0625 = 1 / 16
 					readBuffer.width, readBuffer.height );
 			}
 
-			//console.log( 'writeBuffer', writeBuffer, 'readBuffer', readBuffer );
-
-
-			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, null, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
+			renderer.render( this.scene, camera, this.sampleRenderTarget, true );
+			renderer.render( this.scene2, this.camera2, writeBuffer, (i === 0) );
 
 		}
 
 		// reset jitter to nothing.	TODO: add support for orthogonal cameras
-		if ( this.camera.view ) this.camera.view = null;
+		if ( camera.setViewOffset ) camera.setViewOffset( undefined, undefined, undefined, undefined, undefined, undefined );
 
 		renderer.autoClear = autoClear;
 
-	},
+	}
 
 };
 
