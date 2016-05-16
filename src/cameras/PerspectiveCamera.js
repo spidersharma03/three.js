@@ -155,6 +155,11 @@ THREE.PerspectiveCamera.prototype = Object.assign( Object.create( THREE.Camera.p
 	 */
 	setViewOffset: function ( fullWidth, fullHeight, x, y, width, height ) {
 
+		if( ! fullWidth ) {
+			this.view = null;
+			return;
+		}
+		
 		this.aspect = fullWidth / fullHeight;
 
 		this.view = {

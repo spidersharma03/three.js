@@ -29,18 +29,16 @@ THREE.MSAAEffect = function ( params ) {
 	}
 
 	var compositeShader = THREE.CompositeShader;
+	this.compositeUniforms = THREE.UniformsUtils.clone( compositeShader.uniforms );
+
 	this.materialComposite = new THREE.ShaderMaterial(	{
 
 		uniforms: this.compositeUniforms,
 		vertexShader: compositeShader.vertexShader,
 		fragmentShader: compositeShader.fragmentShader,
+		premultipliedAlpha: true,
 		transparent: true,
-		blending: THREE.CustomBlending,
-		blendSrc: THREE.OneFactor,
-		blendDst: THREE.OneFactor,
-		blendSrcAlpha: THREE.OneFactor,
-		blendDstAlpha: THREE.OneFactor,
-		blendEquation: THREE.AddEquation,
+		blending: THREE.AdditiveBlending,
 		depthTest: false,
 		depthWrite: false
 
@@ -86,19 +84,19 @@ THREE.MSAAEffect.prototype = {
 			// only jitters perspective cameras.	TODO: add support for jittering orthogonal cameras
 			var jitterOffset = jitterOffsets[ i ];
 			if ( camera.setViewOffset ) {
-				camera.setViewOffset( readBuffer.width, readBuffer.height,
+				camera.setViewOffset( this.sampleRenderTarget.width, this.sampleRenderTarget.height,
 					jitterOffset[ 0 ] * 0.0625, jitterOffset[ 1 ] * 0.0625,   // 0.0625 = 1 / 16
-					readBuffer.width, readBuffer.height );
+					this.sampleRenderTarget.width, this.sampleRenderTarget.height );
 			}
 
-			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			EffectRenderer.renderPass( this.materialComposite, renderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined );
+			renderer.render( scene, camera, this.sampleRenderTarget, true, 'msaa: sample #' + i );
+			THREE.EffectRenderer.renderPass( renderer, this.materialComposite, renderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
 
 		}
 
 		// reset jitter to nothing.	TODO: add support for orthogonal cameras
 		if ( camera.setViewOffset ) camera.setViewOffset( undefined, undefined, undefined, undefined, undefined, undefined );
-		renderer.autoClear = true;
+		renderer.autoClear = autoClear;
 
 	}
 

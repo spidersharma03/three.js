@@ -39,11 +39,10 @@
 		<script src="js/shaders/CopyShader.js"></script>
 		<script src="js/shaders/DepthLimitedBlurShader.js"></script>
 		<script src="js/shaders/SAOShader.js"></script>
-		<script src="js/shaders/CompositeShader.js"></script>
-		<script src="js/shaders/ModulateShader.js"></script>
-		<script src="js/shaders/ModulateShader.js"></script>
 		<script src="js/postprocessing/EffectRenderer.js"></script>
 		<script src="js/postprocessing/MSAAEffect.js"></script>
+		<script src="js/shaders/CompositeShader.js"></script>
+		<script src="js/shaders/ModulateShader.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -97,10 +96,10 @@
 				renderer.setSize( width, height );
 				document.body.appendChild( renderer.domElement );
 
-				if ( renderer.extensions.get('WEBGL_depth_texture') ) {
+			/*	if ( renderer.extensions.get('WEBGL_depth_texture') ) {
 					supportsDepthTextureExtension = true;
 					console.log( "using depth extension");
-				}
+				}*/
 
 				camera = new THREE.PerspectiveCamera( 65, width / height, 3, 10 );
 				camera.position.z = 7;
@@ -110,13 +109,13 @@
 				group = new THREE.Object3D();
 				scene.add( group );
 
-				var light = new THREE.PointLight( 0xddffdd, 8.8 );
+				var light = new THREE.PointLight( 0xddffdd, 2.8 );
 				light.position.z = 70;
 				light.position.y = -70;
 				light.position.x = -70;
 				scene.add( light );
 
-				var light2 = new THREE.PointLight( 0xffdddd, 10.8 );
+				var light2 = new THREE.PointLight( 0xffdddd, 3.8 );
 				light2.position.z = 70;
 				light2.position.x = -70;
 				light2.position.y = 70;
@@ -218,6 +217,21 @@
 				modulateMaterial.uniforms[ 'tBackground' ].value = beautyRenderTarget.texture;
 				modulateMaterial.blending = THREE.NoBlending;
 
+				var compositeShader = THREE.CompositeShader;
+				this.compositeUniforms = THREE.UniformsUtils.clone( compositeShader.uniforms );
+				this.compositeMaterial = new THREE.ShaderMaterial(	{
+
+					uniforms: this.compositeUniforms,
+					vertexShader: compositeShader.vertexShader,
+					fragmentShader: compositeShader.fragmentShader,
+					premultipliedAlpha: false,
+					transparent: true,
+					blending: THREE.MultiplyBlending,
+					depthTest: false,
+					depthWrite: false
+
+				} );
+
 				msaaEffect = new THREE.MSAAEffect();
 
 				// Init gui
@@ -302,54 +316,63 @@
 					prevStdDev = params.saoBlurStdDev;
 					prevNumSamples = params.saoBlurRadius;
 				}
+				renderer.setClearColor( 0x000000 );
+
+				var width = window.innerWidth || 1;
+				var height = window.innerHeight || 1;
+				msaaEffect.setSize( width, height );
+
 
 				if( params.output == 1 ) {
 					renderer.setClearColor( 0x000000 );
-					renderer.render( scene, camera, null, true );
+					msaaEffect.renderPass( renderer, scene, camera, null, 1 );
+		//			renderer.render( scene, camera, null, true );
 					return;
 				}
 
 				renderer.autoClear = false;
-				renderer.setClearColor( 0x00ff00 );
+				renderer.setClearColor( 0x000000 );
 				renderer.toneMapping = THREE.ReinhardToneMapping;
 
-				msaaEffect.renderPass( renderer, scene, camera, beautyRenderTarget, 4 );
+				msaaEffect.renderPass( renderer, scene, camera, beautyRenderTarget, 0 );
 
-				renderer.render( scene, camera, beautyRenderTarget, true );
+			//	renderer.render( scene, camera, null, true );
 
 				if( ! supportsDepthTextureExtension ) {
 
-					THREE.EffectRenderer.renderOverride( renderer, depthMaterial, scene, camera, depthRenderTarget );
+					THREE.EffectRenderer.renderOverride( renderer, depthMaterial, scene, camera, depthRenderTarget, undefined, undefined, 'depth rgba' );
 
 				}
 
 				if( params.output == 4 ) {
 					copyMaterial.uniforms[ 'tDiffuse' ].value = supportsDepthTextureExtension ? depthTexture : depthRenderTarget.texture;
-					THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0 );
+					THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, 'output depth' );
 					return;
 				}
 
 				if( params.output == 3 ) {
 					copyMaterial.uniforms[ 'tDiffuse' ].value = normalRenderTarget.texture;
-					THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0 );
+					THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, 'output normal' );
 					return;
 				}
 
-				THREE.EffectRenderer.renderPass( renderer, saoMaterial, saoRenderTarget, 0xffffff, 0.0 );
+				THREE.EffectRenderer.renderPass( renderer, saoMaterial, saoRenderTarget, 0xffffff, 0.0, "sao" );
 				if( params.saoBlur ) {
-					THREE.EffectRenderer.renderPass( renderer, vBlurMaterial, blurIntermediateRenderTarget, 0xffffff, 0.0 );
-					THREE.EffectRenderer.renderPass( renderer,  hBlurMaterial, saoRenderTarget, 0xffffff, 0.0 );
+					THREE.EffectRenderer.renderPass( renderer, vBlurMaterial, blurIntermediateRenderTarget, 0xffffff, 0.0, "sao vBlur" );
+					THREE.EffectRenderer.renderPass( renderer,  hBlurMaterial, saoRenderTarget, 0xffffff, 0.0, "sao hBlur" );
 				}
 
 				if( params.output == 2 ) {
 					copyMaterial.uniforms[ 'tDiffuse' ].value = saoRenderTarget.texture;
-					THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0 );
+					THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, 'output sao' );
 					return;
 				}
 
-//				copyMaterial.uniforms[ 'tDiffuse' ].value = beautyRenderTarget.texture;
-//				THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0 );
-				THREE.EffectRenderer.renderPass( renderer, modulateMaterial, null, 0x000000, 0.0 );
+				copyMaterial.uniforms[ 'tDiffuse' ].value = beautyRenderTarget.texture;
+				compositeMaterial.uniforms[ 'tForeground' ].value = saoRenderTarget.texture;
+				THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, "copy" );
+				console.log( 'modulateMaterial', modulateMaterial );
+				THREE.EffectRenderer.renderPass( renderer, compositeMaterial, null, undefined, undefined, "modulate" );
 
 			}
 

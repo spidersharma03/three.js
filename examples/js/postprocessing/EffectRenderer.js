@@ -11,6 +11,8 @@ THREE.EffectRenderer = function () {
 	return this;
 };
 
+THREE.EffectRenderer.verbose = true;
+
 THREE.EffectRenderer.getClearState = function ( renderer, optionalClearState ) {
 
 	var clearState = optionalClearState || {};
@@ -47,7 +49,9 @@ THREE.EffectRenderer.applyCustomClearState = function( renderer, material, clear
 
 };
 
-THREE.EffectRenderer.renderOverride = function ( renderer, overrideMaterial, scene, camera, renderTarget, clearColor, clearAlpha ) {
+THREE.EffectRenderer.renderOverride = function ( renderer, overrideMaterial, scene, camera, renderTarget, clearColor, clearAlpha, renderName ) {
+
+	if( THREE.EffectRenderer.verbose ) console.log( 'renderOverride[ ' + renderName + ' ]' );
 
 	var self = THREE.EffectRenderer;
 
@@ -62,7 +66,9 @@ THREE.EffectRenderer.renderOverride = function ( renderer, overrideMaterial, sce
 
 };
 
-THREE.EffectRenderer.renderPass = function ( renderer, passMaterial, renderTarget, clearColor, clearAlpha ) {
+THREE.EffectRenderer.renderPass = function ( renderer, passMaterial, renderTarget, clearColor, clearAlpha, renderName ) {
+
+	if( THREE.EffectRenderer.verbose ) console.log( 'renderPass[ ' + renderName + ' ]' );
 
 	var self = THREE.EffectRenderer;
 
