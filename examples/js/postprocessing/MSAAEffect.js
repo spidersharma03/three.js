@@ -95,7 +95,7 @@ THREE.MSAAEffect.prototype = {
 		}
 
 		// reset jitter to nothing.	TODO: add support for orthogonal cameras
-		if ( camera.setViewOffset ) camera.setViewOffset( undefined, undefined, undefined, undefined, undefined, undefined );
+		if ( camera.view ) camera.view = null;
 		renderer.autoClear = autoClear;
 
 	}

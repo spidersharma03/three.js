@@ -81,7 +81,7 @@ THREE.ShaderMaterial = function ( parameters ) {
 				this.defines[name] = THREE.UniformsUtils.cloneValue( parameters.defines[ name ] );
 			}
 		}
-		
+
 	}
 
 };
