@@ -181,6 +181,7 @@
 				copyMaterial.blending = THREE.NoBlending;
 
 				saoMaterial = new THREE.ShaderMaterial( THREE.SAOShader );
+				saoMaterial.uniforms = THREE.UniformsUtils.clone( saoMaterial.uniforms );
 				saoMaterial.defines[ 'DIFFUSE_TEXTURE' ] = 0;
 				saoMaterial.defines[ 'NORMAL_TEXTURE' ] = 0;
 				saoMaterial.defines[ 'DEPTH_PACKING' ] = supportsDepthTextureExtension ? 0 : 1;
@@ -195,6 +196,8 @@
 				saoMaterial.blending = THREE.NoBlending;
 
 				vBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
+				vBlurMaterial.uniforms = THREE.UniformsUtils.clone( vBlurMaterial.uniforms );
+				vBlurMaterial.defines = THREE.UniformsUtils.cloneDefines( vBlurMaterial.defines );
 				vBlurMaterial.defines[ 'DEPTH_PACKING' ] = supportsDepthTextureExtension ? 0 : 1;
 				vBlurMaterial.uniforms[ "tDiffuse" ].value = saoRenderTarget.texture;
 				vBlurMaterial.uniforms[ "tDepth" ].value = ( supportsDepthTextureExtension ) ? depthTexture : depthRenderTarget.texture;
@@ -204,6 +207,8 @@
 				vBlurMaterial.blending = THREE.NoBlending;
 
 				hBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
+				hBlurMaterial.uniforms = THREE.UniformsUtils.clone( hBlurMaterial.uniforms );
+				hBlurMaterial.defines = THREE.UniformsUtils.cloneDefines( hBlurMaterial.defines );
 				hBlurMaterial.defines[ 'DEPTH_PACKING' ] = supportsDepthTextureExtension ? 0 : 1;
 				hBlurMaterial.uniforms[ "tDiffuse" ].value = blurIntermediateRenderTarget.texture;
 				hBlurMaterial.uniforms[ "tDepth" ].value = ( supportsDepthTextureExtension ) ? depthTexture : depthRenderTarget.texture;
@@ -213,6 +218,7 @@
 				hBlurMaterial.blending = THREE.NoBlending;
 
 				modulateMaterial = new THREE.ShaderMaterial( THREE.ModulateShader );
+				modulateMaterial.uniforms = THREE.UniformsUtils.clone( modulateMaterial.uniforms );
 				modulateMaterial.uniforms[ 'tForeground' ].value = saoRenderTarget.texture;
 				modulateMaterial.uniforms[ 'tBackground' ].value = beautyRenderTarget.texture;
 				modulateMaterial.blending = THREE.NoBlending;

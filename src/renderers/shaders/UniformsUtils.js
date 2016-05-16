@@ -24,6 +24,19 @@ THREE.UniformsUtils = {
 
 	},
 
+	cloneDefines: function ( uniforms_src ) {
+
+		var uniforms_dst = {};
+
+		for ( var u in uniforms_src ) {
+
+			uniforms_dst[ u ] = this.cloneValue( uniforms_src[ u ] );
+
+		}
+
+		return uniforms_dst;
+
+	},
 
 		clone: function ( uniforms_src ) {
 
