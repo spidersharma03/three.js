@@ -72,8 +72,8 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 
 	if( this.accumulateIndex >= 0 && this.accumulateIndex < jitterOffsets.length ) {
 
-		this.compositeUniforms[ "scale" ].value = sampleWeight;
-		this.compositeUniforms[ "tForeground" ].value = writeBuffer.texture;
+		this.compositeMaterial.uniforms[ "scale" ].value = sampleWeight;
+		this.compositeMaterial.uniforms[ "tForeground" ].value = writeBuffer.texture;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		var numSamplesPerFrame = Math.pow( 2, this.sampleLevel );
@@ -97,21 +97,21 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 		}
 
 		// reset jitter to nothing.	TODO: add support for orthogonal cameras
-		if ( camera.setViewOffset ) camera.setViewOffset( undefined, undefined, undefined, undefined, undefined, undefined );
+		if ( camera.setViewOffset ) camera.view = null;
 
 	}
 
 	var accumulationWeight = this.accumulateIndex * sampleWeight;
 
 	if( accumulationWeight > 0 ) {
-		this.compositeUniforms[ "scale" ].value = 1.0;
-		this.compositeUniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+		this.compositeMaterial.uniforms[ "scale" ].value = 1.0;
+		this.compositeMaterial.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
 		renderer.render( this.scene2, this.camera2, writeBuffer, true );
 	}
 
 	if( accumulationWeight < 1.0 ) {
-		this.compositeUniforms[ "scale" ].value = 1.0 - accumulationWeight;
-		this.compositeUniforms[ "tForeground" ].value = this.holdRenderTarget.texture;
+		this.compositeMaterial.uniforms[ "scale" ].value = 1.0 - accumulationWeight;
+		this.compositeMaterial.uniforms[ "tForeground" ].value = this.holdRenderTarget.texture;
 		renderer.render( this.scene2, this.camera2, writeBuffer, ( accumulationWeight === 0 ) );
 	}
 

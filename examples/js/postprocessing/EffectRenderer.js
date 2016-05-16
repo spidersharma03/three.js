@@ -11,7 +11,7 @@ THREE.EffectRenderer = function () {
 	return this;
 };
 
-THREE.EffectRenderer.verbose = true;
+THREE.EffectRenderer.verbose = false;
 
 THREE.EffectRenderer.getClearState = function ( renderer, optionalClearState ) {
 

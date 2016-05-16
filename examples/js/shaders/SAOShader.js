@@ -17,6 +17,10 @@ THREE.SAOShader = {
 		"PERSPECTIVE_CAMERA": 1
 	},
 
+	extensions: {
+		'derivatives': true
+	},
+
 	uniforms: {
 
 		"tDepth":       { type: "t", value: null },
@@ -54,8 +58,6 @@ THREE.SAOShader = {
 
 	fragmentShader: [
 
-		// total number of samples at each fragment",
-		"#extension GL_OES_standard_derivatives : enable",
 
 		"#include <common>",
 

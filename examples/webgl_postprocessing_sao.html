@@ -39,10 +39,9 @@
 		<script src="js/shaders/CopyShader.js"></script>
 		<script src="js/shaders/DepthLimitedBlurShader.js"></script>
 		<script src="js/shaders/SAOShader.js"></script>
+		<script src="js/shaders/CompositeShader.js"></script>
 		<script src="js/postprocessing/EffectRenderer.js"></script>
 		<script src="js/postprocessing/MSAAEffect.js"></script>
-		<script src="js/shaders/CompositeShader.js"></script>
-		<script src="js/shaders/ModulateShader.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -58,7 +57,7 @@
 
 			var container, stats;
 			var camera, scene, renderer;
-			var depthMaterial, saoMaterial, modulateMaterial, normalMaterial, vBlurMaterial, hBlurMaterial, copyMaterial;
+			var depthMaterial, saoMaterial, compositeMaterial, normalMaterial, vBlurMaterial, hBlurMaterial, copyMaterial;
 			var depthRenderTarget, normalRenderTarget, saoRenderTarget, beautyRenderTarget, blurIntermediateRenderTarget;
 			var msaaEffect;
 
@@ -217,26 +216,11 @@
 				hBlurMaterial.uniforms[ 'size' ].value.set( width, height );
 				hBlurMaterial.blending = THREE.NoBlending;
 
-				modulateMaterial = new THREE.ShaderMaterial( THREE.ModulateShader );
-				modulateMaterial.uniforms = THREE.UniformsUtils.clone( modulateMaterial.uniforms );
-				modulateMaterial.uniforms[ 'tForeground' ].value = saoRenderTarget.texture;
-				modulateMaterial.uniforms[ 'tBackground' ].value = beautyRenderTarget.texture;
-				modulateMaterial.blending = THREE.NoBlending;
-
-				var compositeShader = THREE.CompositeShader;
-				this.compositeUniforms = THREE.UniformsUtils.clone( compositeShader.uniforms );
-				this.compositeMaterial = new THREE.ShaderMaterial(	{
-
-					uniforms: this.compositeUniforms,
-					vertexShader: compositeShader.vertexShader,
-					fragmentShader: compositeShader.fragmentShader,
-					premultipliedAlpha: false,
-					transparent: true,
-					blending: THREE.MultiplyBlending,
-					depthTest: false,
-					depthWrite: false
-
-				} );
+				compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
+				compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );
+				compositeMaterial.premultipliedAlpha = false;
+				compositeMaterial.transparent = true;
+				compositeMaterial.blending = THREE.MultiplyBlending;
 
 				msaaEffect = new THREE.MSAAEffect();
 
@@ -332,7 +316,6 @@
 				if( params.output == 1 ) {
 					renderer.setClearColor( 0x000000 );
 					msaaEffect.renderPass( renderer, scene, camera, null, 1 );
-		//			renderer.render( scene, camera, null, true );
 					return;
 				}
 
@@ -340,9 +323,7 @@
 				renderer.setClearColor( 0x000000 );
 				renderer.toneMapping = THREE.ReinhardToneMapping;
 
-				msaaEffect.renderPass( renderer, scene, camera, beautyRenderTarget, 0 );
-
-			//	renderer.render( scene, camera, null, true );
+				msaaEffect.renderPass( renderer, scene, camera, beautyRenderTarget, 1 );
 
 				if( ! supportsDepthTextureExtension ) {
 
@@ -377,7 +358,6 @@
 				copyMaterial.uniforms[ 'tDiffuse' ].value = beautyRenderTarget.texture;
 				compositeMaterial.uniforms[ 'tForeground' ].value = saoRenderTarget.texture;
 				THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, "copy" );
-				console.log( 'modulateMaterial', modulateMaterial );
 				THREE.EffectRenderer.renderPass( renderer, compositeMaterial, null, undefined, undefined, "modulate" );
 
 			}

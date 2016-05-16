@@ -6,8 +6,6 @@
 
 THREE.CompositeShader = {
 
-	shaderID: "composite",
-
 	uniforms: {
 
 		"tForeground": { type: "t", value: null },
