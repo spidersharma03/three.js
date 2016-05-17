@@ -192,7 +192,6 @@
 				saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
 				saoMaterial.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
 				saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
-				saoMaterial.blending = THREE.NoBlending;
 
 				vBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
 				vBlurMaterial.uniforms = THREE.UniformsUtils.clone( vBlurMaterial.uniforms );
@@ -203,7 +202,6 @@
 				vBlurMaterial.uniforms[ "cameraNear" ].value = camera.near;
 				vBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
 				vBlurMaterial.uniforms[ 'size' ].value.set( width, height );
-				vBlurMaterial.blending = THREE.NoBlending;
 
 				hBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
 				hBlurMaterial.uniforms = THREE.UniformsUtils.clone( hBlurMaterial.uniforms );
@@ -214,7 +212,6 @@
 				hBlurMaterial.uniforms[ "cameraNear" ].value = camera.near;
 				hBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
 				hBlurMaterial.uniforms[ 'size' ].value.set( width, height );
-				hBlurMaterial.blending = THREE.NoBlending;
 
 				compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
 				compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );

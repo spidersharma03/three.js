@@ -217,6 +217,7 @@
 				saoEffect.blurEnabled = params.saoBlur;
 				saoEffect.blurRadius = params.saoBlurRadius;
 				saoEffect.blurStdDev = params.saoBlurStdDev;
+				saoEffect.blurDepthCutoff = params.saoBlurDepthCutoff;
 
 				switch( params.output ) {
 					case '1': saoEffect.outputOverride = "beauty"; break;
@@ -235,7 +236,7 @@
 				msaaEffect.renderPass( renderer, scene, camera );
 				saoEffect.renderPass( renderer, scene, camera );
 
-				THREE.EffectRenderer.renderCopy( renderer, beautyRenderTarget.texture, 1.0, null, 0xff00ff, 1.0, "beauty to screen" );
+			//	THREE.EffectRenderer.renderCopy( renderer, beautyRenderTarget.texture, 1.0, null, 0xff00ff, 1.0, "beauty to screen" );
 
 			}
 

@@ -173,7 +173,7 @@ THREE.SAOEffect.prototype = {
 		if( this.outputOverride === "depth" ) {
 
 			console.log( "writing depth output and exiting" );
-			THREE.EffectRenderer.renderCopy( renderer, ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture, 1.0, this.beautyRenderTarget, 0x000000, 0.0, 'output depth' );
+			THREE.EffectRenderer.renderCopy( renderer, ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output depth' );
 			return;
 
 		}
@@ -189,12 +189,13 @@ THREE.SAOEffect.prototype = {
 		if( this.outputOverride === "sao" ) {
 
 			console.log( "writing sao output and exiting" );
-			THREE.EffectRenderer.renderCopy( renderer, this.saoRenderTarget.texture, 1.0, this.beautyRenderTarget, 0x000000, 0.0, 'output sao' );
+			THREE.EffectRenderer.renderCopy( renderer, this.saoRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output sao' );
 			return;
 
 		}
 
-		THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, this.beautyRenderTarget, undefined, undefined, "composite" );
+		THREE.EffectRenderer.renderCopy( renderer, this.beautyRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output beauty' );
+	THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, null, undefined, undefined, "composite" );
 
 		renderer.autoClear = autoClear;
 
