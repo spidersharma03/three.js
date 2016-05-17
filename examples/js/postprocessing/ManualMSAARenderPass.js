@@ -85,8 +85,11 @@ THREE.ManualMSAARenderPass.prototype = {
 
 	//	console.log( this.sampleLevel, jitterOffsets.length );
 
-		this.compositeMaterial.uniforms[ "scale" ].value = 0.0 / jitterOffsets.length;
+		this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length;
 		this.compositeMaterial.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+
+		var base = 1.0 / jitterOffsets.length;
+		var jitterSum = 0;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
@@ -100,10 +103,16 @@ THREE.ManualMSAARenderPass.prototype = {
 			}
 
 			//console.log( 'writeBuffer', writeBuffer, 'readBuffer', readBuffer );
-
-
+			if( i <= ( jitterOffsets.length - 1 ) ) {
+				var jitter = Math.randon() * 0.5 / ( jitterOffsets.length ) - 0.25;
+				jitterSum += jitter;
+				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length + jitter;
+			}
+			else {
+				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length;// - jitterSum;
+			}
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, null, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
+			THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, writeBuffer, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
 
 		}
 

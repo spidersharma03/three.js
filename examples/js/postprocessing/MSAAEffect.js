@@ -58,10 +58,6 @@ THREE.MSAAEffect.prototype = {
 		renderer.autoClear = true;
 
 		var jitterOffsets = THREE.MSAAEffect.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
-
-		//this.materialComposite.uniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
-//		this.materialComposite.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
-
 		var width = this.sampleRenderTarget.width, height = this.sampleRenderTarget.height;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
@@ -76,7 +72,7 @@ THREE.MSAAEffect.prototype = {
 			}
 
 			renderer.render( scene, camera, this.sampleRenderTarget, true, 'msaa: sample #' + i );
-			THREE.EffectRenderer.renderCopy( renderer, this.sampleRenderTarget.texture, 1.0 / ( jitterOffsets.length ), THREE.AdditiveBlending,
+			THREE.EffectRenderer.renderCopy( renderer, this.sampleRenderTarget.texture, 1.0 / ( jitterOffsets.length ), THREE.NormalBlending,
 				this.beautyRenderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined,
 				'msaa: composite #' + i );
 

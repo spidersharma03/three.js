@@ -98,7 +98,7 @@ THREE.EffectRenderer.renderCopy = function( renderer, source, opacity, blending,
 
 		self.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 		self.copyMaterial.uniforms = THREE.UniformsUtils.clone( self.copyMaterial.uniforms );
-		self.copyMaterial.premultipliedAlpha = false;
+		self.copyMaterial.premultipliedAlpha = true;
 		self.copyMaterial.transparent = true;
 		self.copyMaterial.depthTest = false;
 	}

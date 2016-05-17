@@ -26,7 +26,6 @@ THREE.SAOEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.beautyRenderTarget = beautyRenderTarget; // not owned by SAOEffect
 	this.saoRenderTarget = optionalBuffers.saoRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 	this.blurIntermediateRenderTarget = optionalBuffers.blurIntermediateRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
-	//this.normalRenderTarget = optionalBuffers.normalRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 	this.depthRenderTarget = optionalBuffers.depthRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
@@ -62,7 +61,6 @@ THREE.SAOEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.saoMaterial.defines[ 'DEPTH_PACKING' ] = this.depthTexture ? 0 : 1;
 	this.saoMaterial.defines[ 'MODE' ] = 2;
 	this.saoMaterial.uniforms[ "tDepth" ].value = ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture;
-//	this.saoMaterial.uniforms[ "tNormal" ].value = this.normalRenderTarget.texture;
 
 	this.vBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
 	this.vBlurMaterial.uniforms = THREE.UniformsUtils.clone( this.vBlurMaterial.uniforms );
@@ -77,16 +75,6 @@ THREE.SAOEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.hBlurMaterial.defines[ 'DEPTH_PACKING' ] = ( this.depthTexture ) ? 0 : 1;
 	this.hBlurMaterial.uniforms[ "tDiffuse" ].value = this.blurIntermediateRenderTarget.texture;
 	this.hBlurMaterial.uniforms[ "tDepth" ].value = ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture;
-
-/*
-	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
-	this.compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );
-	this.compositeMaterial.uniforms[ 'tForeground' ].value = this.saoRenderTarget.texture;
-	this.compositeMaterial.premultipliedAlpha = false;
-	this.compositeMaterial.transparent = true;
-	this.compositeMaterial.blending = THREE.MultiplyBlending;
-	this.compositeMaterial.depthWrite = false;
-	this.compositeMaterial.depthTest = false;*/
 
 	this.setSize( width, height );
 
@@ -106,10 +94,6 @@ THREE.SAOEffect.prototype = {
 			this.blurIntermediateRenderTarget.dispose();
 			this.blurIntermediateRenderTarget = null;
 		}
-		/*if( this.normalRenderTarget ) {
-			this.normalRenderTarget.dispose();
-			this.normalRenderTarget = null;
-		}*/
 		if( this.depthRenderTarget ) {
 			this.depthRenderTarget.dispose();
 			this.depthRenderTarget = null;
@@ -122,7 +106,6 @@ THREE.SAOEffect.prototype = {
 
 		this.saoRenderTarget.setSize( width, height );
 		this.blurIntermediateRenderTarget.setSize( width, height );
-		//this.normalRenderTarget.setSize( width, height );
 		this.depthRenderTarget.setSize( width, height );
 
 		this.saoMaterial.uniforms[ 'size' ].value.set( width, height );
@@ -161,9 +144,6 @@ THREE.SAOEffect.prototype = {
 
 	renderPass: function( renderer, scene, camera ) {
 
-		var autoClear = renderer.autoClear;
-		renderer.autoClear = false;
-
 		this.updateParameters( camera );
 
 		if( this.outputOverride === "beauty" ) return;
@@ -196,10 +176,7 @@ THREE.SAOEffect.prototype = {
 
 		}
 
-		//THREE.EffectRenderer.renderCopy( renderer, this.beautyRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output beauty' );
 		THREE.EffectRenderer.renderCopy( renderer, this.saoRenderTarget.texture, 1.0, THREE.MultiplyBlending, this.beautyRenderTarget, undefined, undefined, "composite" );
-
-		renderer.autoClear = autoClear;
 
 	}
 

@@ -230,7 +230,7 @@
 				renderer.setClearColor( 0xf0f0f0 );
 				renderer.setClearAlpha( 0.0 );
 
-				msaaEffect.sampleLevel = 0;
+				msaaEffect.sampleLevel = 4;
 				msaaEffect.renderPass( renderer, scene, camera );
 				saoEffect.renderPass( renderer, scene, camera );
 
