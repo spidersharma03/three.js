@@ -78,6 +78,7 @@ THREE.SAOEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.hBlurMaterial.uniforms[ "tDiffuse" ].value = this.blurIntermediateRenderTarget.texture;
 	this.hBlurMaterial.uniforms[ "tDepth" ].value = ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture;
 
+/*
 	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
 	this.compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );
 	this.compositeMaterial.uniforms[ 'tForeground' ].value = this.saoRenderTarget.texture;
@@ -85,7 +86,7 @@ THREE.SAOEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.compositeMaterial.transparent = true;
 	this.compositeMaterial.blending = THREE.MultiplyBlending;
 	this.compositeMaterial.depthWrite = false;
-	this.compositeMaterial.depthTest = false;
+	this.compositeMaterial.depthTest = false;*/
 
 	this.setSize( width, height );
 
@@ -144,8 +145,14 @@ THREE.SAOEffect.prototype = {
 		this.saoMaterial.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
 
 		var depthCutoff = this.blurDepthCutoff * ( camera.far - camera.near );
+
 		this.vBlurMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
+		this.vBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
+		this.vBlurMaterial.uniforms[ "cameraNear" ].value = camera.near;
+
 		this.hBlurMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
+		this.hBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
+		this.hBlurMaterial.uniforms[ "cameraNear" ].value = camera.near;
 
 		THREE.BlurShaderUtils.configure( this.vBlurMaterial, this.blurRadius, this.blurStdDev, new THREE.Vector2( 0, 1 ) );
 		THREE.BlurShaderUtils.configure( this.hBlurMaterial, this.blurRadius, this.blurStdDev, new THREE.Vector2( 1, 0 ) );
@@ -159,21 +166,17 @@ THREE.SAOEffect.prototype = {
 
 		this.updateParameters( camera );
 
-		console.log( this.outputOverride );
-
 		if( this.outputOverride === "beauty" ) return;
 
 		if( ! this.depthTexture ) {
 
-			console.log( "render depth texture" );
 			THREE.EffectRenderer.renderOverride( renderer, this.depthMaterial, scene, camera, this.depthRenderTarget, undefined, undefined, 'depth rgba' );
 
 		}
 
 		if( this.outputOverride === "depth" ) {
 
-			console.log( "writing depth output and exiting" );
-			THREE.EffectRenderer.renderCopy( renderer, ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output depth' );
+			THREE.EffectRenderer.renderCopy( renderer, ( this.depthTexture ) ? this.depthTexture : this.depthRenderTarget.texture, 1.0, THREE.NoBlending, this.beautyRenderTarget, 0x000000, 0.0, 'output depth' );
 			return;
 
 		}
@@ -188,14 +191,13 @@ THREE.SAOEffect.prototype = {
 
 		if( this.outputOverride === "sao" ) {
 
-			console.log( "writing sao output and exiting" );
-			THREE.EffectRenderer.renderCopy( renderer, this.saoRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output sao' );
+			THREE.EffectRenderer.renderCopy( renderer, this.saoRenderTarget.texture, 1.0, THREE.NoBlending, this.beautyRenderTarget, 0x000000, 0.0, 'output sao' );
 			return;
 
 		}
 
-		THREE.EffectRenderer.renderCopy( renderer, this.beautyRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output beauty' );
-	THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, null, undefined, undefined, "composite" );
+		//THREE.EffectRenderer.renderCopy( renderer, this.beautyRenderTarget.texture, 1.0, null, 0x000000, 0.0, 'output beauty' );
+		THREE.EffectRenderer.renderCopy( renderer, this.saoRenderTarget.texture, 1.0, THREE.MultiplyBlending, this.beautyRenderTarget, undefined, undefined, "composite" );
 
 		renderer.autoClear = autoClear;
 

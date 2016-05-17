@@ -20,13 +20,13 @@ THREE.MSAAEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.beautyRenderTarget = beautyRenderTarget; // not owned by MSAAEffect
   this.sampleRenderTarget = optionalBuffers.sampleRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat }  );
 
-	if ( THREE.CompositeShader === undefined )	console.error( "THREE.MSAAEffect relies on THREE.CompositeShader" );
+/*	if ( THREE.CompositeShader === undefined )	console.error( "THREE.MSAAEffect relies on THREE.CompositeShader" );
 
 	this.materialComposite = new THREE.ShaderMaterial( THREE.CompositeShader );
 	this.materialComposite.uniforms = THREE.UniformsUtils.clone( this.materialComposite.uniforms );
 	this.materialComposite.premultipliedAlpha = true;
 	this.materialComposite.transparent = true;
-	this.materialComposite.blending = THREE.AdditiveBlending;
+	this.materialComposite.blending = THREE.AdditiveBlending;*/
 
 	this.setSize( width, height );
 
@@ -59,8 +59,8 @@ THREE.MSAAEffect.prototype = {
 
 		var jitterOffsets = THREE.MSAAEffect.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
 
-		this.materialComposite.uniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
-		this.materialComposite.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+		//this.materialComposite.uniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
+//		this.materialComposite.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
 
 		var width = this.sampleRenderTarget.width, height = this.sampleRenderTarget.height;
 
@@ -76,7 +76,9 @@ THREE.MSAAEffect.prototype = {
 			}
 
 			renderer.render( scene, camera, this.sampleRenderTarget, true, 'msaa: sample #' + i );
-			THREE.EffectRenderer.renderPass( renderer, this.materialComposite, this.beautyRenderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
+			THREE.EffectRenderer.renderCopy( renderer, this.sampleRenderTarget.texture, 1.0 / ( jitterOffsets.length ), THREE.AdditiveBlending,
+				this.beautyRenderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined,
+				'msaa: composite #' + i );
 
 		}
 

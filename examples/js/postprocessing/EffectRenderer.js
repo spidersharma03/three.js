@@ -11,7 +11,7 @@ THREE.EffectRenderer = function () {
 	return this;
 };
 
-THREE.EffectRenderer.verbose = true;
+THREE.EffectRenderer.verbose = false;
 
 THREE.EffectRenderer.getClearState = function ( renderer, optionalClearState ) {
 
@@ -89,7 +89,7 @@ THREE.EffectRenderer.renderPass = function ( renderer, passMaterial, renderTarge
 
 };
 
-THREE.EffectRenderer.renderCopy = function( renderer, source, opacity, renderTarget, clearColor, clearAlpha, renderName ) {
+THREE.EffectRenderer.renderCopy = function( renderer, source, opacity, blending, renderTarget, clearColor, clearAlpha, renderName ) {
 
 	var self = THREE.EffectRenderer;
 
@@ -99,16 +99,19 @@ THREE.EffectRenderer.renderCopy = function( renderer, source, opacity, renderTar
 		self.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 		self.copyMaterial.uniforms = THREE.UniformsUtils.clone( self.copyMaterial.uniforms );
 		self.copyMaterial.premultipliedAlpha = false;
-		self.copyMaterial.transparent = false;
+		self.copyMaterial.transparent = true;
 		self.copyMaterial.depthTest = false;
-		self.copyMaterial.blending = THREE.NoBlending;
 	}
 
 	self.copyMaterial.uniforms['tDiffuse'].value = source;
 	self.copyMaterial.uniforms['opacity'].value = opacity;
+	self.copyMaterial.blending = blending;
 
-	//console.log( self.copyMaterial );
+	var autoClear = renderer.autoClear;
+	renderer.autoClear = false;
 
-	self.renderPass( renderer, self.copyMaterial, null, clearColor, clearAlpha, renderName + "(renderCopy)" );
+	self.renderPass( renderer, self.copyMaterial, renderTarget, clearColor, clearAlpha, renderName + "(renderCopy)" );
+
+	renderer.autoClear = autoClear;
 
 };
