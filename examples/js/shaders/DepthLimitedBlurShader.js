@@ -10,12 +10,13 @@
 
 THREE.DepthLimitedBlurShader = {
 
+	blending: THREE.NoBlending,
+
 	defines: {
 
 		"KERNEL_RADIUS": 4,
 		"DEPTH_PACKING": 1,
 		"PERSPECTIVE_CAMERA": 1
-
 
 	},
 

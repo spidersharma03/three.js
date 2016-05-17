@@ -299,13 +299,9 @@
 				hBlurMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
 
 				params.saoBlurRadius = Math.floor( params.saoBlurRadius );
-				if(( prevStdDev !== params.saoBlurStdDev )||
-					( prevNumSamples !== params.saoBlurRadius )) {
-					THREE.BlurShaderUtils.configure( vBlurMaterial, params.saoBlurRadius, params.saoBlurStdDev, new THREE.Vector2( 0, 1 ) );
-					THREE.BlurShaderUtils.configure( hBlurMaterial, params.saoBlurRadius, params.saoBlurStdDev, new THREE.Vector2( 1, 0 ) );
-					prevStdDev = params.saoBlurStdDev;
-					prevNumSamples = params.saoBlurRadius;
-				}
+				THREE.BlurShaderUtils.configure( vBlurMaterial, params.saoBlurRadius, params.saoBlurStdDev, new THREE.Vector2( 0, 1 ) );
+				THREE.BlurShaderUtils.configure( hBlurMaterial, params.saoBlurRadius, params.saoBlurStdDev, new THREE.Vector2( 1, 0 ) );
+
 				renderer.setClearColor( 0x000000 );
 
 				var width = window.innerWidth || 1;
@@ -321,9 +317,9 @@
 
 				renderer.autoClear = false;
 				renderer.setClearColor( 0x000000 );
-				renderer.toneMapping = THREE.ReinhardToneMapping;
+			//	renderer.toneMapping = THREE.ReinhardToneMapping;
 
-				msaaEffect.renderPass( renderer, scene, camera, beautyRenderTarget, 1 );
+				msaaEffect.renderPass( renderer, scene, camera, null, 0 );
 
 				if( ! supportsDepthTextureExtension ) {
 
@@ -357,7 +353,7 @@
 
 				copyMaterial.uniforms[ 'tDiffuse' ].value = beautyRenderTarget.texture;
 				compositeMaterial.uniforms[ 'tForeground' ].value = saoRenderTarget.texture;
-				THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, "copy" );
+		//		THREE.EffectRenderer.renderPass( renderer, copyMaterial, null, 0x000000, 0.0, "copy" );
 				THREE.EffectRenderer.renderPass( renderer, compositeMaterial, null, undefined, undefined, "modulate" );
 
 			}
