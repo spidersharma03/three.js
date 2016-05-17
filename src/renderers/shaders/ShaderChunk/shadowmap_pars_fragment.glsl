@@ -22,21 +22,21 @@
 	#endif
 
 	#if defined( SHADOWMAP_TYPE_PCSS )
-		#define LIGHT_WORLD_SIZE 0.005
+		#define LIGHT_WORLD_SIZE 1.0
 		#define LIGHT_FRUSTUM_WIDTH 3.75
-		#define LIGHT_SIZE_UV (LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH) 
+		#define LIGHT_SIZE_UV (LIGHT_WORLD_SIZE / LIGHT_FRUSTUM_WIDTH)
 		#define NEAR_PLANE 9.5
 		#define BLOCKER_SEARCH_NUM_SAMPLES 16
 		#define PCF_NUM_SAMPLES 16
 		vec2 poissonDisk[BLOCKER_SEARCH_NUM_SAMPLES];
-		
+
 		void initPoissonSamples()
 		{
 			poissonDisk[0] = vec2(-0.94201624, -0.39906216 );
 			poissonDisk[1] = vec2( 0.94558609, -0.76890725 );
 			poissonDisk[2] =  vec2( -0.094184101, -0.92938870 );
 			poissonDisk[3] =  vec2( 0.34495938, 0.29387760 );
-	        poissonDisk[4] = vec2( -0.91588581, 0.45771432 );
+	    poissonDisk[4] = vec2( -0.91588581, 0.45771432 );
 			poissonDisk[5] = vec2( -0.81544232, -0.87912464 );
 			poissonDisk[6] =  vec2( -0.38277543, 0.27676845 );
 			poissonDisk[7] =  vec2( 0.97484398, 0.75648379 );
@@ -47,15 +47,15 @@
 			poissonDisk[12] =  vec2( -0.24188840, 0.99706507 );
 			poissonDisk[13] =  vec2( -0.81409955, 0.91437590 );
 			poissonDisk[14] =  vec2( 0.19984126, 0.78641367 );
-			poissonDisk[15] =  vec2( 0.14383161, -0.14100790 ); 
+			poissonDisk[15] =  vec2( 0.14383161, -0.14100790 );
 		}
-		
+
 		float PenumbraSize(float zReceiver, float zBlocker) //Parallel plane estimation
 		{
 			return (zReceiver - zBlocker) / zBlocker;
 		}
 
-		void FindBlocker(sampler2D shadowMap, out float avgBlockerDepth, out float numBlockers, vec2 uv, float zReceiver )
+		void FindBlocker(sampler2D shadowMap, vec2 shadowMapSize, out float avgBlockerDepth, out float numBlockers, vec2 uv, float zReceiver )
 		{
 			//This uses similar triangles to compute what
 			//area of the shadow map we should search
@@ -64,7 +64,7 @@
 			numBlockers = 0.0;
 			for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i )
 			{
-				float shadowMapDepth = unpackRGBAToDepth(texture2D(shadowMap, uv + poissonDisk[i] * searchWidth));
+				float shadowMapDepth = unpackRGBAToDepth(texture2D(shadowMap, uv + poissonDisk[i]/shadowMapSize * searchWidth));
 				if ( shadowMapDepth < zReceiver ) {
 					blockerSum += shadowMapDepth;
 					numBlockers = numBlockers + 1.0;
@@ -73,28 +73,28 @@
 			avgBlockerDepth = blockerSum / numBlockers;
 		}
 
-		float PCF_Filter(sampler2D shadowMap, vec2 uv, float zReceiver, float filterRadiusUV )
+		float PCF_Filter(sampler2D shadowMap, vec2 shadowMapSize, vec2 uv, float zReceiver, float filterRadiusUV )
 		{
 			float sum = 0.0;
 			for ( int i = 0; i < PCF_NUM_SAMPLES; ++i )
 			{
-				vec2 offset = poissonDisk[i] * filterRadiusUV;
+				vec2 offset = poissonDisk[i]/shadowMapSize * filterRadiusUV;
 				float depth = unpackRGBAToDepth(texture2D(shadowMap, uv + offset));
-				sum += (zReceiver <= depth) ? 1.0 : 0.0;
+				sum += (zReceiver <= depth) ? 1.0 : 0.5;
 			}
 			return sum / float(PCF_NUM_SAMPLES);
 		}
 
-		float PCSS ( sampler2D shadowMap, vec4 coords )
+		float PCSS ( sampler2D shadowMap, vec2 shadowMapSize, vec4 coords )
 		{
 			vec2 uv = coords.xy;
 			float zReceiver = coords.z; // Assumed to be eye-space z in this code
-			
+
 			initPoissonSamples();
 			// STEP 1: blocker search
 			float avgBlockerDepth = 0.0;
 			float numBlockers = 0.0;
-			FindBlocker( shadowMap, avgBlockerDepth, numBlockers, uv, zReceiver );
+			FindBlocker( shadowMap, shadowMapSize, avgBlockerDepth, numBlockers, uv, zReceiver );
 			if( numBlockers < 1.0 )
 			//There are no occluders so early out (this saves filtering)
 				return 1.0;
@@ -103,8 +103,7 @@
 			float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV * NEAR_PLANE / coords.z;
 
 			// STEP 3: filtering
-			//return avgBlockerDepth;
-			return PCF_Filter( shadowMap, uv, zReceiver, filterRadiusUV );
+			return PCF_Filter( shadowMap, shadowMapSize, uv, zReceiver, filterRadiusUV );
 		}
 
 	#endif
@@ -197,7 +196,7 @@
 			) * ( 1.0 / 9.0 );
 
 		#elif defined( SHADOWMAP_TYPE_PCSS )
-		  return PCSS( shadowMap, shadowCoord);
+		  return PCSS( shadowMap, shadowMapSize, shadowCoord);
 		  return texture2DCompare( shadowMap, shadowCoord.xy, shadowCoord.z );
 
 		#else // no percentage-closer filtering:
