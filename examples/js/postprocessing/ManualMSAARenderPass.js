@@ -103,13 +103,14 @@ THREE.ManualMSAARenderPass.prototype = {
 			}
 
 			//console.log( 'writeBuffer', writeBuffer, 'readBuffer', readBuffer );
-			if( i <= ( jitterOffsets.length - 1 ) ) {
-				var jitter = Math.randon() * 0.5 / ( jitterOffsets.length ) - 0.25;
+			if( i < ( jitterOffsets.length - 1 ) ) {
+				var jitter = ( Math.random() * 2.0 - 1.0 ) * ( 0.125 / jitterOffsets.length );
 				jitterSum += jitter;
 				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length + jitter;
 			}
 			else {
-				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length;// - jitterSum;
+				console.log( 'jitterSum', jitterSum, i, jitterOffsets.length );
+				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length - jitterSum;
 			}
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 			THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, writeBuffer, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
