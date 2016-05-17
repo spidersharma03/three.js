@@ -10,39 +10,25 @@
 *
 */
 
-THREE.MSAAEffect = function ( params ) {
+THREE.MSAAEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 
-	this.params = params || { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat };
-	this.params.minFilter = THREE.NearestFilter;
-	this.params.maxFilter = THREE.NearestFilter;
+	optionalBuffers = optionalBuffers || {};
+	var width = beautyRenderTarget.width, height = beautyRenderTarget.height;
 
-  if ( ! this.sampleRenderTarget ) {
+	this.sampleLevel = 1;
 
-    this.sampleRenderTarget = new THREE.WebGLRenderTarget( 256, 256, this.params );
+	this.beautyRenderTarget = beautyRenderTarget; // not owned by MSAAEffect
+  this.sampleRenderTarget = optionalBuffers.sampleRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat }  );
 
-  }
+	if ( THREE.CompositeShader === undefined )	console.error( "THREE.MSAAEffect relies on THREE.CompositeShader" );
 
-	if ( THREE.CompositeShader === undefined ) {
+	this.materialComposite = new THREE.ShaderMaterial( THREE.CompositeShader );
+	this.materialComposite.uniforms = THREE.UniformsUtils.clone( this.materialComposite.uniforms );
+	this.materialComposite.premultipliedAlpha = true;
+	this.materialComposite.transparent = true;
+	this.materialComposite.blending = THREE.AdditiveBlending;
 
-		console.error( "THREE.ManualMSAARenderPass relies on THREE.CompositeShader" );
-
-	}
-
-	var compositeShader = THREE.CompositeShader;
-	this.compositeUniforms = THREE.UniformsUtils.clone( compositeShader.uniforms );
-
-	this.materialComposite = new THREE.ShaderMaterial(	{
-
-		uniforms: this.compositeUniforms,
-		vertexShader: compositeShader.vertexShader,
-		fragmentShader: compositeShader.fragmentShader,
-		premultipliedAlpha: true,
-		transparent: true,
-		blending: THREE.AdditiveBlending,
-		depthTest: false,
-		depthWrite: false
-
-	} );
+	this.setSize( width, height );
 
 };
 
@@ -53,10 +39,8 @@ THREE.MSAAEffect.prototype = {
 	dispose: function() {
 
 		if ( this.sampleRenderTarget ) {
-
 			this.sampleRenderTarget.dispose();
 			this.sampleRenderTarget = null;
-
 		}
 
 	},
@@ -68,15 +52,17 @@ THREE.MSAAEffect.prototype = {
 
 	},
 
-	renderPass: function( renderer, scene, camera, renderTarget, sampleLevel ) {
+	renderPass: function( renderer, scene, camera ) {
 
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = true;
 
-		var jitterOffsets = THREE.MSAAEffect.JitterVectors[ Math.max( 0, Math.min( sampleLevel, 5 ) ) ];
+		var jitterOffsets = THREE.MSAAEffect.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
 
 		this.materialComposite.uniforms[ "scale" ].value = 1.0 / ( jitterOffsets.length );
 		this.materialComposite.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+
+		var width = this.sampleRenderTarget.width, height = this.sampleRenderTarget.height;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
@@ -84,13 +70,13 @@ THREE.MSAAEffect.prototype = {
 			// only jitters perspective cameras.	TODO: add support for jittering orthogonal cameras
 			var jitterOffset = jitterOffsets[ i ];
 			if ( camera.setViewOffset ) {
-				camera.setViewOffset( this.sampleRenderTarget.width, this.sampleRenderTarget.height,
+				camera.setViewOffset( width, height,
 					jitterOffset[ 0 ] * 0.0625, jitterOffset[ 1 ] * 0.0625,   // 0.0625 = 1 / 16
-					this.sampleRenderTarget.width, this.sampleRenderTarget.height );
+					width, height );
 			}
 
 			renderer.render( scene, camera, this.sampleRenderTarget, true, 'msaa: sample #' + i );
-			THREE.EffectRenderer.renderPass( renderer, this.materialComposite, renderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
+			THREE.EffectRenderer.renderPass( renderer, this.materialComposite, this.beautyRenderTarget, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
 
 		}
 

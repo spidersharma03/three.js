@@ -11,7 +11,7 @@ THREE.EffectRenderer = function () {
 	return this;
 };
 
-THREE.EffectRenderer.verbose = false;
+THREE.EffectRenderer.verbose = true;
 
 THREE.EffectRenderer.getClearState = function ( renderer, optionalClearState ) {
 
@@ -89,20 +89,26 @@ THREE.EffectRenderer.renderPass = function ( renderer, passMaterial, renderTarge
 
 };
 
-THREE.EffectRenderer.renderCopyPass = function( renderer, source, opacity, renderTarget, clearColor, clearAlpha ) {
+THREE.EffectRenderer.renderCopy = function( renderer, source, opacity, renderTarget, clearColor, clearAlpha, renderName ) {
 
 	var self = THREE.EffectRenderer;
 
-	if( ! self.copyShader ) {
-		if ( THREE.CopyShader === undefined )
-			console.error( "THREE.EffectRenderer relies on THREE.CopyShader" );
+	if( ! self.copyMaterial ) {
+		if ( THREE.CopyShader === undefined )	console.error( "THREE.EffectRenderer relies on THREE.CopyShader" );
 
-		self.copyShader = new THREE.ShaderMaterial( THREE.CopyShader );
+		self.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
+		self.copyMaterial.uniforms = THREE.UniformsUtils.clone( self.copyMaterial.uniforms );
+		self.copyMaterial.premultipliedAlpha = false;
+		self.copyMaterial.transparent = false;
+		self.copyMaterial.depthTest = false;
+		self.copyMaterial.blending = THREE.NoBlending;
 	}
 
-	self.copyShader.tDiffuse = source;
-	self.copyShader.opacity = opacity;
+	self.copyMaterial.uniforms['tDiffuse'].value = source;
+	self.copyMaterial.uniforms['opacity'].value = opacity;
 
-	self.renderPass( renderer, er.copyShader, renderTarget, clearColor, clearAlpha );
+	//console.log( self.copyMaterial );
+
+	self.renderPass( renderer, self.copyMaterial, null, clearColor, clearAlpha, renderName + "(renderCopy)" );
 
 };
