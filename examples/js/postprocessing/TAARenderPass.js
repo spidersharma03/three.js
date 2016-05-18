@@ -72,8 +72,8 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 
 	if( this.accumulateIndex >= 0 && this.accumulateIndex < jitterOffsets.length ) {
 
-		this.copyUniforms[ "opacity" ].value = sampleWeight;
-		this.copyUniforms[ "tDiffuse" ].value = writeBuffer.texture;
+		this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = writeBuffer.texture;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		var numSamplesPerFrame = Math.pow( 2, this.sampleLevel );
@@ -104,14 +104,14 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 	var accumulationWeight = this.accumulateIndex * sampleWeight;
 
 	if( accumulationWeight > 0 ) {
-		this.copyUniforms[ "opacity" ].value = 1.0;
-		this.copyUniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
+		this.copyMaterial.uniforms[ "opacity" ].value = 1.0;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 		renderer.renderPass( this.copyMaterial, writeBuffer, true );
 	}
 
 	if( accumulationWeight < 1.0 ) {
-		this.copyUniforms[ "opacity" ].value = 1.0 - accumulationWeight;
-		this.copyUniforms[ "tDiffuse" ].value = this.holdRenderTarget.texture;
+		this.copyMaterial.uniforms[ "opacity" ].value = 1.0 - accumulationWeight;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.holdRenderTarget.texture;
 		renderer.renderPass( this.copyMaterial, writeBuffer, ( accumulationWeight === 0 ) );
 	}
 

@@ -21,21 +21,13 @@ THREE.ManualMSAARenderPass = function ( scene, camera ) {
 
 	if ( THREE.CopyShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CopyShader" );
 
-	var copyShader = THREE.CopyShader;
-	this.copyUniforms = THREE.UniformsUtils.clone( copyShader.uniforms );
-
-	this.copyMaterial = new THREE.ShaderMaterial(	{
-
-		uniforms: this.copyUniforms,
-		vertexShader: copyShader.vertexShader,
-		fragmentShader: copyShader.fragmentShader,
-		premultipliedAlpha: true,
-		transparent: true,
-		blending: THREE.AdditiveBlending,
-		depthTest: false,
-		depthWrite: false
-
-	} );
+	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
+	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
+	this.copyMaterial.blending = THREE.AdditiveBlending;
+	this.copyMaterial.premultipliedAlpha = true;
+	this.copyMaterial.transparent = true;
+	this.copyMaterial.depthTest = false;
+	this.copyMaterial.depthWrite = false;
 
 };
 
@@ -77,8 +69,8 @@ THREE.ManualMSAARenderPass.prototype = {
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-		this.copyUniforms[ "opacity" ].value = 1.0 / jitterOffsets.length;
-		this.copyUniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
+		this.copyMaterial.uniforms[ "opacity" ].value = 1.0 / jitterOffsets.length;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
