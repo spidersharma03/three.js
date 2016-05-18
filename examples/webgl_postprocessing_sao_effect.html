@@ -64,6 +64,7 @@
 
 			var group;
 			var params = {
+				msaaLevel: 4,
 				output: 0,
 				saoBias: 0.5,
 				saoIntensity: 0.25,
@@ -162,6 +163,7 @@
 					'Depth': 4,
 					'Normals': 3,
 				});
+				gui.add( params, "msaaLevel", 0, 4 );
 
 				gui.add( params, "saoBias", -1, 1 );
 				gui.add( params, "saoIntensity", 0, 1 );
