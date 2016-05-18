@@ -71,7 +71,6 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
 
-	console.log( 'saoPass', this );
 };
 
 THREE.SAOPass.prototype = {
@@ -165,8 +164,6 @@ THREE.SAOPass.prototype = {
 
 		var clearColor = renderer.getClearColor(), clearAlpha = renderer.getClearAlpha(), autoClear = renderer.autoClear;
 
-		console.log( 'this.outputOverride', this.outputOverride );
-
 		this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
 		this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
 		this.copyMaterial.blending = THREE.NormalBlending;
@@ -175,18 +172,7 @@ THREE.SAOPass.prototype = {
 
 		if( this.outputOverride === "beauty" ) return;
 
-		//renderer.render( this.scene, this.camera, writeBuffer );
-		//return;
-
-		/*this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
-		this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
-		this.copyMaterial.blending = THREE.NormalBlending;
-
-		renderer.renderPass( this.copyMaterial, writeBuffer, true );
-		return;*/
-
 		var depthPackingMode = 0;
-
 
 		if( ! depthTexture ) {
 
