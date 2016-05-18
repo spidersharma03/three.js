@@ -23,12 +23,6 @@ THREE.GlitchPass = function ( dt_size ) {
 		fragmentShader: shader.fragmentShader
 	} );
 
-	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-	this.scene  = new THREE.Scene();
-
-	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
-	this.scene.add( this.quad );
-
 	this.goWild = false;
 	this.curF = 0;
 	this.generateTrigger();
@@ -37,9 +31,7 @@ THREE.GlitchPass = function ( dt_size ) {
 
 THREE.GlitchPass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.GlitchPass.prototype = {
-
-	constructor: THREE.GlitchPass,
+Object.assign( THREE.GlitchPass.prototype, {
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
@@ -74,15 +66,14 @@ THREE.GlitchPass.prototype = {
 		}
 
 		this.curF ++;
-		this.quad.material = this.material;
 
 		if ( this.renderToScreen ) {
 
-			renderer.render( this.scene, this.camera );
+			renderer.renderPass( this.material );
 
 		} else {
 
-			renderer.render( this.scene, this.camera, writeBuffer, this.clear );
+			renderer.renderPass( this.material, writeBuffer, this.clear );
 
 		}
 
@@ -114,4 +105,4 @@ THREE.GlitchPass.prototype = {
 
 	}
 
-};
+} );

@@ -135,7 +135,7 @@ THREE.CinematicCamera.prototype.initPostProcessing = function () {
 
 		this.postprocessing.bokeh_uniforms[ "focalDepth" ].value = 0.1;
 
-		console.log( this.postprocessing.bokeh_uniforms[ "focalDepth" ].value );
+		//console.log( this.postprocessing.bokeh_uniforms[ "focalDepth" ].value );
 
 		this.postprocessing.bokeh_uniforms[ "znear" ].value = this.near;
 		this.postprocessing.bokeh_uniforms[ "zfar" ].value = this.near;
@@ -171,13 +171,11 @@ THREE.CinematicCamera.prototype.renderCinematic = function ( scene, renderer ) {
 
 		// Render scene into texture
 
-		scene.overrideMaterial = null;
 		renderer.render( scene, camera, this.postprocessing.rtTextureColor, true );
 
 		// Render depth into texture
 
-		scene.overrideMaterial = this.material_depth;
-		renderer.render( scene, camera, this.postprocessing.rtTextureDepth, true );
+		renderer.renderOverride( this.material_depth, scene, camera, this.postprocessing.rtTextureDepth, true );
 
 		// Render bokeh composite
 

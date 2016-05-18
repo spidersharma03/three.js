@@ -40,7 +40,6 @@
 		<script src="js/libs/dat.gui.min.js"></script>
 
 		<script src="js/shaders/CopyShader.js"></script>
-		<script src="js/shaders/CompositeShader.js"></script>
 
 		<script src="js/postprocessing/EffectComposer.js"></script>
 		<script src="js/postprocessing/EffectRenderer.js"></script>
@@ -155,7 +154,6 @@
 				var newWidth  = Math.floor( width / pixelRatio ) || 1;
 				var newHeight = Math.floor( height / pixelRatio ) || 1;
 				composer.setSize( newWidth, newHeight );
-				msaaRenderPass.setSize( newWidth, newHeight );
 
 			}
 

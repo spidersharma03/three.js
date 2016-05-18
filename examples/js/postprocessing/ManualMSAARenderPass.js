@@ -10,7 +10,7 @@
 *
 */
 
-THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
+THREE.ManualMSAARenderPass = function ( scene, camera ) {
 
 	THREE.Pass.call( this );
 
@@ -19,38 +19,21 @@ THREE.ManualMSAARenderPass = function ( scene, camera, params ) {
 
 	this.sampleLevel = 4; // specified as n, where the number of samples is 2^n, so sampleLevel = 4, is 2^4 samples, 16.
 
-	this.params = params || { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat };
-	this.params.minFilter = THREE.NearestFilter;
-	this.params.maxFilter = THREE.NearestFilter;
+	if ( THREE.CopyShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CopyShader" );
 
-	if ( THREE.CompositeShader === undefined ) {
-
-		console.error( "THREE.ManualMSAARenderPass relies on THREE.CompositeShader" );
-
-	}
-
-	var compositeShader = THREE.CompositeShader;
-
-	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
-	this.compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );
-	this.compositeMaterial.premultipliedAlpha = true;
-	this.compositeMaterial.transparent = true;
-	this.compositeMaterial.blending = THREE.AdditiveBlending;
-	this.compositeMaterial.depthTest = false;
-	this.compositeMaterial.depthWrite = false;
-
-	this.camera2 = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-	this.scene2	= new THREE.Scene();
-	this.quad2 = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), this.compositeMaterial );
-	this.scene2.add( this.quad2 );
+	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
+	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
+	this.copyMaterial.blending = THREE.AdditiveBlending;
+	this.copyMaterial.premultipliedAlpha = true;
+	this.copyMaterial.transparent = true;
+	this.copyMaterial.depthTest = false;
+	this.copyMaterial.depthWrite = false;
 
 };
 
 THREE.ManualMSAARenderPass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.ManualMSAARenderPass.prototype = {
-
-	constructor: THREE.ManualMSAARenderPass,
+Object.assign( THREE.ManualMSAARenderPass.prototype, {
 
 	dispose: function() {
 
@@ -63,10 +46,9 @@ THREE.ManualMSAARenderPass.prototype = {
 
 	},
 
-
 	setSize: function ( width, height ) {
 
-		if ( this.sampleRenderTarget ) { this.sampleRenderTarget.setSize( width, height ); }
+		if ( this.sampleRenderTarget )	this.sampleRenderTarget.setSize( width, height );
 
 	},
 
@@ -76,19 +58,20 @@ THREE.ManualMSAARenderPass.prototype = {
 
 		if ( ! this.sampleRenderTarget ) {
 
-			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height, this.params );
+			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 
 		}
+
+		var jitterOffsets = THREE.ManualMSAARenderPass.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
 
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-	//	console.log( this.sampleLevel, jitterOffsets.length );
+		this.copyMaterial.uniforms[ "opacity" ].value = 1.0 / jitterOffsets.length;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 
-		this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length;
-		this.compositeMaterial.uniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
-
-		var base = 1.0 / jitterOffsets.length;
+		var baseSampleWeight = 1.0 / jitterOffsets.length;
 		var jitterSum = 0;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
@@ -102,18 +85,20 @@ THREE.ManualMSAARenderPass.prototype = {
 					readBuffer.width, readBuffer.height );
 			}
 
-			//console.log( 'writeBuffer', writeBuffer, 'readBuffer', readBuffer );
+			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
+
+			var sampleWeight = baseSampleWeight;
 			if( i < ( jitterOffsets.length - 1 ) ) {
-				var jitter = ( Math.random() * 2.0 - 1.0 ) * ( 0.125 / jitterOffsets.length );
+				jitter = ( Math.random() * 2.0 - 1.0 ) * ( 0.125 / jitterOffsets.length );
+				sampleWeight += jitter;
 				jitterSum += jitter;
-				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length + jitter;
 			}
 			else {
-				console.log( 'jitterSum', jitterSum, i, jitterOffsets.length );
-				this.compositeMaterial.uniforms[ "scale" ].value = 1.0 / jitterOffsets.length - jitterSum;
+				sampleWeight -= jitterSum;
 			}
-			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			THREE.EffectRenderer.renderPass( renderer, this.compositeMaterial, writeBuffer, ( i === 0 ) ? renderer.getClearColor() : undefined, ( i === 0 ) ? renderer.getClearAlpha() : undefined, 'msaa: composite #' + i );
+
+			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
+			renderer.renderPass( this.copyMaterial, writeBuffer, (i === 0) );
 
 		}
 
@@ -124,7 +109,7 @@ THREE.ManualMSAARenderPass.prototype = {
 
 	},
 
-};
+} );
 
 // These jitter vectors are specified in integers because it is easier.
 // I am assuming a [-8,8) integer grid, but it needs to be mapped onto [-0.5,0.5)

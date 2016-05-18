@@ -25,37 +25,27 @@ THREE.DotScreenPass = function ( center, angle, scale ) {
 
 	} );
 
-	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-	this.scene  = new THREE.Scene();
-
-	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
-	this.scene.add( this.quad );
-
 };
 
 THREE.DotScreenPass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.DotScreenPass.prototype = {
-
-	constructor: THREE.DotScreenPass,
+Object.assign( THREE.DotScreenPass.prototype, {
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
 		this.uniforms[ "tDiffuse" ].value = readBuffer.texture;
 		this.uniforms[ "tSize" ].value.set( readBuffer.width, readBuffer.height );
 
-		this.quad.material = this.material;
-
 		if ( this.renderToScreen ) {
 
-			renderer.render( this.scene, this.camera );
+			renderer.renderPass( this.material );
 
 		} else {
 
-			renderer.render( this.scene, this.camera, writeBuffer, this.clear );
+			renderer.renderPass( this.material, writeBuffer, this.clear );
 
 		}
 
 	}
 
-};
+} );
