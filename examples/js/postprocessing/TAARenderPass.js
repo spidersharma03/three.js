@@ -73,8 +73,8 @@ Object.assign( THREE.TAARenderPass.prototype, {
 
 		if( this.accumulateIndex >= 0 && this.accumulateIndex < jitterOffsets.length ) {
 
-			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
-			this.copyMaterial.uniforms[ "tDiffuse" ].value = writeBuffer.texture;
+			this.compositeUniforms[ "scale" ].value = sampleWeight;
+			this.compositeUniforms[ "tForeground" ].value = writeBuffer.texture;
 
 			// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 			var numSamplesPerFrame = Math.pow( 2, this.sampleLevel );
@@ -91,7 +91,7 @@ Object.assign( THREE.TAARenderPass.prototype, {
 
 				renderer.render( this.scene, this.camera, writeBuffer, true );
 
-				renderer.renderPass( this.copyMaterial, this.sampleRenderTarget, ( this.accumulateIndex === 0 ) );
+				renderer.render( this.scene2, this.camera2, this.sampleRenderTarget, ( this.accumulateIndex === 0 ) );
 
 				this.accumulateIndex ++;
 				if( this.accumulateIndex >= jitterOffsets.length ) break;
@@ -105,15 +105,15 @@ Object.assign( THREE.TAARenderPass.prototype, {
 		var accumulationWeight = this.accumulateIndex * sampleWeight;
 
 		if( accumulationWeight > 0 ) {
-			this.copyMaterial.uniforms[ "opacity" ].value = 1.0;
-			this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
-			renderer.renderPass( this.copyMaterial, writeBuffer, true );
+			this.compositeUniforms[ "scale" ].value = 1.0;
+			this.compositeUniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
+			renderer.render( this.scene2, this.camera2, writeBuffer, true );
 		}
 
 		if( accumulationWeight < 1.0 ) {
-			this.copyMaterial.uniforms[ "opacity" ].value = 1.0 - accumulationWeight;
-			this.copyMaterial.uniforms[ "tDiffuse" ].value = this.holdRenderTarget.texture;
-			renderer.renderPass( this.copyMaterial, writeBuffer, ( accumulationWeight === 0 ) );
+			this.compositeUniforms[ "scale" ].value = 1.0 - accumulationWeight;
+			this.compositeUniforms[ "tForeground" ].value = this.holdRenderTarget.texture;
+			renderer.render( this.scene2, this.camera2, writeBuffer, ( accumulationWeight === 0 ) );
 		}
 
 		renderer.autoClear = autoClear;

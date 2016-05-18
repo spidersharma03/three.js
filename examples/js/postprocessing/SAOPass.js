@@ -75,8 +75,6 @@ THREE.SAOPass = function ( scene, camera ) {
 
 THREE.SAOPass.prototype = {
 
-	constructor: THREE.SAOEffect,
-
 	dispose: function() {
 
 		if( this.saoRenderTarget ) {
