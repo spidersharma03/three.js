@@ -35,8 +35,6 @@ THREE.ManualMSAARenderPass.prototype = Object.create( THREE.Pass.prototype );
 
 Object.assign( THREE.ManualMSAARenderPass.prototype, {
 
-	constructor: THREE.ManualMSAARenderPass,
-
 	dispose: function() {
 
 		if ( this.sampleRenderTarget ) {
@@ -48,10 +46,9 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 
 	},
 
-
 	setSize: function ( width, height ) {
 
-		if ( this.sampleRenderTarget ) { this.sampleRenderTarget.setSize( width, height ); }
+		if ( this.sampleRenderTarget )	this.sampleRenderTarget.setSize( width, height );
 
 	},
 

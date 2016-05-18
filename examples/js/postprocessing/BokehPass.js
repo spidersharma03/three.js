@@ -65,8 +65,6 @@ THREE.BokehPass.prototype = Object.create( THREE.Pass.prototype );
 
 Object.assign( THREE.BokehPass.prototype, {
 
-	constructor: THREE.BokehPass,
-
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
 		// Render depth into texture
