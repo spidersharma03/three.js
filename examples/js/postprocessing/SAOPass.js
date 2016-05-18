@@ -168,8 +168,6 @@ THREE.SAOPass.prototype = {
 
 		renderer.renderPass( this.copyMaterial, writeBuffer, true );
 
-		if( this.outputOverride === "beauty" ) return;
-
 		var depthPackingMode = 0;
 
 		if( ! depthTexture ) {
