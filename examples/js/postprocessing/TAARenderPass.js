@@ -72,8 +72,8 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 
 	if( this.accumulateIndex >= 0 && this.accumulateIndex < jitterOffsets.length ) {
 
-		this.compositeUniforms[ "scale" ].value = sampleWeight;
-		this.compositeUniforms[ "tForeground" ].value = writeBuffer.texture;
+		this.copyUniforms[ "opacity" ].value = sampleWeight;
+		this.copyUniforms[ "tDiffuse" ].value = writeBuffer.texture;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		var numSamplesPerFrame = Math.pow( 2, this.sampleLevel );
@@ -90,7 +90,7 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 
 			renderer.render( this.scene, this.camera, writeBuffer, true );
 
-			renderer.renderPass( this.compositeMaterial, this.sampleRenderTarget, ( this.accumulateIndex === 0 ) );
+			renderer.renderPass( this.copyMaterial, this.sampleRenderTarget, ( this.accumulateIndex === 0 ) );
 
 			this.accumulateIndex ++;
 			if( this.accumulateIndex >= jitterOffsets.length ) break;
@@ -104,15 +104,15 @@ THREE.TAARenderPass.prototype.render = function ( renderer, writeBuffer, readBuf
 	var accumulationWeight = this.accumulateIndex * sampleWeight;
 
 	if( accumulationWeight > 0 ) {
-		this.compositeUniforms[ "scale" ].value = 1.0;
-		this.compositeUniforms[ "tForeground" ].value = this.sampleRenderTarget.texture;
-		renderer.renderPass( this.compositeMaterial, writeBuffer, true );
+		this.copyUniforms[ "opacity" ].value = 1.0;
+		this.copyUniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
+		renderer.renderPass( this.copyMaterial, writeBuffer, true );
 	}
 
 	if( accumulationWeight < 1.0 ) {
-		this.compositeUniforms[ "scale" ].value = 1.0 - accumulationWeight;
-		this.compositeUniforms[ "tForeground" ].value = this.holdRenderTarget.texture;
-		renderer.renderPass( this.compositeMaterial, writeBuffer, ( accumulationWeight === 0 ) );
+		this.copyUniforms[ "opacity" ].value = 1.0 - accumulationWeight;
+		this.copyUniforms[ "tDiffuse" ].value = this.holdRenderTarget.texture;
+		renderer.renderPass( this.copyMaterial, writeBuffer, ( accumulationWeight === 0 ) );
 	}
 
 	renderer.autoClear = autoClear;
