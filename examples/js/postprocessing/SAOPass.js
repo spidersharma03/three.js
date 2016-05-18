@@ -244,7 +244,7 @@ THREE.SAOPass.prototype = {
 
 		this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
 		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
-		this.copyMaterial.blending = THREE.NormalBlending;
+		this.copyMaterial.blending = THREE.MultiplyBlending;
 
 		renderer.autoClear = false;
 		renderer.renderPass( this.copyMaterial, writeBuffer, false );
