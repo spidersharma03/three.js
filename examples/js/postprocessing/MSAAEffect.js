@@ -20,14 +20,6 @@ THREE.MSAAEffect = function ( renderer, beautyRenderTarget, optionalBuffers ) {
 	this.beautyRenderTarget = beautyRenderTarget; // not owned by MSAAEffect
   this.sampleRenderTarget = optionalBuffers.sampleRenderTarget || new THREE.WebGLRenderTarget( width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat }  );
 
-/*	if ( THREE.CompositeShader === undefined )	console.error( "THREE.MSAAEffect relies on THREE.CompositeShader" );
-
-	this.materialComposite = new THREE.ShaderMaterial( THREE.CompositeShader );
-	this.materialComposite.uniforms = THREE.UniformsUtils.clone( this.materialComposite.uniforms );
-	this.materialComposite.premultipliedAlpha = true;
-	this.materialComposite.transparent = true;
-	this.materialComposite.blending = THREE.AdditiveBlending;*/
-
 	this.setSize( width, height );
 
 };
