@@ -162,17 +162,18 @@ THREE.SAOPass.prototype = {
 		}
 
 		this.updateParameters( camera );
+
+		var clearColor = renderer.getClearColor(), clearAlpha = renderer.getClearAlpha(), autoClear = renderer.autoClear;
+
 		console.log( 'this.outputOverride', this.outputOverride );
-		if( this.outputOverride === "beauty" ) {
 
-			this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
-			this.copyMaterial.blending = THREE.NormalBlending;
+		this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
+		this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
+		this.copyMaterial.blending = THREE.NormalBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer, true );
-			return;
+		renderer.renderPass( this.copyMaterial, writeBuffer, true );
 
-		}
+		if( this.outputOverride === "beauty" ) return;
 
 		//renderer.render( this.scene, this.camera, writeBuffer );
 		//return;
@@ -189,19 +190,12 @@ THREE.SAOPass.prototype = {
 
 		if( ! depthTexture ) {
 
-			renderer.renderOverride( this.depthMaterial, this.scene, this.camera, writeBuffer );
+			renderer.setClearColor( 0xffffff );
+			renderer.setClearAlpha( 1.0 );
+			renderer.renderOverride( this.depthMaterial, this.scene, this.camera, this.depthRenderTarget, true );
 
 			depthTexture = this.depthRenderTarget.texture;
 			depthPackingMode = 1;
-
-			console.log( 'depthTexture', depthTexture );
-
-			this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = depthTexture;//readBuffer.texture;
-			this.copyMaterial.blending = THREE.NormalBlending;
-
-			//renderer.renderPass( this.copyMaterial, writeBuffer, true );
-			return;
 
 		}
 
@@ -209,9 +203,9 @@ THREE.SAOPass.prototype = {
 
 			this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = depthTexture;
-			this.copyMaterial.blending = THREE.NoBlending;
+			this.copyMaterial.blending = THREE.NormalBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer );
+			renderer.renderPass( this.copyMaterial, writeBuffer, true );
 			return;
 
 		}
@@ -241,17 +235,23 @@ THREE.SAOPass.prototype = {
 
 			this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
-			this.copyMaterial.blending = THREE.NoBlending;
+			this.copyMaterial.blending = THREE.NormalBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer );
+			renderer.renderPass( this.copyMaterial, writeBuffer, true );
 			return;
 
 		}
 
-		this.copyMaterial.uniforms[ 'opacity' ] = 1.0;
-		this.copyMaterial.uniforms[ 'tDiffuse' ] = this.saoRenderTarget.texture;
-		this.copyMaterial.blending = THREE.MultiplyBlending;
-		renderer.renderPass( this.copyMaterial, writeBuffer );
+		this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
+		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
+		this.copyMaterial.blending = THREE.NormalBlending;
+
+		renderer.autoClear = false;
+		renderer.renderPass( this.copyMaterial, writeBuffer, false );
+
+		renderer.autoClear = autoClear;
+		renderer.setClearColor( clearColor );
+		renderer.setClearAlpha( clearAlpha );
 
 	}
 
