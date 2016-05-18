@@ -38,7 +38,7 @@ THREE.SavePass = function ( renderTarget ) {
 
 THREE.SavePass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.SavePass.prototype = {
+Object.assign( THREE.SavePass.prototype, {
 
 	constructor: THREE.SavePass,
 
@@ -54,4 +54,4 @@ THREE.SavePass.prototype = {
 
 	}
 
-};
+} );

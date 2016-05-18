@@ -119,7 +119,7 @@ THREE.AdaptiveToneMappingPass = function ( adaptive, resolution ) {
 
 THREE.AdaptiveToneMappingPass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.AdaptiveToneMappingPass.prototype = {
+Object.assign( THREE.AdaptiveToneMappingPass.prototype, {
 
 	constructor: THREE.AdaptiveToneMappingPass,
 
@@ -307,4 +307,4 @@ THREE.AdaptiveToneMappingPass.prototype = {
 
 	}
 
-};
+} );

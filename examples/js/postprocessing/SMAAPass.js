@@ -100,7 +100,7 @@ THREE.SMAAPass = function ( width, height ) {
 
 THREE.SMAAPass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.SMAAPass.prototype = {
+Object.assign( THREE.SMAAPass.prototype, {
 
 	constructor: THREE.SMAAPass,
 
@@ -151,4 +151,4 @@ THREE.SMAAPass.prototype = {
 		return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEIAAAAhCAAAAABIXyLAAAAAOElEQVRIx2NgGAWjYBSMglEwEICREYRgFBZBqDCSLA2MGPUIVQETE9iNUAqLR5gIeoQKRgwXjwAAGn4AtaFeYLEAAAAASUVORK5CYII=';
 	}
 
-};
+} );

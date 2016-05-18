@@ -122,4 +122,4 @@ Object.assign( THREE.TAARenderPass.prototype, {
 
 	}
 
-} );
+});

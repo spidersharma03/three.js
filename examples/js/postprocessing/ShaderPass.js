@@ -34,7 +34,7 @@ THREE.ShaderPass = function( shader, textureID ) {
 
 THREE.ShaderPass.prototype = Object.create( THREE.Pass.prototype );
 
-THREE.ShaderPass.prototype = {
+Object.assign( THREE.ShaderPass.prototype, {
 
 	constructor: THREE.ShaderPass,
 
@@ -58,4 +58,4 @@ THREE.ShaderPass.prototype = {
 
 	}
 
-};
+} );
