@@ -18,6 +18,7 @@ THREE.ManualMSAARenderPass = function ( scene, camera ) {
 	this.camera = camera;
 
 	this.sampleLevel = 4; // specified as n, where the number of samples is 2^n, so sampleLevel = 4, is 2^4 samples, 16.
+	this.unbiased = true;
 
 	if ( THREE.CopyShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CopyShader" );
 
@@ -66,36 +67,36 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-		this.copyMaterial.uniforms[ "opacity" ].value = 1.0 / jitterOffsets.length;
-		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 
 		var baseSampleWeight = 1.0 / jitterOffsets.length;
-		var jitterSum = 0;
+		var roundingRange = 1 / 32;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
+
+		var width = readBuffer.width, height = readBuffer.height;
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
 
 			// only jitters perspective cameras.	TODO: add support for jittering orthogonal cameras
 			var jitterOffset = jitterOffsets[i];
-			if ( this.camera.setViewOffset ) {
-				this.camera.setViewOffset( readBuffer.width, readBuffer.height,
+			if ( camera.setViewOffset ) {
+				camera.setViewOffset( width, height,
 					jitterOffset[ 0 ] * 0.0625, jitterOffset[ 1 ] * 0.0625,   // 0.0625 = 1 / 16
-					readBuffer.width, readBuffer.height );
+					width, height );
 			}
-
-			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 
 			var sampleWeight = baseSampleWeight;
-			if( i < ( jitterOffsets.length - 1 ) ) {
-				jitter = ( Math.random() * 2.0 - 1.0 ) * ( 0.125 / jitterOffsets.length );
-				sampleWeight += jitter;
-				jitterSum += jitter;
-			}
-			else {
-				sampleWeight -= jitterSum;
+			if( this.unbiased ) {
+				// the theory is that equal weights for each sample lead to an accumulation of rounding errors.
+				// The following equation varies the sampleWeight per sample so that it is uniformly distributed
+				// across a range of values whose rounding errors cancel each other out.
+				var uniformCenteredDistribution = ( -0.5 + ( i + 0.5 ) / jitterOffsets.length );
+				sampleWeight += roundingRange * uniformCenteredDistribution;
 			}
 
 			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
+
+			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 			renderer.renderPass( this.copyMaterial, writeBuffer, (i === 0) );
 
 		}
