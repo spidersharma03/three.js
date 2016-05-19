@@ -19,6 +19,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scale = 1;
 	this.kernelRadius = 25;
 	this.minResolution = 0;
+	this.maxDistance = 0.5;
 	this.blurEnabled = true;
 	this.blurRadius = 12;
 	this.blurStdDev = 6;
@@ -44,6 +45,8 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.depthMaterial.depthPacking = THREE.RGBADepthPacking;
 	this.depthMaterial.blending = THREE.NoBlending;
 
+	this.normalMaterial = new THREE.MeshNormalMaterial();
+
 	if ( THREE.SAOShader === undefined )	console.error( "THREE.SAOPass relies on THREE.SAOShader" );
 	if ( THREE.DepthLimitedBlurShader === undefined )	console.error( "THREE.SAOPass relies on THREE.DepthLimitedBlurShader" );
 	if ( THREE.CopyShader === undefined )	console.error( "THREE.SAOPass relies on THREE.CopyShader" );
@@ -52,7 +55,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.saoMaterial.uniforms = THREE.UniformsUtils.clone( this.saoMaterial.uniforms );
 	this.saoMaterial.defines = THREE.UniformsUtils.cloneDefines( this.saoMaterial.defines );
 	this.saoMaterial.defines[ 'DIFFUSE_TEXTURE' ] = 0;
-	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = 0;
+	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = 1;
 	this.saoMaterial.defines[ 'MODE' ] = 2;
 
 	// TODO: combine v and h blur materials together.
@@ -89,6 +92,10 @@ THREE.SAOPass.prototype = {
 			this.depthRenderTarget.dispose();
 			this.depthRenderTarget = null;
 		}
+		if( this.normalRenderTarget ) {
+			this.normalRenderTarget.dispose();
+			this.normalRenderTarget = null;
+		}
 
 	},
 
@@ -98,6 +105,7 @@ THREE.SAOPass.prototype = {
 		if( this.saoRenderTarget ) this.saoRenderTarget.setSize( width, height );
 		if( this.blurIntermediateRenderTarget ) this.blurIntermediateRenderTarget.setSize( width, height );
 		if( this.depthRenderTarget ) this.depthRenderTarget.setSize( width, height );
+		if( this.normalRenderTarget ) this.normalRenderTarget.setSize( width, height );
 
 		this.saoMaterial.uniforms[ 'size' ].value.set( width, height );
 		this.vBlurMaterial.uniforms[ 'size' ].value.set( width, height );
@@ -112,6 +120,7 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.uniforms['scale'].value = this.scale;
 		this.saoMaterial.uniforms['kernelRadius'].value = this.kernelRadius;
 		this.saoMaterial.uniforms['minResolution'].value = this.minResolution;
+		this.saoMaterial.uniforms['maxDistance'].value = this.maxDistance;
 
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
@@ -158,6 +167,13 @@ THREE.SAOPass.prototype = {
 
 		}
 
+		if( ! this.normalRenderTarget ) {
+
+			this.normalRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat } );
+
+		}
+
 		this.updateParameters( this.camera );
 
 		var clearColor = renderer.getClearColor(), clearAlpha = renderer.getClearAlpha(), autoClear = renderer.autoClear;
@@ -192,8 +208,25 @@ THREE.SAOPass.prototype = {
 
 		}
 
+		renderer.setClearColor( new THREE.Color( 0.5, 0.5, 1.0 ) );
+		renderer.setClearAlpha( 1.0 );
+		renderer.renderOverride( this.normalMaterial, this.scene, this.camera, this.normalRenderTarget, true );
+		renderer.setClearColor( 0xffffff );
+
+		if( this.outputOverride === "normal" ) {
+
+			this.copyMaterial.uniforms[ 'opacity' ].value = 1.0;
+			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.normalRenderTarget.texture;
+			this.copyMaterial.blending = THREE.NormalBlending;
+
+			renderer.renderPass( this.copyMaterial, writeBuffer, true );
+			return;
+
+		}
+
 		this.saoMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 		this.saoMaterial.uniforms[ "tDepth" ].value = depthTexture;
+		this.saoMaterial.uniforms[ "tNormal" ].value = this.normalRenderTarget.texture;
 
 		renderer.renderPass( this.saoMaterial, this.saoRenderTarget ); // , 0xffffff, 0.0, "sao"
 

@@ -71,6 +71,7 @@
 				saoScale: 1,
 				saoKernelRadius: 25,
 				saoMinResolution: 0,
+				saoMaxDistance: 0.5,
 				saoBlur: true,
 				saoBlurRadius: 12,
 				saoBlurStdDev: 6,
@@ -175,6 +176,7 @@
 				gui.add( params, "saoScale", 0, 10 );
 				gui.add( params, "saoKernelRadius", 1, 100 );
 				gui.add( params, "saoMinResolution", 0, 1 );
+				gui.add( params, "saoMaxDistance", 0, 1 );
 				gui.add( params, "saoBlur" );
 				gui.add( params, "saoBlurRadius", 0, 200 );
 				gui.add( params, "saoBlurStdDev", 0.5, 150 );
@@ -182,7 +184,8 @@
 				gui.add( params, "saoOutput", {
 					'Default': 0,
 					'Depth': 1,
-					'SAO': 2
+					'SAO': 2,
+					'Normal': 3
 				});
 
 				window.addEventListener( 'resize', onWindowResize, false );
@@ -220,6 +223,7 @@
 				saoPass.scale = params.saoScale;
 				saoPass.kernelRadius = params.saoKernelRadius;
 				saoPass.minResolution = params.saoMinResolution;
+				saoPass.maxDistance = params.saoMaxDistance;
 				saoPass.blurEnabled = params.saoBlur;
 				saoPass.blurRadius = params.saoBlurRadius;
 				saoPass.blurStdDev = params.saoBlurStdDev;
@@ -228,6 +232,7 @@
 				switch( params.saoOutput ) {
 					case '1': saoPass.outputOverride = "depth"; break;
 					case '2': saoPass.outputOverride = "sao"; break;
+					case '3': saoPass.outputOverride = "normal"; break;
 					default: saoPass.outputOverride = null; break;
 				}
 

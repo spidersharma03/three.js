@@ -40,6 +40,7 @@ THREE.SAOShader = {
 		"bias":         { type: "f", value: 0.5 },
 
 		"minResolution": { type: "f", value: 0.0 },
+		"maxDistance": { type: "f", value: 10.0 },
 		"kernelRadius": { type: "f", value: 100.0 },
 		"randomSeed":   { type: "f", value: 0.0 }
 	},
@@ -85,6 +86,7 @@ THREE.SAOShader = {
 		"uniform float bias;",
 		"uniform float kernelRadius;",
 		"uniform float minResolution;",
+		"uniform float maxDistance;",
 		"uniform vec2 size;",
 		"uniform float randomSeed;",
 
@@ -149,7 +151,7 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance = length( viewDelta );",
 			"float scaledScreenDistance = scaleDividedByCameraFar * viewDistance;",
-			"return max(0.0, (dot(centerViewNormal, viewDelta) - minResolutionMultipliedByCameraFar) / scaledScreenDistance - bias) / (1.0 + pow2( scaledScreenDistance ) );",
+			"return mix( max(0.0, (dot(centerViewNormal, viewDelta) - minResolutionMultipliedByCameraFar) / scaledScreenDistance - bias) / (1.0 + pow2( viewDistance ) ), 0.0, smoothstep( viewDistance, 0.0, maxDistance ) );",
 
 		"}",
 
