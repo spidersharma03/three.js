@@ -67,7 +67,6 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-
 		var baseSampleWeight = 1.0 / jitterOffsets.length;
 		var roundingRange = 1 / 32;
 		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
