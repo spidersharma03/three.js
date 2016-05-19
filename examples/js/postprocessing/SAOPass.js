@@ -158,7 +158,7 @@ THREE.SAOPass.prototype = {
 
 		}
 
-		this.updateParameters( camera );
+		this.updateParameters( this.camera );
 
 		var clearColor = renderer.getClearColor(), clearAlpha = renderer.getClearAlpha(), autoClear = renderer.autoClear;
 
