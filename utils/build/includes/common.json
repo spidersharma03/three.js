@@ -258,5 +258,13 @@
 	"src/renderers/webgl/plugins/SpritePlugin.js",
 	"src/Three.Legacy.js",
 	"examples/js/pmrem/PMREMGenerator.js",
-	"examples/js/pmrem/PMREMCubeUVPacker.js"
+	"examples/js/pmrem/PMREMCubeUVPacker.js",
+	"examples/js/shaders/CopyShader.js",
+	"examples/js/shaders/BlurShader.js",
+	"examples/js/shaders/DepthLimitedBlurShader.js",
+	"examples/js/shaders/SAOShader.js",
+	"examples/js/postprocessing/EffectComposer.js",
+	"examples/js/postprocessing/MaskPass.js",
+	"examples/js/postprocessing/ShaderPass.js",
+	"examples/js/postprocessing/ManualMSAARenderPass.js"
 ]
