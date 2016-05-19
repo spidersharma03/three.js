@@ -94,7 +94,7 @@ Object.assign( THREE.TAARenderPass.prototype, {
 				if( this.accumulateIndex >= jitterOffsets.length ) break;
 			}
 
-			if ( this.camera.setViewOffset ) this.camera.view = null;
+			if ( this.camera.clearViewOffset ) this.camera.clearViewOffset();
 			
 		}
 
