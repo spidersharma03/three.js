@@ -266,5 +266,6 @@
 	"examples/js/postprocessing/EffectComposer.js",
 	"examples/js/postprocessing/MaskPass.js",
 	"examples/js/postprocessing/ShaderPass.js",
+	"examples/js/postprocessing/SAOPass.js",
 	"examples/js/postprocessing/ManualMSAARenderPass.js"
 ]
