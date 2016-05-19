@@ -19,11 +19,10 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scale = 1;
 	this.kernelRadius = 25;
 	this.minResolution = 0;
-	this.maxDistance = 0.5;
+	this.maxDistance = 0.02;
 	this.blurEnabled = true;
 	this.blurRadius = 12;
 	this.blurStdDev = 6;
-	this.blurDepthCutoff = 0.01;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 
 	/*
@@ -120,14 +119,15 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.uniforms['scale'].value = this.scale;
 		this.saoMaterial.uniforms['kernelRadius'].value = this.kernelRadius;
 		this.saoMaterial.uniforms['minResolution'].value = this.minResolution;
-		this.saoMaterial.uniforms['maxDistance'].value = this.maxDistance;
+
+		var depthCutoff = this.maxDistance * ( camera.far - camera.near );
+
+		this.saoMaterial.uniforms['maxDistance'].value = depthCutoff;
 
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
 		this.saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
 		this.saoMaterial.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
-
-		var depthCutoff = this.blurDepthCutoff * ( camera.far - camera.near );
 
 		this.vBlurMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
 		this.vBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
