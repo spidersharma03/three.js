@@ -118,5 +118,5 @@ Object.assign( THREE.TAARenderPass.prototype, {
 		renderer.autoClear = autoClear;
 
 	}
-	
+
 });
