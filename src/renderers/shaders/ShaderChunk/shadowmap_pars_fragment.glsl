@@ -108,7 +108,7 @@
 			// STEP 2: penumbra size
 			float avgBlockerDepthLight = ZClipToZLight(avgBlockerDepth);
 			float penumbraRatio = PenumbraSize(zReceiverLight, avgBlockerDepthLight);
-			float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV * NEAR_PLANE / zReceiverLight;
+			float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV * LIGHT_NEAR_PLANE / zReceiverLight;
 
 			// STEP 3: filtering
 			return PCF_Filter( shadowMap, uv, zReceiverClip, filterRadiusUV );
