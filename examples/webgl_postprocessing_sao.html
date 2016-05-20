@@ -65,7 +65,7 @@
 
 			var group;
 			var params = {
-				renderToScren: false,
+				renderToScreen: false,
 				msaaEnabled: true,
 				msaaLevel: 4,
 				saoEnabled: true,
@@ -83,7 +83,7 @@
 
 			// Init gui
 			var gui = new dat.GUI();
-			gui.add( params, "renderToScren" );
+			gui.add( params, "renderToScreen" );
 			gui.add( params, "msaaEnabled" );
 			gui.add( params, "msaaLevel", 0, 4 );
 			gui.add( params, "saoEnabled" );
@@ -181,7 +181,7 @@
 				composer = new THREE.EffectComposer( renderer );
 
 				renderPass = new THREE.RenderPass( scene, camera );
-				//composer.addPass( renderPass );
+				composer.addPass( renderPass );
 
 				msaaRenderPass = new THREE.ManualMSAARenderPass( scene, camera );
 				composer.addPass( msaaRenderPass );

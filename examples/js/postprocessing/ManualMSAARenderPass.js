@@ -95,7 +95,7 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
 
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			renderer.renderPass( this.copyMaterial, writeBuffer, (i === 0) );
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, (i === 0) );
 
 		}
 

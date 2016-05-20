@@ -182,7 +182,7 @@ THREE.SAOPass.prototype = {
 		this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
 		this.copyMaterial.blending = THREE.NormalBlending;
 
-		renderer.renderPass( this.copyMaterial, writeBuffer, true );
+		if( ! this.renderToScreen ) renderer.renderPass( this.copyMaterial, writeBuffer, true );
 
 		var depthPackingMode = 0;
 
@@ -203,7 +203,7 @@ THREE.SAOPass.prototype = {
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = depthTexture;
 			this.copyMaterial.blending = THREE.NormalBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer, true );
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
 			return;
 
 		}
@@ -219,7 +219,7 @@ THREE.SAOPass.prototype = {
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.normalRenderTarget.texture;
 			this.copyMaterial.blending = THREE.NormalBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer, true );
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : this.renderToScreen ? null : writeBuffer, true );
 			return;
 
 		}
@@ -252,7 +252,7 @@ THREE.SAOPass.prototype = {
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
 			this.copyMaterial.blending = THREE.NormalBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer, true );
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
 			return;
 
 		}
@@ -262,7 +262,7 @@ THREE.SAOPass.prototype = {
 		this.copyMaterial.blending = THREE.MultiplyBlending;
 
 		renderer.autoClear = false;
-		renderer.renderPass( this.copyMaterial, writeBuffer, false );
+		renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : this.renderToScreen ? null : writeBuffer, false );
 
 		renderer.autoClear = autoClear;
 		renderer.setClearColor( clearColor );

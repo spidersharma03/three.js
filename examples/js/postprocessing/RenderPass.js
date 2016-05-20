@@ -37,7 +37,7 @@ Object.assign( THREE.RenderPass.prototype, {
 
 		}
 
-		renderer.renderOverride( this.overrideMaterial, this.scene, this.camera, readBuffer, this.clear );
+		renderer.renderOverride( this.overrideMaterial, this.scene, this.camera, this.renderToScreen ? null : readBuffer, this.clear );
 
 		if ( this.clearColor ) {
 
