@@ -12,7 +12,6 @@ THREE.SAOShader = {
 	defines: {
 		'NUM_SAMPLES': 7,
 		'NUM_RINGS': 4,
-		"MODE": 0,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
 		"DEPTH_PACKING": 1,
@@ -211,7 +210,7 @@ THREE.SAOShader = {
 			"float ambientOcclusion = getAmbientOcclusion( viewPosition );",
 
 			"gl_FragColor = getDefaultColor( vUv );",
-			"gl_FragColor.xyz *=  1.0 - ambientOcclusion;",
+			"gl_FragColor.xyz *= 1.0 - ambientOcclusion;",
 
 		"}"
 
