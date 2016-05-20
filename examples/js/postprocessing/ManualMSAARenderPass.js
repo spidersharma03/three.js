@@ -107,12 +107,14 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 			this.compositeMaterial.uniforms['tDestination'].value = writeBuffer.texture;
 			this.compositeMaterial.uniforms['opacityDestination'].value = 1.0;
 
+			this.copyMaterial.blending = THREE.NoBlending;
 			this.copyMaterial.uniforms[ "tDiffuse" ].value = this.accumulationRenderTarget.texture;
 			this.copyMaterial.uniforms[ "opacity" ].value = 1.0;
 
 		}
 		else {
 
+			this.copyMaterial.blending = THREE.AdditiveBlending;
 			this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 
 		}
