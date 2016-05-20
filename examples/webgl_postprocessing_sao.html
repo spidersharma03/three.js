@@ -65,6 +65,7 @@
 
 			var group;
 			var params = {
+				manualCompositing: false,
 				renderToScreen: false,
 				msaaEnabled: true,
 				msaaLevel: 4,
@@ -83,6 +84,7 @@
 
 			// Init gui
 			var gui = new dat.GUI();
+			gui.add( params, "manualCompositing" );
 			gui.add( params, "renderToScreen" );
 			gui.add( params, "msaaEnabled" );
 			gui.add( params, "msaaLevel", 0, 4 );
@@ -220,8 +222,14 @@
 				group.rotation.x = timer * 0.0002;
 				group.rotation.y = timer * 0.0001;
 
+				if( params.manualCompositing ) params.renderToScreen = false;
+
+				msaaRenderPass.manualCompositing = params.manualCompositing;
+				saoPass.manualCompositing = params.manualCompositing;
+
 				renderPass.renderToScreen = params.renderToScreen;
 				msaaRenderPass.renderToScreen = params.renderToScreen;
+
 				saoPass.renderToScreen = params.renderToScreen;
 				copyPass.enabled = ! params.renderToScreen;
 
