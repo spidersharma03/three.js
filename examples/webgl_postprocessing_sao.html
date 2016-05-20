@@ -41,6 +41,7 @@
 		<script src="js/shaders/SAOShader.js"></script>
     <script src="js/postprocessing/EffectComposer.js"></script>
     <script src="js/postprocessing/MaskPass.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
     <script src="js/postprocessing/SAOPass.js"></script>
     <script src="js/postprocessing/ShaderPass.js"></script>
 		<script src="js/postprocessing/ManualMSAARenderPass.js"></script>
@@ -64,6 +65,8 @@
 
 			var group;
 			var params = {
+				renderToScren: false,
+				msaaEnabled: true,
 				msaaLevel: 4,
 				saoEnabled: true,
 				saoBias: 0.5,
@@ -77,6 +80,28 @@
 				saoBlurStdDev: 6,
 				saoOutput: 0
 			}
+
+			// Init gui
+			var gui = new dat.GUI();
+			gui.add( params, "renderToScren" );
+			gui.add( params, "msaaEnabled" );
+			gui.add( params, "msaaLevel", 0, 4 );
+			gui.add( params, "saoEnabled" );
+			gui.add( params, "saoBias", -1, 1 );
+			gui.add( params, "saoIntensity", 0, 1 );
+			gui.add( params, "saoScale", 0, 10 );
+			gui.add( params, "saoKernelRadius", 1, 100 );
+			gui.add( params, "saoMinResolution", 0, 1 );
+			gui.add( params, "saoMaxDistance", 0, 0.5 );
+			gui.add( params, "saoBlur" );
+			gui.add( params, "saoBlurRadius", 0, 200 );
+			gui.add( params, "saoBlurStdDev", 0.5, 150 );
+			gui.add( params, "saoOutput", {
+				'Default': 0,
+				'Depth': 1,
+				'SAO': 2,
+				'Normal': 3
+			});
 
 			var supportsDepthTextureExtension = false;
 			var isWebGL2 = false;
@@ -155,6 +180,9 @@
 
 				composer = new THREE.EffectComposer( renderer );
 
+				renderPass = new THREE.RenderPass( scene, camera );
+				//composer.addPass( renderPass );
+
 				msaaRenderPass = new THREE.ManualMSAARenderPass( scene, camera );
 				composer.addPass( msaaRenderPass );
 
@@ -164,27 +192,6 @@
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
 				copyPass.renderToScreen = true;
 				composer.addPass( copyPass );
-
-				// Init gui
-				var gui = new dat.GUI();
-				gui.add( params, "msaaLevel", 0, 4 );
-
-				gui.add( params, "saoEnabled" );
-				gui.add( params, "saoBias", -1, 1 );
-				gui.add( params, "saoIntensity", 0, 1 );
-				gui.add( params, "saoScale", 0, 10 );
-				gui.add( params, "saoKernelRadius", 1, 100 );
-				gui.add( params, "saoMinResolution", 0, 1 );
-				gui.add( params, "saoMaxDistance", 0, 0.5 );
-				gui.add( params, "saoBlur" );
-				gui.add( params, "saoBlurRadius", 0, 200 );
-				gui.add( params, "saoBlurStdDev", 0.5, 150 );
-				gui.add( params, "saoOutput", {
-					'Default': 0,
-					'Depth': 1,
-					'SAO': 2,
-					'Normal': 3
-				});
 
 				window.addEventListener( 'resize', onWindowResize, false );
 			}
@@ -212,6 +219,14 @@
 				var timer = performance.now();
 				group.rotation.x = timer * 0.0002;
 				group.rotation.y = timer * 0.0001;
+
+				renderPass.renderToScreen = params.renderToScreen;
+				msaaRenderPass.renderToScreen = params.renderToScreen;
+				saoPass.renderToScreen = params.renderToScreen;
+				copyPass.enabled = ! params.renderToScreen;
+
+				renderPass.enabled = ! params.msaaEnabled;
+				msaaRenderPass.enabled = params.msaaEnabled;
 
 				msaaRenderPass.sampleLevel = Math.round( params.msaaLevel );
 
