@@ -55,7 +55,9 @@
 
 			var param = {
 				sampleLevel: 4,
-				unbiased: true
+				unbiased: true,
+				manualCompositing: false,
+				renderToScreen: false
 			};
 
 			init();
@@ -70,6 +72,8 @@
 				gui = new dat.GUI();
 
 				gui.add( param, "unbiased" );
+				gui.add( param, "manualCompositing" );
+				gui.add( param, "renderToScreen" );
 				gui.add( param, 'sampleLevel', {
 					'Level 0: 1 Sample': 0,
 					'Level 1: 2 Samples': 1,
@@ -199,6 +203,10 @@
 
 				msaaRenderPass.sampleLevel = param.sampleLevel;
 				msaaRenderPass.unbiased = param.unbiased;
+				msaaRenderPass.renderToScreen = param.renderToScreen;
+				msaaRenderPass.manualCompositing = param.manualCompositing;
+
+				copyPass.enabled = ! param.renderToScreen;
 
 				composer.render();
 				stats.end();
