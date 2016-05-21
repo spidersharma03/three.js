@@ -31,6 +31,20 @@
 		#define PCF_NUM_SAMPLES 16
 		vec2 poissonDisk[BLOCKER_SEARCH_NUM_SAMPLES];
 
+		float random(in vec3 seed, in float freq)
+		{
+		   // project seed on random constant vector
+		   float dt = dot(floor(seed * freq), vec3(53.1215, 21.1352, 9.1322));
+		   // return only fractional part
+		   return fract(sin(dt) * 2105.2354);
+		}
+
+		// returns random angle
+		float randomAngle(in vec3 seed, in float freq)
+		{
+		   return random(seed, freq) * 6.283285;
+		}
+
 		void initPoissonSamples()
 		{
 			poissonDisk[0] = vec2(-0.94201624, -0.39906216 );
@@ -55,21 +69,20 @@
 		{
 			return (zReceiver - zBlocker) / zBlocker;
 		}
-		
-		float ZClipToZLight(float zClip)
-		{
-			return LIGHT_FAR_PLANE*LIGHT_NEAR_PLANE / (LIGHT_FAR_PLANE - zClip*(LIGHT_FAR_PLANE - LIGHT_NEAR_PLANE));   
-		}
 
-		void FindBlocker(sampler2D shadowMap, out float avgBlockerDepth, out float numBlockers, vec2 uv, float zReceiverClip, float zRecieverLight )
+		void FindBlocker(sampler2D shadowMap, out float avgBlockerDepth, out float numBlockers, vec2 uv, float zReceiverClip, float zRecieverLight, vec3 shadowCoord )
 		{
 			//This uses similar triangles to compute what
 			//area of the shadow map we should search
 			float searchWidth = LIGHT_SIZE_UV * (zRecieverLight - LIGHT_NEAR_PLANE) / zRecieverLight;
 			float blockerSum = 0.0;
 			numBlockers = 0.0;
+			float angle = randomAngle(shadowCoord, 11150.0);
+			float s = sin(angle);
+			float c = cos(angle);
 			for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i )
 			{
+				vec2 rotatedOffset = vec2(poissonDisk[i].y * c + poissonDisk[i].x * s, poissonDisk[i].y * -s + poissonDisk[i].x * c);
 				float shadowMapDepth = unpackRGBAToDepth(texture2D(shadowMap, uv + poissonDisk[i] * searchWidth));
 				if ( shadowMapDepth < zReceiverClip ) {
 					blockerSum += shadowMapDepth;
@@ -79,14 +92,18 @@
 			avgBlockerDepth = blockerSum / numBlockers;
 		}
 
-		float PCF_Filter(sampler2D shadowMap, vec2 uv, float zReceiver, float filterRadiusUV )
+		float PCF_Filter(sampler2D shadowMap, vec2 uv, float zReceiver, float filterRadiusUV, vec3 shadowCoord )
 		{
 			float sum = 0.0;
+			float angle = randomAngle(shadowCoord, 11150.0);
+			float s = sin(angle);
+			float c = cos(angle);
 			for ( int i = 0; i < PCF_NUM_SAMPLES; ++i )
 			{
-				vec2 offset = poissonDisk[i] * filterRadiusUV;
+			  vec2 rotatedOffset = vec2(poissonDisk[i].x * c + poissonDisk[i].y * s, poissonDisk[i].x * -s + poissonDisk[i].y * c);
+				vec2 offset = rotatedOffset * filterRadiusUV;
 				float depth = unpackRGBAToDepth(texture2D(shadowMap, uv + offset));
-				sum += (zReceiver <= depth) ? 1.0 : 0.5;
+				sum += (zReceiver <= depth) ? 1.0 : 0.0;
 			}
 			return sum / float(PCF_NUM_SAMPLES);
 		}
@@ -95,23 +112,23 @@
 		{
 			vec2 uv = coords.xy;
 			float zReceiverClip = coords.z;
-			float zReceiverLight = ZClipToZLight(zReceiverClip);
+			float zReceiverLight = -perspectiveDepthToViewZ( zReceiverClip, LIGHT_NEAR_PLANE, LIGHT_FAR_PLANE );
 			initPoissonSamples();
 			// STEP 1: blocker search
 			float avgBlockerDepth = 0.0;
 			float numBlockers = 0.0;
-			FindBlocker( shadowMap, avgBlockerDepth, numBlockers, uv, zReceiverClip, zReceiverLight );
+			FindBlocker( shadowMap, avgBlockerDepth, numBlockers, uv, zReceiverClip, zReceiverLight, coords.xyz );
 			if( numBlockers < 1.0 )
 			//There are no occluders so early out (this saves filtering)
 				return 1.0;
-				
+
 			// STEP 2: penumbra size
-			float avgBlockerDepthLight = ZClipToZLight(avgBlockerDepth);
+			float avgBlockerDepthLight = -perspectiveDepthToViewZ( avgBlockerDepth, LIGHT_NEAR_PLANE, LIGHT_FAR_PLANE );
 			float penumbraRatio = PenumbraSize(zReceiverLight, avgBlockerDepthLight);
 			float filterRadiusUV = penumbraRatio * LIGHT_SIZE_UV * LIGHT_NEAR_PLANE / zReceiverLight;
 
 			// STEP 3: filtering
-			return PCF_Filter( shadowMap, uv, zReceiverClip, filterRadiusUV );
+			return PCF_Filter( shadowMap, uv, zReceiverClip, filterRadiusUV, coords.xyz );
 		}
 
 	#endif
