@@ -105,6 +105,8 @@ THREE.BlurShaderUtils = {
 
 	configure: function( material, kernelRadius, stdDev, uvIncrement ) {
 
+		kernelRadius = kernelRadius | 0;
+
 		if( ( material.defines[ 'KERNEL_RADIUS' ] !== kernelRadius ) ||
 			( ! material.uvIncrement.equals( uvIncrement ) ) || ( material.stdDev != stdDev ) ) {
 

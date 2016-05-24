@@ -17,12 +17,12 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.bias = 0.5;
 	this.intensity = 0.25;
 	this.scale = 1;
-	this.kernelRadius = 25;
+	this.kernelRadius = 20;
 	this.minResolution = 0;
 	this.maxDistance = 0.02;
 	this.blurEnabled = true;
-	this.blurRadius = 12;
-	this.blurStdDev = 6;
+	this.blurRadius = 7;
+	this.blurStdDev = 4;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.manualCompositing = false;
 
@@ -280,6 +280,7 @@ THREE.SAOPass.prototype = {
 			this.compositeMaterial.uniforms['opacitySource'].value = 1.0;
 			this.compositeMaterial.uniforms['tDestination'].value = readBuffer.texture;
 			this.compositeMaterial.uniforms['tSource'].value = this.saoRenderTarget.texture;
+			this.compositeMaterial.blending = THREE.NoBlending;
 
 			renderer.renderPass( this.compositeMaterial, this.blurIntermediateRenderTarget, true );
 
