@@ -16,7 +16,7 @@ THREE.SAOPass = function ( scene, camera ) {
 
 	this.bias = 0.5;
 	this.intensity = 0.25;
-	this.implicitNormals = true;
+	this.implicitNormals = false;
 	this.scale = 1;
 	this.kernelRadius = 20;
 	this.minResolution = 0;

@@ -332,10 +332,10 @@ THREE.SAODepthMinifyShader = {
 
 	 		"vec2 uv = vUv;",
 
-			"uv += ( round( vec2( rand( vUv * size ), rand( vUv * size + vec2( 0.333, 2.0 ) ) ) ) - 0.5 ) / size;",
+		//	"uv += ( round( vec2( rand( vUv * size ), rand( vUv * size + vec2( 0.333, 2.0 ) ) ) ) - 0.5 ) / size;",
 
 			// NOTE: no need for depth decoding if nearest interpolation is used.
-			"gl_FragColor = texture2D( tDepth, uv );",
+			"gl_FragColor = texture2D( tDepth, vUv );",
 
 		"}"
 
