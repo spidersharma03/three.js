@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - geometry - cube</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="../build/three.js"></script>
+		<script src="js/shaders/BilateralBlurShader.js"></script>
+
+		<script>
+
+			var camera, scene, sceneRenderTarget, renderer;
+			var renderTarget, renderTarget1;
+			var mesh;
+			var texture;
+			var bilateralBlurMaterial, bilateralBlurMaterial1;
+			init();
+			animate();
+
+			function init() {
+
+			    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+			    
+				sceneRenderTarget = new THREE.Scene();
+				scene = new THREE.Scene();
+				
+				//var texture = new THREE.TextureLoader().load( 'textures/normal/ninja/ao.jpg' );
+				texture = new THREE.TextureLoader().load( 'textures/brick_diffuse.jpg' );
+				
+				var width = 1024, height = 1024;
+				//var geometry = new THREE.BoxBufferGeometry( 200, 200, 200 );
+				bilateralBlurMaterial = new THREE.ShaderMaterial( THREE.BilateralBlurShader );
+				bilateralBlurMaterial.side = THREE.DoubleSide;
+				bilateralBlurMaterial.uniforms[ 'size' ].value.set( width, height );
+				bilateralBlurMaterial.uniforms[ 'tDiffuse' ].value = texture;
+				bilateralBlurMaterial.uniforms[ 'direction' ].value = new THREE.Vector2(0,1);
+				bilateralBlurMaterial.blending = THREE.NoBlending;
+				
+				//var material = new THREE.MeshBasicMaterial( { map: texture } );
+
+				//mesh = new THREE.Mesh( geometry, material );
+				mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null);
+				sceneRenderTarget.add( mesh );
+				
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+				
+				var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
+				renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+				renderTarget.generateMipmaps = false;
+				renderTarget1 = new THREE.WebGLRenderTarget( width, height, parameters );
+				renderTarget1.generateMipmaps = false;
+				renderTarget.minFilter = THREE.LinearFilter;
+				renderTarget1.minFilter = THREE.LinearFilter;
+				
+				bilateralBlurMaterial1 = bilateralBlurMaterial.clone();
+				bilateralBlurMaterial1.side = THREE.DoubleSide;
+				bilateralBlurMaterial1.uniforms[ 'size' ].value.set( width, height );
+				bilateralBlurMaterial1.uniforms[ 'tDiffuse' ].value = renderTarget;
+				bilateralBlurMaterial1.uniforms[ 'direction' ].value = new THREE.Vector2(1,0);
+				bilateralBlurMaterial1.blending = THREE.NoBlending;
+
+				//
+				var material = new THREE.MeshBasicMaterial( { map: renderTarget1 } );
+				var quad1 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+				scene.add( quad1 );
+				
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				
+				mesh.material = bilateralBlurMaterial;
+				mesh.material.uniforms[ 'tDiffuse' ].value = texture;
+				renderer.render( sceneRenderTarget, camera, renderTarget );
+				mesh.material = bilateralBlurMaterial1;
+				mesh.material.uniforms[ 'tDiffuse' ].value = renderTarget;
+				renderer.render( sceneRenderTarget, camera, renderTarget1 );
+				
+				renderer.render( scene, camera );
+			}
+
+		</script>
+
+	</body>
+</html>
