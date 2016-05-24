@@ -5,13 +5,49 @@
  *
  */
 
+THREE.ShaderChunk['sao'] = [
+
+"#include <packing>",
+
+"float getDepth( const in vec2 screenPosition ) {",
+
+	"#if DEPTH_PACKING == 1",
+		"return unpackRGBAToDepth( texture2D( tDepth, screenPosition ) );",
+	"#else",
+		"return texture2D( tDepth, screenPosition ).x;",
+	"#endif",
+
+"}",
+
+"vec4 setDepth( const in float depth ) {",
+
+	"#if DEPTH_PACKING == 1",
+		"return packDepthToRGBA( depth );",
+	"#else",
+		"return vec4( depth, 0, 0, 0 );",
+	"#endif",
+
+"}",
+
+"float getViewZ( const in float depth ) {",
+
+	"#if PERSPECTIVE_CAMERA == 1",
+		"return perspectiveDepthToViewZ( depth, cameraNear, cameraFar );",
+	"#else",
+		"return orthoDepthToViewZ( depth, cameraNear, cameraFar );",
+	"#endif",
+
+"}"
+
+].join( "\n" );
+
 THREE.SAOShader = {
 
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 7,
-		'NUM_RINGS': 4,
+		'NUM_SAMPLES': 9,
+		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
 		"DEPTH_PACKING": 1,
@@ -25,6 +61,10 @@ THREE.SAOShader = {
 	uniforms: {
 
 		"tDepth":       { type: "t", value: null },
+		"tDepth1":       { type: "t", value: null },
+		"tDepth2":       { type: "t", value: null },
+		"tDepth3":       { type: "t", value: null },
+
 		"tDiffuse":     { type: "t", value: null },
 		"tNormal":      { type: "t", value: null },
 		"size":         { type: "v2", value: new THREE.Vector2( 512, 512 ) },
@@ -69,7 +109,12 @@ THREE.SAOShader = {
 			"uniform sampler2D tDiffuse;",
 		"#endif",
 
+		"#define MAX_MIP_LEVEL 3",
+
 		"uniform sampler2D tDepth;",
+		"uniform sampler2D tDepth1;",
+		"uniform sampler2D tDepth2;",
+		"uniform sampler2D tDepth3;",
 
 		"#if NORMAL_TEXTURE == 1",
 			"uniform sampler2D tNormal;",
@@ -89,9 +134,8 @@ THREE.SAOShader = {
 		"uniform vec2 size;",
 		"uniform float randomSeed;",
 
-		// RGBA depth
 
-		"#include <packing>",
+		"#include <sao>",
 
 		"vec4 getDefaultColor( const in vec2 screenPosition ) {",
 
@@ -99,26 +143,6 @@ THREE.SAOShader = {
 				"return texture2D( tDiffuse, vUv );",
 			"#else",
 				"return vec4( 1.0 );",
-			"#endif",
-
-		"}",
-
-		"float getDepth( const in vec2 screenPosition ) {",
-
-			"#if DEPTH_PACKING == 1",
-				"return unpackRGBAToDepth( texture2D( tDepth, screenPosition ) );",
-			"#else",
-				"return texture2D( tDepth, screenPosition ).x;",
-			"#endif",
-
-		"}",
-
-		"float getViewZ( const in float depth ) {",
-
-			"#if PERSPECTIVE_CAMERA == 1",
-				"return perspectiveDepthToViewZ( depth, cameraNear, cameraFar );",
-			"#else",
-				"return orthoDepthToViewZ( depth, cameraNear, cameraFar );",
 			"#endif",
 
 		"}",
@@ -142,6 +166,36 @@ THREE.SAOShader = {
 
 		"}",
 
+		//"const float maximumScreenRadius = 10.0;",
+
+		"int getMipLevel( const in float screenSpaceRadius ) {",
+    	"return int( clamp( floor( log2( screenSpaceRadius / kernelRadius ) ), 0.0, 3.0 ) );",
+		"}",
+
+		"float getDepthMIP( const in vec2 screenPosition, const int mipLevel ) {",
+
+			"vec4 rawDepth;",
+			"if( mipLevel == 0 ) {",
+				"rawDepth = texture2D( tDepth, screenPosition );",
+			"}",
+			"else if( mipLevel == 1 ) {",
+				"rawDepth = texture2D( tDepth1, screenPosition );",
+			"}",
+			"else if( mipLevel == 2 ) {",
+				"rawDepth = texture2D( tDepth2, screenPosition );",
+			"}",
+			"else {",
+				"rawDepth = texture2D( tDepth3, screenPosition );",
+			"}",
+
+			"#if DEPTH_PACKING == 1",
+				"return unpackRGBAToDepth( rawDepth );",
+			"#else",
+				"return rawDepth.x;",
+			"#endif",
+
+		"}",
+
 		"float scaleDividedByCameraFar;",
 		"float minResolutionMultipliedByCameraFar;",
 
@@ -150,6 +204,7 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance = length( viewDelta );",
 			"float scaledScreenDistance = scaleDividedByCameraFar * viewDistance;",
+
 			"return mix( max(0.0, (dot(centerViewNormal, viewDelta) - minResolutionMultipliedByCameraFar) / scaledScreenDistance - bias) / (1.0 + pow2( viewDistance ) ), 0.0, smoothstep( viewDistance, 0.0, maxDistance ) );",
 
 		"}",
@@ -167,18 +222,20 @@ THREE.SAOShader = {
 
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float angle = rand( vUv + randomSeed ) * PI2;",
-			"vec2 radius = vec2( kernelRadius * INV_NUM_SAMPLES ) / size;",
-			"vec2 radiusStep = radius;",
+			"float radiusStep = INV_NUM_SAMPLES;",
+			"float radius = radiusStep;",
+			"vec2 radiusToOffset = vec2( kernelRadius ) / size;",
 
 			"float occlusionSum = 0.0;",
 			"float weightSum = 0.0;",
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"vec2 sampleUv = vUv + vec2( cos( angle ), sin( angle ) ) * radius;",
+				"vec2 sampleUv = vUv + vec2( cos( angle ), sin( angle ) ) * radius * radiusToOffset;",
 				"radius += radiusStep;",
 				"angle += ANGLE_STEP;",
 
-				"float sampleDepth = getDepth( sampleUv );",
+				"int depthMipLevel = getMipLevel( radius );",
+				"float sampleDepth = getDepthMIP( sampleUv, depthMipLevel );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
 					"continue;",
 				"}",
@@ -211,6 +268,191 @@ THREE.SAOShader = {
 
 			"gl_FragColor = getDefaultColor( vUv );",
 			"gl_FragColor.xyz *= 1.0 - ambientOcclusion;",
+
+		"}"
+
+	].join( "\n" )
+
+};
+
+// source: http://g3d.cs.williams.edu/websvn/filedetails.php?repname=g3d&path=%2FG3D10%2Fdata-files%2Fshader%2FAmbientOcclusion%2FAmbientOcclusion_minify.pix
+THREE.SAODepthMinifyShader = {
+
+	blending: THREE.NoBlending,
+
+	defines: {
+	//	"DEPTH_PACKING": 1,
+	//	"JITTERED_SAMPLING": 1
+	},
+
+	uniforms: {
+
+		"tDepth":	{ type: "t", value: null },
+		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
+
+	},
+
+	vertexShader: [
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+			"vUv = uv;",
+
+			"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join( "\n" ),
+
+	fragmentShader: [
+
+
+		"#include <common>",
+
+		"varying vec2 vUv;",
+
+		"uniform sampler2D tDepth;",
+		"uniform vec2 size;",
+
+		"vec2 round( const in vec2 a ) { return floor( a + 0.5 ); }",
+
+		"void main() {",
+
+/*		g3d_FragColor.mask = texelFetch(
+			CSZ_buffer,
+			clamp(
+				ssP * 2 + ivec2(ssP.y & 1, ssP.x & 1),
+				ivec2(0),
+				textureSize(CSZ_buffer, previousMIPNumber) - ivec2(1)),
+			previousMIPNumber).mask;
+
+	 }*/
+
+	 		"vec2 uv = vUv;",
+
+			"uv += ( round( vec2( rand( vUv * size ), rand( vUv * size + vec2( 0.333, 2.0 ) ) ) ) - 0.5 ) / size;",
+
+			// NOTE: no need for depth decoding if nearest interpolation is used.
+			"gl_FragColor = texture2D( tDepth, uv );",
+
+		"}"
+
+	].join( "\n" )
+
+};
+
+THREE.SAOBilaterialFilterShader = {
+
+	blending: THREE.NoBlending,
+
+	defines: {
+		"DEPTH_PACKING": 1,
+		"PERSPECTIVE_CAMERA": 1,
+		"KERNEL_SAMPLE_RADIUS": 4,
+	},
+
+	uniforms: {
+
+		"tAO":	{ type: "t", value: null },
+		"tDepth":	{ type: "t", value: null },
+		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
+
+		"depthCutoff": { type: "f", value: 1 },
+
+		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
+		"kernelScreenRadius": { type: "f", value: 5 },
+
+		"cameraNear":   { type: "f", value: 1 },
+		"cameraFar":    { type: "f", value: 100 }
+
+	},
+
+	vertexShader: [
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+			"vUv = uv;",
+
+			"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join( "\n" ),
+
+	fragmentShader: [
+
+		"#include <common>",
+
+		"varying vec2 vUv;",
+
+		"uniform sampler2D tAO;",
+		"uniform sampler2D tDepth;",
+		"uniform vec2 size;",
+
+		"uniform float depthCutoff;",
+
+		"uniform float cameraNear;",
+		"uniform float cameraFar;",
+
+		"uniform float kernelScreenRadius;",
+		"uniform vec2 kernelDirection;",
+
+		"#include <sao>",
+
+		"float getKernelWeight( const in int i ) {",
+
+			"return smoothstep( float( KERNEL_SAMPLE_RADIUS ), 0.0, float( i ) );",
+
+		"}",
+
+		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float weightSum ) {",
+
+			"float depth = getDepth( tapUv );",
+
+			"if( depth >= ( 1.0 - EPSILON ) ) {",
+				"return;",
+			"}",
+
+			"float tapViewZ = -getViewZ( depth );",
+			"float tapWeight = sampleWeight * smoothstep( depthCutoff, 0.0, abs( tapViewZ - centerViewZ ) );",
+
+			"aoSum += texture2D( tAO, tapUv ).r * tapWeight;",
+			"weightSum += tapWeight;",
+
+		"}",
+
+		"void main() {",
+
+			"float depth = getDepth( vUv );",
+			"if( depth >= ( 1.0 - EPSILON ) ) {",
+				"discard;",
+			"}",
+
+			"float centerViewZ = -getViewZ( depth );",
+
+			"float weightSum = getKernelWeight( 0 );",
+			"float aoSum = texture2D( tAO, vUv ).r;",
+
+			"vec2 uvIncrement = ( kernelDirection / size ) * kernelScreenRadius;",
+
+			"vec2 rTapUv = vUv, lTapUv = vUv;",
+			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
+
+				"float sampleWeight = getKernelWeight( i );",
+
+				"rTapUv += uvIncrement;",
+				"addTapInfluence( rTapUv, centerViewZ, sampleWeight, aoSum, weightSum );",
+
+				"lTapUv -= uvIncrement;",
+				"addTapInfluence( lTapUv, centerViewZ, sampleWeight, aoSum, weightSum );",
+
+			"}",
+
+			"gl_FragColor = vec4( aoSum / weightSum );",
 
 		"}"
 

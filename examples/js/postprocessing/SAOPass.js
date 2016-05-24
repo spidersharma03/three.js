@@ -16,6 +16,7 @@ THREE.SAOPass = function ( scene, camera ) {
 
 	this.bias = 0.5;
 	this.intensity = 0.25;
+	this.implicitNormals = true;
 	this.scale = 1;
 	this.kernelRadius = 20;
 	this.minResolution = 0;
@@ -48,24 +49,22 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.normalMaterial = new THREE.MeshNormalMaterial();
 
 	if ( THREE.SAOShader === undefined )	console.error( "THREE.SAOPass relies on THREE.SAOShader" );
-	if ( THREE.DepthLimitedBlurShader === undefined )	console.error( "THREE.SAOPass relies on THREE.DepthLimitedBlurShader" );
 	if ( THREE.CopyShader === undefined )	console.error( "THREE.SAOPass relies on THREE.CopyShader" );
+
+	this.depthMinifyMaterial = new THREE.ShaderMaterial( THREE.SAODepthMinifyShader );
+	this.depthMinifyMaterial.uniforms = THREE.UniformsUtils.clone( this.depthMinifyMaterial.uniforms );
+	this.depthMinifyMaterial.defines = THREE.UniformsUtils.cloneDefines( this.depthMinifyMaterial.defines );
 
 	this.saoMaterial = new THREE.ShaderMaterial( THREE.SAOShader );
 	this.saoMaterial.uniforms = THREE.UniformsUtils.clone( this.saoMaterial.uniforms );
 	this.saoMaterial.defines = THREE.UniformsUtils.cloneDefines( this.saoMaterial.defines );
 	this.saoMaterial.defines[ 'DIFFUSE_TEXTURE' ] = 0;
-	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = 1;
+	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = this.implicitNormals ? 0 : 1;
 	this.saoMaterial.defines[ 'MODE' ] = 2;
 
-	// TODO: combine v and h blur materials together.
-	this.vBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
-	this.vBlurMaterial.uniforms = THREE.UniformsUtils.clone( this.vBlurMaterial.uniforms );
-	this.vBlurMaterial.defines = THREE.UniformsUtils.cloneDefines( this.vBlurMaterial.defines );
-
-	this.hBlurMaterial = new THREE.ShaderMaterial( THREE.DepthLimitedBlurShader );
-	this.hBlurMaterial.uniforms = THREE.UniformsUtils.clone( this.hBlurMaterial.uniforms );
-	this.hBlurMaterial.defines = THREE.UniformsUtils.cloneDefines( this.hBlurMaterial.defines );
+	this.bilateralFilterMaterial = new THREE.ShaderMaterial( THREE.SAOBilaterialFilterShader );
+	this.bilateralFilterMaterial.uniforms = THREE.UniformsUtils.clone( this.bilateralFilterMaterial.uniforms );
+	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
 
 	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
@@ -119,11 +118,13 @@ THREE.SAOPass.prototype = {
 		if( this.saoRenderTarget ) this.saoRenderTarget.setSize( width, height );
 		if( this.blurIntermediateRenderTarget ) this.blurIntermediateRenderTarget.setSize( width, height );
 		if( this.depthRenderTarget ) this.depthRenderTarget.setSize( width, height );
+		if( this.depth1RenderTarget ) this.depth1RenderTarget.setSize( Math.ceil( width / 2 ), Math.ceil( height / 2 ) );
+		if( this.depth2RenderTarget ) this.depth2RenderTarget.setSize( Math.ceil( width / 4 ), Math.ceil( height / 4 ) );
+		if( this.depth3RenderTarget ) this.depth3RenderTarget.setSize( Math.ceil( width / 8 ), Math.ceil( height / 8 ) );
 		if( this.normalRenderTarget ) this.normalRenderTarget.setSize( width, height );
 
 		this.saoMaterial.uniforms[ 'size' ].value.set( width, height );
-		this.vBlurMaterial.uniforms[ 'size' ].value.set( width, height );
-		this.hBlurMaterial.uniforms[ 'size' ].value.set( width, height );
+		this.bilateralFilterMaterial.uniforms[ 'size' ].value.set( width, height );
 
 	},
 
@@ -144,48 +145,37 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
 		this.saoMaterial.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
 
-		this.vBlurMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
-		this.vBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
-		this.vBlurMaterial.uniforms[ "cameraNear" ].value = camera.near;
-
-		this.hBlurMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
-		this.hBlurMaterial.uniforms[ "cameraFar" ].value = camera.far;
-		this.hBlurMaterial.uniforms[ "cameraNear" ].value = camera.near;
-
-		THREE.BlurShaderUtils.configure( this.vBlurMaterial, this.blurRadius, this.blurStdDev, new THREE.Vector2( 0, 1 ) );
-		THREE.BlurShaderUtils.configure( this.hBlurMaterial, this.blurRadius, this.blurStdDev, new THREE.Vector2( 1, 0 ) );
-
+		this.bilateralFilterMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
+		this.bilateralFilterMaterial.uniforms[ "cameraFar" ].value = camera.far;
+		this.bilateralFilterMaterial.uniforms[ "cameraNear" ].value = camera.near;
 	},
 
 	render: function( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
+		var width = readBuffer.width, height = readBuffer.height;
 		var depthTexture = ( readBuffer.depthBuffer && readBuffer.depthTexture ) ? readBuffer.depthTexture : null;
 
 		if ( ! this.saoRenderTarget ) {
 
-			this.saoRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
-
-		}
-
-		if ( ! this.blurIntermediateRenderTarget ) {
-
-			this.blurIntermediateRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+			this.saoRenderTarget = new THREE.WebGLRenderTarget( width, height,
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+			this.blurIntermediateRenderTarget = new THREE.WebGLRenderTarget( width, height,
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+			this.depth1RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 2 ), Math.ceil( height / 2 ),
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+			this.depth2RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 4 ), Math.ceil( height / 4 ),
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+			this.depth3RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 8 ), Math.ceil( height / 8 ),
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+			this.normalRenderTarget = new THREE.WebGLRenderTarget( width, height,
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat } );
 
 		}
 
 		if( ! depthTexture && ! this.depthRenderTarget ) {
 
-			this.depthRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+			this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
 				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
-
-		}
-
-		if( ! this.normalRenderTarget ) {
-
-			this.normalRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat } );
 
 		}
 
@@ -215,6 +205,19 @@ THREE.SAOPass.prototype = {
 
 		}
 
+		this.depthMinifyMaterial.uniforms['tDepth'].value = depthTexture;
+		this.depthMinifyMaterial.uniforms['size'].value.set( width, height );
+		renderer.renderPass( this.depthMinifyMaterial, this.depth1RenderTarget, true );
+
+		this.depthMinifyMaterial.uniforms['tDepth'].value = this.depth1RenderTarget.texture;
+		this.depthMinifyMaterial.uniforms['size'].value.set( Math.ceil( width / 2 ), Math.ceil( height / 2 ) );
+		renderer.renderPass( this.depthMinifyMaterial, this.depth2RenderTarget, true );
+
+		this.depthMinifyMaterial.uniforms['tDepth'].value = this.depth2RenderTarget.texture;
+		this.depthMinifyMaterial.uniforms['size'].value.set( Math.ceil( width / 4 ), Math.ceil( height / 4 ) );
+		renderer.renderPass( this.depthMinifyMaterial, this.depth3RenderTarget, true );
+
+
 		if( this.outputOverride === "depth" ) {
 
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = depthTexture;
@@ -224,11 +227,42 @@ THREE.SAOPass.prototype = {
 			return;
 
 		}
+		if( this.outputOverride === "depth1" ) {
 
-		renderer.setClearColor( new THREE.Color( 0.5, 0.5, 1.0 ) );
-		renderer.setClearAlpha( 1.0 );
-		renderer.renderOverride( this.normalMaterial, this.scene, this.camera, this.normalRenderTarget, true );
-		renderer.setClearColor( 0xffffff );
+			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.depth1RenderTarget.texture;
+			this.copyMaterial.blending = THREE.NoBlending;
+
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
+			return;
+
+		}
+		if( this.outputOverride === "depth2" ) {
+
+			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.depth2RenderTarget.texture;
+			this.copyMaterial.blending = THREE.NoBlending;
+
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
+			return;
+
+		}
+		if( this.outputOverride === "depth3" ) {
+
+			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.depth3RenderTarget.texture;
+			this.copyMaterial.blending = THREE.NoBlending;
+
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
+			return;
+
+		}
+
+		if( ! this.implicitNormals ) {
+
+			renderer.setClearColor( new THREE.Color( 0.5, 0.5, 1.0 ) );
+			renderer.setClearAlpha( 1.0 );
+			renderer.renderOverride( this.normalMaterial, this.scene, this.camera, this.normalRenderTarget, true );
+			renderer.setClearColor( 0xffffff );
+
+		}
 
 		if( this.outputOverride === "normal" ) {
 
@@ -242,23 +276,28 @@ THREE.SAOPass.prototype = {
 
 		this.saoMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 		this.saoMaterial.uniforms[ "tDepth" ].value = depthTexture;
+		this.saoMaterial.uniforms[ "tDepth1" ].value = this.depth1RenderTarget.texture;
+		this.saoMaterial.uniforms[ "tDepth2" ].value = this.depth2RenderTarget.texture;
+		this.saoMaterial.uniforms[ "tDepth3" ].value = this.depth3RenderTarget.texture;
 		this.saoMaterial.uniforms[ "tNormal" ].value = this.normalRenderTarget.texture;
 
 		renderer.renderPass( this.saoMaterial, this.saoRenderTarget ); // , 0xffffff, 0.0, "sao"
 
 		if( this.blurEnabled ) {
 
-			this.vBlurMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
-			this.vBlurMaterial.uniforms[ "tDepth" ].value = depthTexture;
-			this.vBlurMaterial.uniforms[ "tDiffuse" ].value = this.saoRenderTarget.texture;
+			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
+			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
+			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
+			this.bilateralFilterMaterial.uniforms[ "kernelScreenRadius" ].value = this.blurRadius;
 
-			renderer.renderPass( this.vBlurMaterial, this.blurIntermediateRenderTarget ); // , 0xffffff, 0.0, "sao vBlur"
+			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 
-			this.hBlurMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
-			this.hBlurMaterial.uniforms[ "tDepth" ].value = depthTexture;
-			this.hBlurMaterial.uniforms[ "tDiffuse" ].value = this.blurIntermediateRenderTarget.texture;
+			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget ); // , 0xffffff, 0.0, "sao vBlur"
 
-			renderer.renderPass( this.hBlurMaterial, this.saoRenderTarget ); // 0xffffff, 0.0, "sao hBlur"
+			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.blurIntermediateRenderTarget.texture;
+			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 0, 1 );
+
+			renderer.renderPass( this.bilateralFilterMaterial, this.saoRenderTarget ); // 0xffffff, 0.0, "sao hBlur"
 
 		}
 
