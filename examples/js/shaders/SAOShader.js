@@ -405,7 +405,7 @@ THREE.SAOBilaterialFilterShader = {
 
 		"float getKernelWeight( const in int i ) {",
 
-			"return smoothstep( float( KERNEL_SAMPLE_RADIUS ), 0.0, float( i ) );",
+			"return smoothstep( float( KERNEL_SAMPLE_RADIUS ) + 1.0, 0.0, float( i ) );",
 
 		"}",
 
