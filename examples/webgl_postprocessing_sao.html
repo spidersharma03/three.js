@@ -76,7 +76,6 @@
 				saoMaxDistance: 0.02,
 				saoBlur: true,
 				saoBlurRadius: 2,
-				saoBlurStdDev: 6,
 				saoOutput: 0
 			}
 
@@ -95,7 +94,6 @@
 			gui.add( params, "saoMaxDistance", 0, 0.5 );
 			gui.add( params, "saoBlur" );
 			gui.add( params, "saoBlurRadius", 0, 200 );
-			gui.add( params, "saoBlurStdDev", 0.5, 150 );
 			gui.add( params, "saoOutput", {
 				'Default': 0,
 				'Depth': 1,
@@ -252,7 +250,6 @@
 				saoPass.maxDistance = params.saoMaxDistance;
 				saoPass.blurEnabled = params.saoBlur;
 				saoPass.blurRadius = params.saoBlurRadius;
-				saoPass.blurStdDev = params.saoBlurStdDev;
 
 				switch( params.saoOutput ) {
 					case '1': saoPass.outputOverride = "depth"; break;

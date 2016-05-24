@@ -16,14 +16,13 @@ THREE.SAOPass = function ( scene, camera ) {
 
 	this.bias = 0.5;
 	this.intensity = 0.25;
-	this.implicitNormals = false;
+	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.scale = 1;
 	this.kernelRadius = 20;
 	this.minResolution = 0;
 	this.maxDistance = 0.02;
 	this.blurEnabled = true;
 	this.blurRadius = 7;
-	this.blurStdDev = 4;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.manualCompositing = false;
 
