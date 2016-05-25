@@ -74,13 +74,9 @@ THREE.SAOShader = {
 		"cameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
 		"cameraInverseProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
 
-		"scale":        { type: "f", value: 1.0 },
 		"intensity":    { type: "f", value: 0.1 },
-		"bias":         { type: "f", value: 0.5 },
 
-		"minResolution": { type: "f", value: 0.0 },
-		"maxDistance": { type: "f", value: 10.0 },
-		"kernelRadius": { type: "f", value: 100.0 },
+		"occlusionSphereRadius": { type: "f", value: 100.0 },
 		"randomSeed":   { type: "f", value: 0.0 }
 	},
 
@@ -125,12 +121,8 @@ THREE.SAOShader = {
 		"uniform mat4 cameraProjectionMatrix;",
 		"uniform mat4 cameraInverseProjectionMatrix;",
 
-		"uniform float scale;",
 		"uniform float intensity;",
-		"uniform float bias;",
-		"uniform float kernelRadius;",
-		"uniform float minResolution;",
-		"uniform float maxDistance;",
+		"uniform float occlusionSphereRadius;",
 		"uniform vec2 size;",
 		"uniform float randomSeed;",
 
@@ -169,7 +161,7 @@ THREE.SAOShader = {
 		//"const float maximumScreenRadius = 10.0;",
 
 		"int getMipLevel( const in float screenSpaceRadius ) {",
-    	"return int( clamp( floor( log2( screenSpaceRadius / kernelRadius ) ), 0.0, 3.0 ) );",
+    	"return int( clamp( floor( log2( screenSpaceRadius ) - log2( occlusionSphereRadius ) + 3.0 ), 0.0, 3.0 ) );",
 		"}",
 
 		"float getDepthMIP( const in vec2 screenPosition, const int mipLevel ) {",
@@ -202,10 +194,10 @@ THREE.SAOShader = {
 		"float getOcclusion( const in vec3 centerViewPosition, const in vec3 centerViewNormal, const in vec3 sampleViewPosition ) {",
 
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
-			"float viewDistance = length( viewDelta );",
-			"float scaledScreenDistance = scaleDividedByCameraFar * viewDistance;",
+			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return mix( max(0.0, (dot(centerViewNormal, viewDelta) - minResolutionMultipliedByCameraFar) / scaledScreenDistance - bias) / (1.0 + pow2( viewDistance ) ), 0.0, smoothstep( viewDistance, 0.0, maxDistance ) );",
+			"return max( pow3( pow2( occlusionSphereRadius ) - viewDistance2 ), 0.0 ) *",
+				"max( ( dot( centerViewNormal, viewDelta ) - 0.001 * occlusionSphereRadius ) / ( viewDistance2 + 0.001 * occlusionSphereRadius ), 0.0 );",
 
 		"}",
 
@@ -216,18 +208,15 @@ THREE.SAOShader = {
 		"float getAmbientOcclusion( const in vec3 centerViewPosition ) {",
 
 			// precompute some variables require in getOcclusion.
-			"scaleDividedByCameraFar = scale / cameraFar;",
-			"minResolutionMultipliedByCameraFar = minResolution * cameraFar;",
 			"vec3 centerViewNormal = getViewNormal( centerViewPosition, vUv );",
 
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float angle = rand( vUv + randomSeed ) * PI2;",
 			"float radiusStep = INV_NUM_SAMPLES;",
 			"float radius = radiusStep;",
-			"vec2 radiusToOffset = vec2( kernelRadius ) / size;",
+			"vec2 radiusToOffset = vec2( occlusionSphereRadius ) / size / centerViewPosition.z;",
 
 			"float occlusionSum = 0.0;",
-			"float weightSum = 0.0;",
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
 				"vec2 sampleUv = vUv + vec2( cos( angle ), sin( angle ) ) * radius * radiusToOffset;",
@@ -243,13 +232,10 @@ THREE.SAOShader = {
 				"float sampleViewZ = getViewZ( sampleDepth );",
 				"vec3 sampleViewPosition = getViewPosition( sampleUv, sampleDepth, sampleViewZ );",
 				"occlusionSum += getOcclusion( centerViewPosition, centerViewNormal, sampleViewPosition );",
-				"weightSum += 1.0;",
 
 			"}",
 
-			"if( weightSum == 0.0 ) discard;",
-
-			"return occlusionSum * ( intensity / weightSum );",
+			"return occlusionSum * intensity * 5.0 / ( float( NUM_SAMPLES ) * pow( occlusionSphereRadius, 6.0 ) );",
 
 		"}",
 
@@ -267,7 +253,7 @@ THREE.SAOShader = {
 			"float ambientOcclusion = getAmbientOcclusion( viewPosition );",
 
 			"gl_FragColor = getDefaultColor( vUv );",
-			"gl_FragColor.xyz *= 1.0 - ambientOcclusion;",
+			"gl_FragColor.xyz *= max( 1.0 - ambientOcclusion, 0.0 );",
 
 		"}"
 
@@ -359,10 +345,8 @@ THREE.SAOBilaterialFilterShader = {
 		"tDepth":	{ type: "t", value: null },
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
-		"depthCutoff": { type: "f", value: 1 },
-
 		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
-		"kernelScreenRadius": { type: "f", value: 5 },
+		"occlusionSphereRadius": { type: "f", value: 50 },
 
 		"cameraNear":   { type: "f", value: 1 },
 		"cameraFar":    { type: "f", value: 100 }
@@ -393,12 +377,10 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform sampler2D tDepth;",
 		"uniform vec2 size;",
 
-		"uniform float depthCutoff;",
-
 		"uniform float cameraNear;",
 		"uniform float cameraFar;",
 
-		"uniform float kernelScreenRadius;",
+		"uniform float occlusionSphereRadius;",
 		"uniform vec2 kernelDirection;",
 
 		"#include <sao>",
@@ -418,7 +400,7 @@ THREE.SAOBilaterialFilterShader = {
 			"}",
 
 			"float tapViewZ = -getViewZ( depth );",
-			"float tapWeight = sampleWeight * smoothstep( depthCutoff, 0.0, abs( tapViewZ - centerViewZ ) );",
+			"float tapWeight = sampleWeight * smoothstep( occlusionSphereRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
 
 			"aoSum += texture2D( tAO, tapUv ).r * tapWeight;",
 			"weightSum += tapWeight;",
@@ -437,7 +419,7 @@ THREE.SAOBilaterialFilterShader = {
 			"float weightSum = getKernelWeight( 0 );",
 			"float aoSum = texture2D( tAO, vUv ).r;",
 
-			"vec2 uvIncrement = ( kernelDirection / size ) * kernelScreenRadius;",
+			"vec2 uvIncrement = ( kernelDirection / size ) * 2.0;",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
 			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",

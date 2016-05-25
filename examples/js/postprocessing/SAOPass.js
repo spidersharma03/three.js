@@ -18,11 +18,8 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.intensity = 0.25;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.scale = 1;
-	this.kernelRadius = 20;
-	this.minResolution = 0;
-	this.maxDistance = 0.02;
+	this.occlusionSphereRadius = 20;
 	this.blurEnabled = true;
-	this.blurRadius = 7;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.manualCompositing = false;
 
@@ -73,7 +70,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.copyMaterial.transparent = true;
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
-
+/*
 	if ( THREE.CompositeShader === undefined ) console.error( "THREE.SAOPass relies on THREE.CompositeShader" );
 
 	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
@@ -84,7 +81,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.compositeMaterial.premultipliedAlpha = true;
 	this.compositeMaterial.transparent = true;
 	this.compositeMaterial.depthTest = false;
-	this.compositeMaterial.depthWrite = false;
+	this.compositeMaterial.depthWrite = false;*/
 
 };
 
@@ -129,24 +126,16 @@ THREE.SAOPass.prototype = {
 
 	updateParameters: function( camera ) {
 
-		this.saoMaterial.uniforms['bias'].value = this.bias;
 		this.saoMaterial.uniforms['intensity'].value = this.intensity;
-		this.saoMaterial.uniforms['scale'].value = this.scale;
-		this.saoMaterial.uniforms['kernelRadius'].value = this.kernelRadius;
-		this.saoMaterial.uniforms['minResolution'].value = this.minResolution;
-
-		var depthCutoff = this.maxDistance * ( camera.far - camera.near );
-
-		this.saoMaterial.uniforms['maxDistance'].value = depthCutoff;
+		this.saoMaterial.uniforms['occlusionSphereRadius'].value = this.occlusionSphereRadius;
 
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
 		this.saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
 		this.saoMaterial.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
 
-		this.bilateralFilterMaterial.uniforms[ 'depthCutoff' ].value = depthCutoff;
-		this.bilateralFilterMaterial.uniforms[ "cameraFar" ].value = camera.far;
 		this.bilateralFilterMaterial.uniforms[ "cameraNear" ].value = camera.near;
+		this.bilateralFilterMaterial.uniforms[ "cameraFar" ].value = camera.far;
 	},
 
 	render: function( renderer, writeBuffer, readBuffer, delta, maskActive ) {
@@ -287,8 +276,7 @@ THREE.SAOPass.prototype = {
 			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
-			this.bilateralFilterMaterial.uniforms[ "kernelScreenRadius" ].value = this.blurRadius;
-
+			this.bilateralFilterMaterial.uniforms[ "occlusionSphereRadius" ].value = this.occlusionSphereRadius * 0.05;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 
 			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget ); // , 0xffffff, 0.0, "sao vBlur"

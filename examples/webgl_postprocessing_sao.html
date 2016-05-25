@@ -63,6 +63,7 @@
 
 			var group;
 			var params = {
+				scale: 1.0,
 				manualCompositing: false,
 				renderToScreen: true,
 				msaaEnabled: false,
@@ -71,9 +72,7 @@
 				saoBias: 0.5,
 				saoIntensity: 0.25,
 				saoScale: 1,
-				saoKernelRadius: 50,
-				saoMinResolution: 0,
-				saoMaxDistance: 0.02,
+				saoSphereRadius: 50,
 				saoBlur: true,
 				saoBlurRadius: 2,
 				saoOutput: 0
@@ -81,17 +80,14 @@
 
 			// Init gui
 			var gui = new dat.GUI();
+			gui.add( params, "scale", 0.01, 10 );
 			gui.add( params, "manualCompositing" );
 			gui.add( params, "renderToScreen" );
 			gui.add( params, "msaaEnabled" );
 			gui.add( params, "msaaLevel", 0, 4 );
 			gui.add( params, "saoEnabled" );
-			gui.add( params, "saoBias", -1, 1 );
 			gui.add( params, "saoIntensity", 0, 1 );
-			gui.add( params, "saoScale", 0, 10 );
-			gui.add( params, "saoKernelRadius", 1, 100 );
-			gui.add( params, "saoMinResolution", 0, 1 );
-			gui.add( params, "saoMaxDistance", 0, 0.5 );
+			gui.add( params, "saoSphereRadius", 1, 400 );
 			gui.add( params, "saoBlur" );
 			gui.add( params, "saoBlurRadius", 0, 200 );
 			gui.add( params, "saoOutput", {
@@ -225,6 +221,14 @@
 				group.rotation.x = timer * 0.0002;
 				group.rotation.y = timer * 0.0001;
 
+				camera.position.z = 7 * params.scale;
+				camera.near = 3 * params.scale;
+				camera.far = 10 * params.scale;
+				camera.updateMatrixWorld( true );
+				camera.updateProjectionMatrix();
+				group.scale.set( params.scale, params.scale, params.scale );
+				group.updateMatrixWorld( true );
+
 				if( params.manualCompositing ) params.renderToScreen = false;
 
 				msaaRenderPass.manualCompositing = params.manualCompositing;
@@ -242,12 +246,8 @@
 				msaaRenderPass.sampleLevel = Math.round( params.msaaLevel );
 
 				saoPass.enabled = params.saoEnabled;
-				saoPass.bias = params.saoBias;
 				saoPass.intensity = params.saoIntensity;
-				saoPass.scale = params.saoScale;
-				saoPass.kernelRadius = params.saoKernelRadius;
-				saoPass.minResolution = params.saoMinResolution;
-				saoPass.maxDistance = params.saoMaxDistance;
+				saoPass.occlusionSphereRadius = params.saoSphereRadius * params.scale;
 				saoPass.blurEnabled = params.saoBlur;
 				saoPass.blurRadius = params.saoBlurRadius;
 
