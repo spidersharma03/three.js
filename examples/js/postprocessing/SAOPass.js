@@ -14,10 +14,8 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scene = scene;
 	this.camera = camera;
 
-	this.bias = 0.5;
 	this.intensity = 0.25;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
-	this.scale = 1;
 	this.occlusionSphereWorldRadius = 20;
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
@@ -70,7 +68,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.copyMaterial.transparent = true;
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
-/*
+
 	if ( THREE.CompositeShader === undefined ) console.error( "THREE.SAOPass relies on THREE.CompositeShader" );
 
 	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
@@ -81,7 +79,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.compositeMaterial.premultipliedAlpha = true;
 	this.compositeMaterial.transparent = true;
 	this.compositeMaterial.depthTest = false;
-	this.compositeMaterial.depthWrite = false;*/
+	this.compositeMaterial.depthWrite = false;
 
 };
 
