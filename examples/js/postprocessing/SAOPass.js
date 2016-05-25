@@ -18,7 +18,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.intensity = 0.25;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.scale = 1;
-	this.occlusionSphereRadius = 20;
+	this.occlusionSphereWorldRadius = 20;
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.manualCompositing = false;
@@ -126,8 +126,14 @@ THREE.SAOPass.prototype = {
 
 	updateParameters: function( camera ) {
 
+		var vSizeAt1M = 1 / ( Math.tan( THREE.Math.DEG2RAD * camera.fov * 0.5 ) * 2 );
+		var sizeAt1M = new THREE.Vector2( vSizeAt1M, vSizeAt1M / camera.aspect );
+
+		this.saoMaterial.uniforms['worldToScreenRatio'].value = sizeAt1M;
+
 		this.saoMaterial.uniforms['intensity'].value = this.intensity;
-		this.saoMaterial.uniforms['occlusionSphereRadius'].value = this.occlusionSphereRadius;
+		this.saoMaterial.uniforms['occlusionSphereWorldRadius'].value = this.occlusionSphereWorldRadius;
+
 
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
@@ -276,7 +282,7 @@ THREE.SAOPass.prototype = {
 			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
-			this.bilateralFilterMaterial.uniforms[ "occlusionSphereRadius" ].value = this.occlusionSphereRadius * 0.05;
+			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.2;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 
 			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget ); // , 0xffffff, 0.0, "sao vBlur"
