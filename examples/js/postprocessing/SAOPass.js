@@ -48,6 +48,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.depthMinifyMaterial = new THREE.ShaderMaterial( THREE.SAODepthMinifyShader );
 	this.depthMinifyMaterial.uniforms = THREE.UniformsUtils.clone( this.depthMinifyMaterial.uniforms );
 	this.depthMinifyMaterial.defines = THREE.UniformsUtils.cloneDefines( this.depthMinifyMaterial.defines );
+	this.depthMinifyMaterial.blending = THREE.NoBlending;
 
 	this.saoMaterial = new THREE.ShaderMaterial( THREE.SAOShader );
 	this.saoMaterial.uniforms = THREE.UniformsUtils.clone( this.saoMaterial.uniforms );
@@ -59,6 +60,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.bilateralFilterMaterial = new THREE.ShaderMaterial( THREE.SAOBilaterialFilterShader );
 	this.bilateralFilterMaterial.uniforms = THREE.UniformsUtils.clone( this.bilateralFilterMaterial.uniforms );
 	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
+	this.bilateralFilterMaterial.blending = THREE.NoBlending;
 
 	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
@@ -125,7 +127,7 @@ THREE.SAOPass.prototype = {
 	updateParameters: function( camera ) {
 
 		var vSizeAt1M = 1 / ( Math.tan( THREE.Math.DEG2RAD * camera.fov * 0.5 ) * 2 );
-		var sizeAt1M = new THREE.Vector2( vSizeAt1M, vSizeAt1M / camera.aspect );
+		var sizeAt1M = new THREE.Vector2( vSizeAt1M, vSizeAt1M * camera.aspect );
 
 		this.saoMaterial.uniforms['worldToScreenRatio'].value = sizeAt1M;
 
@@ -174,6 +176,7 @@ THREE.SAOPass.prototype = {
 		this.updateParameters( this.camera );
 
 		var clearColor = renderer.getClearColor(), clearAlpha = renderer.getClearAlpha(), autoClear = renderer.autoClear;
+		renderer.autoClear = false;
 
 		if( ! this.renderToScreen ) {
 
@@ -273,7 +276,9 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.uniforms[ "tDepth3" ].value = this.depth3RenderTarget.texture;
 		this.saoMaterial.uniforms[ "tNormal" ].value = this.normalRenderTarget.texture;
 
-		renderer.renderPass( this.saoMaterial, this.saoRenderTarget ); // , 0xffffff, 0.0, "sao"
+		renderer.setClearColor( 0xffffff );
+		renderer.setClearAlpha( 1.0 );
+		renderer.renderPass( this.saoMaterial, this.saoRenderTarget, true ); // , 0xffffff, 0.0, "sao"
 
 		if( this.blurEnabled ) {
 
@@ -283,12 +288,12 @@ THREE.SAOPass.prototype = {
 			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.2;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 
-			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget ); // , 0xffffff, 0.0, "sao vBlur"
+			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget, true ); // , 0xffffff, 0.0, "sao vBlur"
 
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.blurIntermediateRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 0, 1 );
 
-			renderer.renderPass( this.bilateralFilterMaterial, this.saoRenderTarget ); // 0xffffff, 0.0, "sao hBlur"
+			renderer.renderPass( this.bilateralFilterMaterial, this.saoRenderTarget, true ); // 0xffffff, 0.0, "sao hBlur"
 
 		}
 
