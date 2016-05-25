@@ -70,12 +70,9 @@
 				msaaEnabled: false,
 				msaaLevel: 4,
 				saoEnabled: true,
-				saoBias: 0.5,
-				saoIntensity: 0.25,
-				saoScale: 1,
+				saoIntensity: 0.75,
 				saoSphereRadius: 0.5,
 				saoBlur: true,
-				saoBlurRadius: 2,
 				saoOutput: 0
 			}
 
@@ -91,7 +88,6 @@
 			gui.add( params, "saoIntensity", 0, 1 );
 			gui.add( params, "saoSphereRadius", 0.01, 5 );
 			gui.add( params, "saoBlur" );
-			gui.add( params, "saoBlurRadius", 0, 200 );
 			gui.add( params, "saoOutput", {
 				'Default': 0,
 				'Depth': 1,
@@ -251,7 +247,6 @@
 				saoPass.intensity = params.saoIntensity;
 				saoPass.occlusionSphereWorldRadius = params.saoSphereRadius * params.scale;
 				saoPass.blurEnabled = params.saoBlur;
-				saoPass.blurRadius = params.saoBlurRadius;
 
 				switch( params.saoOutput ) {
 					case '1': saoPass.outputOverride = "depth"; break;
