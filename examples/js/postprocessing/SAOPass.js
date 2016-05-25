@@ -61,6 +61,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.bilateralFilterMaterial.uniforms = THREE.UniformsUtils.clone( this.bilateralFilterMaterial.uniforms );
 	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
 	this.bilateralFilterMaterial.blending = THREE.NoBlending;
+	this.bilateralFilterMaterial.premultipliedAlpha = true;
 
 	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
@@ -282,6 +283,9 @@ THREE.SAOPass.prototype = {
 
 		if( this.blurEnabled ) {
 
+			renderer.setClearColor( 0x000000 );
+			renderer.setClearAlpha( 0.0 );
+
 			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
@@ -329,6 +333,7 @@ THREE.SAOPass.prototype = {
 
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
 			this.copyMaterial.blending = THREE.MultiplyBlending;
+			this.copyMaterial.premultipliedAlpha = true;
 
 			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, false );
 

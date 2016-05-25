@@ -450,7 +450,7 @@ THREE.SAOBilaterialFilterShader = {
 
 			"}",
 
-			"gl_FragColor = vec4( aoSum / weightSum );",
+			"gl_FragColor = vec4( vec3( aoSum / weightSum ), 1.0 );",
 
 		"}"
 
