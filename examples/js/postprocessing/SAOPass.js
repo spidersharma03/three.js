@@ -283,9 +283,6 @@ THREE.SAOPass.prototype = {
 
 		if( this.blurEnabled ) {
 
-			renderer.setClearColor( 0x000000 );
-			renderer.setClearAlpha( 0.0 );
-
 			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
