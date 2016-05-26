@@ -107,8 +107,7 @@ THREE.BlurShaderUtils = {
 
 		kernelRadius = kernelRadius | 0;
 
-		if( ( material.defines[ 'KERNEL_RADIUS' ] !== kernelRadius ) ||
-			( ! material.uvIncrement.equals( uvIncrement ) ) || ( material.stdDev != stdDev ) ) {
+		if( ( material.defines[ 'KERNEL_RADIUS' ] !== kernelRadius ) || ( material.stdDev != stdDev ) ) {
 
 			material.defines[ 'KERNEL_RADIUS' ] = kernelRadius;
 			material.uniforms[ 'sampleUvOffsets' ].value = THREE.BlurShaderUtils.createSampleOffsets( kernelRadius, uvIncrement );
