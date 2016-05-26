@@ -192,7 +192,7 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.01 ) / ( viewDistance2 + 0.0001 ), 0.0 );",
+			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.01 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
 
 		"}",
 
