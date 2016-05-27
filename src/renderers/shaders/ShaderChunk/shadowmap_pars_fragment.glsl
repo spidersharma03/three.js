@@ -22,8 +22,8 @@
 	#endif
 
 	#if defined( SHADOWMAP_TYPE_PCSS )
+		#define PCSS_QUALITY_LEVEL 1
 		#define PCSS_NUM_POISSON_SAMPLES 16
-		#define PCSS_ROTATE_POISSON_SAMPLES 1
 
 		#define LIGHT_FRUSTUM_WIDTH 3.75 // remove me
 
@@ -47,15 +47,12 @@
 			poissonDisk[13] = vec2( -0.81409955, 0.91437590 );
 			poissonDisk[14] = vec2( 0.19984126, 0.78641367 );
 			poissonDisk[15] = vec2( 0.14383161, -0.14100790 );
+		}
 
-			#if PCSS_ROTATE_POISSON_SAMPLES == 1
-				float angle = rand( randomSeed ) * PI2;
-				float c = cos(angle), s = sin(angle);
-				mat2 rotation = mat2( c, s, -s, c );
-				for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i++ ) {
-					poissonDisk[i] *= rotation;
-				}
-			#endif
+		mat2 createRotationMatrix( const in vec2 randomSeed ) {
+			float angle = rand( randomSeed ) * PI2;
+			float c = cos( angle ), s = sin( angle );
+			return mat2( c, s, -s, c );
 		}
 
 		float penumbraSize( const in float zReceiverLightSpace, const in float zBlockerLightSpace ) { // Parallel plane estimation
@@ -69,13 +66,20 @@
 			float blockerDepthSum = 0.0;
 			int numBlockers = 0;
 
-			for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i++ ) {
+			for( int j = 0; j < PCSS_QUALITY_LEVEL; j ++ ) {
 
-				float shadowMapDepth = unpackRGBAToDepth( texture2D( shadowMap, uv + poissonDisk[i] * searchRadius ) );
+				mat2 poissonRotation = createRotationMatrix( uv + vec2( 0.33, 0.66 ) * float( j ) );
 
-				if ( shadowMapDepth < zReceiverClipSpace ) {
-					blockerDepthSum += shadowMapDepth;
-					numBlockers ++;
+				for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i++ ) {
+
+					vec2 uvOffset = ( poissonDisk[i] * poissonRotation ) * searchRadius;
+
+					float shadowMapDepth = unpackRGBAToDepth( texture2D( shadowMap, uv + uvOffset ) );
+					if ( shadowMapDepth < zReceiverClipSpace ) {
+						blockerDepthSum += shadowMapDepth;
+						numBlockers ++;
+					}
+
 				}
 
 			}
@@ -85,22 +89,28 @@
 			return blockerDepthSum / float( numBlockers );
 		}
 
-		float percentCloserFilter( sampler2D shadowMap, vec2 uv, float zReceiverClipSpace, float filterRadius ) {
+		float percentCloserFilter( sampler2D shadowMap, const in vec2 uv, const in float zReceiverClipSpace, const in float filterRadius ) {
 			float sum = 0.0;
 
-			for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i ++ ) {
+			for( int j = 0; j < PCSS_QUALITY_LEVEL; j ++ ) {
 
-				vec2 offset = poissonDisk[i] * filterRadius;
+				mat2 poissonRotation = createRotationMatrix( uv.yx + vec2( 0.12, 0.30 ) * float( j ) );
 
-				float depth1 = unpackRGBAToDepth( texture2D( shadowMap, uv + offset ) );
-				if( zReceiverClipSpace <= depth1 ) sum += 1.0;
+				for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i ++ ) {
 
-				float depth2 = unpackRGBAToDepth( texture2D( shadowMap, uv - offset.yx ) );
-				if( zReceiverClipSpace <= depth2 ) sum += 1.0;
+					vec2 uvOffset = ( poissonDisk[i] * poissonRotation ) * filterRadius;
+
+					float depth = unpackRGBAToDepth( texture2D( shadowMap, uv + uvOffset ) );
+					if( zReceiverClipSpace <= depth ) sum += 1.0;
+
+					depth = unpackRGBAToDepth( texture2D( shadowMap, uv - uvOffset ) );
+					if( zReceiverClipSpace <= depth ) sum += 1.0;
+
+				}
 
 			}
 
-			return sum / ( 2.0 * float( PCSS_NUM_POISSON_SAMPLES ) );
+			return sum / ( 2.0 * float( PCSS_NUM_POISSON_SAMPLES * PCSS_QUALITY_LEVEL ) );
 		}
 
 		float percentCloserSoftShadow( sampler2D shadowMap, const in float shadowRadius, const in vec2 shadowCameraNearFar, const in vec4 coords ) {
