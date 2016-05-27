@@ -18,6 +18,12 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
 	var width = options.textureWidth !== undefined ? options.textureWidth : 512;
 	var height = options.textureHeight !== undefined ? options.textureHeight : 512;
 
+	this.distanceFade = 0.1;
+	this.metalness = 0.0;
+	this.specularColor = new THREE.Color( 0xffffff );
+	this.roughness = 0.0;
+	this.scale = 0.2;
+
 	this.renderer = renderer;
 
 	this.mirrorPlane = new THREE.Plane();
@@ -223,6 +229,11 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		scene.overrideMaterial = null;
 
 		this.material.visible = visible;
+		this.material.uniforms.distanceFade.value = this.distanceFade;
+		this.material.uniforms.metalness.value = this.metalness;
+		this.material.uniforms.specularColor.value = this.specularColor;
+		this.material.uniforms.roughness.value = this.roughness;
+		this.material.uniforms.scale.value = this.scale;
 
 		if(this.clipPlane !== undefined) {
 

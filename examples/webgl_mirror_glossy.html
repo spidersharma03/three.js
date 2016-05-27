@@ -36,6 +36,8 @@
 
 		<script src="../build/three.js"></script>
 		<script src="../examples/js/libs/stats.min.js"></script>
+		<script src='js/libs/dat.gui.min.js'></script>
+
 		<script src="js/loaders/OBJLoader.js"></script>
 		<script src="js/shaders/GlossyMirrorShader.js"></script>
 		<script src="js/shaders/BlurShader.js"></script>
@@ -65,6 +67,21 @@
 
 			var glossyMirror;
 			var sphereGroup, smallSphere;
+
+			var params = {
+				scale: 0.2,
+				distanceFade: 0.0,
+				roughness: 0.0,
+				metalness: 0.0
+			}
+
+			// Init gui
+			var gui = new dat.GUI();
+			gui.add( params, "scale", 0.1, 1 );
+			gui.add( params, "distanceFade", 0, 1 );
+			gui.add( params, "roughness", 0, 1 );
+			gui.add( params, "metalness", 0, 1 );
+
 
 			function init() {
 
@@ -104,7 +121,7 @@
 				// mirrorMesh.position.y = 5;
 				scene.add( mirrorMesh );
 
-				var groundMaterial = new THREE.MeshPhongMaterial( { color: 0xc0c030, shading: THREE.FlatShading } );
+				var groundMaterial = new THREE.MeshPhongMaterial( { color: 0xc0c0c0, shading: THREE.FlatShading } );
 				var groundMesh = new THREE.Mesh( planeGeo, groundMaterial );
 				groundMesh.add( glossyMirror );
 				groundMesh.rotateX( -Math.PI / 2 );
@@ -230,6 +247,11 @@
 			function render() {
 
 				// render (update) the mirrors
+				glossyMirror.scale = params.scale;
+				glossyMirror.distanceFade = params.distanceFade;
+				glossyMirror.roughness = params.roughness;
+				glossyMirror.metalness = params.metalness;
+
 				glossyMirror.render();
 				//glossyMirror.renderWithMirror( verticalMirror );
 				//verticalMirror.renderWithMirror( glossyMirror );

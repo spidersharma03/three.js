@@ -10,7 +10,7 @@ THREE.GlossyMirrorShader = {
 
 	uniforms: {
 
-	 	"metallic": { type: "f", value: 0.0 },
+	 	"metalness": { type: "f", value: 0.0 },
 	
 	 	"specularColor": { type: "c", value: new THREE.Color( 0xffffff ) },
 		"tSpecular": { type: "t", value: null },
@@ -22,8 +22,8 @@ THREE.GlossyMirrorShader = {
 		"tReflection4": { type: "t", value: null },
 		"tReflectionDepth": { type: "t", value: null },
 
-		"roughness": { type: "f", value: 0.1 },
-	 	"distanceFade": { type: "f", value: 0.0 },
+		"roughness": { type: "f", value: 0.0 },
+	 	"distanceFade": { type: "f", value: 0.01 },
  		"scale": { type: "f", value: 0.2 },
 
 		"reflectionTextureMatrix" : { type: "m4", value: new THREE.Matrix4() },
@@ -60,7 +60,7 @@ THREE.GlossyMirrorShader = {
 
 	].join( "\n" ),
 
-	blending: THREE.AdditiveBlending,
+	blending: THREE.NormalBlending,
 	premultipledAlpha: true,
 	transparent: true,
 
@@ -75,7 +75,7 @@ THREE.GlossyMirrorShader = {
 			"uniform sampler2D tRoughness;",
 		"#endif",
 
-		"uniform float metallic;",
+		"uniform float metalness;",
 		"uniform float distanceFade;",
 		"uniform float scale;",
 	
@@ -203,7 +203,7 @@ THREE.GlossyMirrorShader = {
 				"vec3 pointOnMirror = linePlaneIntersect( cameraPosition, normalize( reflectionWorldPosition - cameraPosition ), mirrorWorldPosition, mirrorNormal );",
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
 
-				"localRoughness = localRoughness * distance * scale;",
+				"localRoughness = localRoughness * distance * scale * 0.1;",
 				"float lodLevel = float( REFLECTION_LOD_LEVELS ) * ( localRoughness );",
 
 				"fade = 1.0 - distanceFade * distance;",
@@ -215,12 +215,12 @@ THREE.GlossyMirrorShader = {
 
 			"vec4 reflection = getReflection( mirrorCoord, lodLevel );",
 
-			// apply dieletric-conductor model parameterized by metallic parameter.
-			"float reflectance = mix( 0.05, 1.0, metallic );",
+			// apply dieletric-conductor model parameterized by metalness parameter.
+			"float reflectance = mix( 0.05, 1.0, metalness );",
 	
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
 			"float fresnel = F_Schlick( reflectance, dotNV );",
-			"specular = mix( vec3( 1.0 ), specular, metallic );",
+			"specular = mix( vec3( 1.0 ), specular, metalness );",
 			"gl_FragColor = vec4( reflection.rgb * specular, fresnel * fade );", // fresnel controls alpha
 
 
