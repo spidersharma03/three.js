@@ -4,23 +4,35 @@
 
 THREE.ShaderLib[ 'mirror' ] = {
 
-	uniforms: { "mirrorColor": { type: "c", value: new THREE.Color( 0x7F7F7F ) },
-				"mirrorSampler0": { type: "t", value: null },
-				"mirrorSampler1": { type: "t", value: null },
-				"mirrorSampler2": { type: "t", value: null },
-				"mirrorSampler3": { type: "t", value: null },
-				"mirrorSampler4": { type: "t", value: null },
-				"depthSampler": { type: "t", value: null },
-				"diffuseTexture": { type: "t", value: null },
-				"textureMatrix" : { type: "m4", value: new THREE.Matrix4() },
-				"cameraViewMatrix": { type: "m4", value: new THREE.Matrix4() },
-				"cameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
-				"cameraInverseProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
-				"cameraNear": { type: "f", value: 0 },
-				"cameraFar": { type: "f", value: 0 },
-				"screenSize": { type: "v2", value: new THREE.Vector2() },
-				"mirrorNormal": { type: "v3", value: new THREE.Vector3() },
-				"mirrorWorldPosition": { type: "v3", value: new THREE.Vector3() }
+	defines: {
+		"SPECULAR_MAP": 0,
+		"ROUGHNESS_MAP": 0,
+		"GLOSSY_REFLECTIONS": 0,
+		"PERSPECTIVE_CAMERA": 1
+	}
+	uniforms: {
+
+	 	"specularColor": { type: "c", value: new THREE.Color( 0x7F7F7F ) },
+		"tSpecular": { type: "t", value: null },
+
+		"tReflection": { type: "t", value: null },
+		"tReflection1": { type: "t", value: null },
+		"tReflection2": { type: "t", value: null },
+		"tReflection3": { type: "t", value: null },
+		"tReflection4": { type: "t", value: null },
+		"tDepth": { type: "t", value: null },
+
+		"roughness": { type: "f", value: 0 },
+
+		"textureMatrix" : { type: "m4", value: new THREE.Matrix4() },
+		"cameraViewMatrix": { type: "m4", value: new THREE.Matrix4() },
+		"cameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
+		"cameraInverseProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
+		"cameraNear": { type: "f", value: 0 },
+		"cameraFar": { type: "f", value: 0 },
+		"screenSize": { type: "v2", value: new THREE.Vector2() },
+		"mirrorNormal": { type: "v3", value: new THREE.Vector3() },
+		"mirrorWorldPosition": { type: "v3", value: new THREE.Vector3() }
 	},
 
 	vertexShader: [
@@ -47,16 +59,29 @@ THREE.ShaderLib[ 'mirror' ] = {
 	].join( "\n" ),
 
 	fragmentShader: [
+
 		"#include <common>",
 		"#include <packing>",
-		"uniform vec3 mirrorColor;",
-		"uniform sampler2D mirrorSampler0;",
-		"uniform sampler2D mirrorSampler1;",
-		"uniform sampler2D mirrorSampler2;",
-		"uniform sampler2D mirrorSampler3;",
-		"uniform sampler2D mirrorSampler4;",
-		"uniform sampler2D depthSampler;",
-		"uniform sampler2D diffuseTexture;",
+
+		"uniform vec3 roughness;",
+		"#if ROUGHNESS_MAP == 1",
+			"uniform sampler2D tRoughness;",
+		"#endif",
+
+		"uniform vec3 specularColor;",
+		"#if SPECULAR_MAP == 1",
+			"uniform sampler2D tSpecular;",
+		"#endif",
+
+		"uniform sampler2D tReflection;",
+		"#if GLOSSY_REFLECTIONS == 1",
+			"uniform sampler2D tReflection1;",
+			"uniform sampler2D tReflection2;",
+			"uniform sampler2D tReflection3;",
+			"uniform sampler2D tReflection4;",
+			"uniform sampler2D tDepth;",
+		"#endif",
+
 		"varying vec3 vecPosition;",
 		"varying vec3 worldNormal;",
 		"varying vec2 vUv;",
@@ -71,78 +96,119 @@ THREE.ShaderLib[ 'mirror' ] = {
 		"uniform vec3 mirrorNormal;",
 		"uniform vec3 mirrorWorldPosition;",
 
-		"const float roughnessOffset   = 0.025;",
 		"const float roughnessGradient = 0.05;",
 
 		"float getDepth() {",
-				"return unpackRGBAToDepth(texture2DProj( depthSampler, mirrorCoord ));",
+
+			"return unpackRGBAToDepth( texture2DProj( tDepth, mirrorCoord ) );",
+
  		"}",
 
 		"float getViewZ( const in float depth ) {",
+			"#if PERSPECTIVE_CAMERA == 1",
  				"return perspectiveDepthToViewZ( depth, cameraNear, cameraFar );",
+			"#else",
+				"return orthographicDepthToViewZ( depth, cameraNear, cameraFar );",
+			"#endif",
  		"}",
 
 		"vec3 getWorldPosition( const in vec2 screenPosition, const in float depth, const in float viewZ ) {",
+
  			"float clipW = cameraProjectionMatrix[2][3] * viewZ + cameraProjectionMatrix[3][3];",
  			"vec4 clipPosition = vec4( ( vec3( screenPosition, depth ) - 0.5 ) * 2.0, 1.0 );",
  			"clipPosition *= clipW;", // unprojection.
 			"vec4 temp = cameraInverseProjectionMatrix * clipPosition;",
  			"return ( cameraViewMatrix * temp ).xyz;",
+
  		"}",
 
-		"float SchlickApproxFresenel(float a, float NdotV) {",
+		"vec3 SchlickApproxFresenel( vec3 f0, float NdotV ) {",
+
 				"float schlick = pow(1.0 - (NdotV), 5.0);",
-				"return a * ( 1.0 - schlick) + schlick;",
+				"return f0 * ( 1.0 - schlick) + schlick;",
+
+		"}",
+
+		"vec4 getReflection( const in vec4 mirrorCoord, const in float lodLevel ) {",
+
+			"#if GLOSSY_REFLECTIONS == 0",
+
+				"return texture2DProj( tReflection, mirrorCoord );",
+
+			"#else",
+
+				"vec4 color0, color1;",
+				"float alpha;",
+
+				"if( lodLevel < 1.0 ) {",
+					"color0 = texture2DProj( tReflection, mirrorCoord );",
+					"color1 = texture2DProj( tReflection1, mirrorCoord );",
+					"alpha = lodLevel;",
+				"}",
+				"else if( lodLevel < 2.0) {",
+					"color0 = texture2DProj( tReflection1, mirrorCoord );",
+					"color1 = texture2DProj( tReflection2, mirrorCoord );",
+					"alpha = lodLevel - 1.0;",
+				"}",
+				"else if( lodLevel > 3.0 ) {",
+					"color0 = texture2DProj( tReflection2, mirrorCoord );",
+					"color1 = texture2DProj( tReflection3, mirrorCoord );",
+					"alpha = lodLevel - 3.0;",
+				"}",
+				"else {",
+					"color0 = texture2DProj( tReflection3, mirrorCoord );",
+					"color1 = vec4( 0.0 );",
+					"alpha = 1.0;",
+				"}",
+
+				"return mix( color0, color1, alpha );"
+
+			"#endif",
+
 		"}",
 
 		"vec4 sampleMirror(vec3 sampleWorldPosition) {",
-			"vec4 color1;",
-		  "vec4 color2;",
-	  	"float t = 0.0;",
+
 			"vec3 closestPointOnMirror = projectOnPlane(sampleWorldPosition, mirrorWorldPosition, mirrorNormal );",
 			"vec3 pointOnMirror = linePlaneIntersect(cameraPosition, normalize(sampleWorldPosition - cameraPosition), mirrorWorldPosition, mirrorNormal);",
-			"float d = length(closestPointOnMirror - sampleWorldPosition);",
-			"vec4 colorDiffuse = texture2D(diffuseTexture, vUv);",
-			"float sampleDepth = d * roughnessGradient + roughnessOffset;",
-			"if( sampleDepth <= 0.25) {",
-				"color1 = texture2DProj(mirrorSampler0, mirrorCoord);",
-				"color2 = texture2DProj(mirrorSampler1, mirrorCoord);",
-				"t = sampleDepth;",
-			"}",
-			"else if(sampleDepth > 0.25 && sampleDepth <= 0.5) {",
-				"color1 = texture2DProj(mirrorSampler1, mirrorCoord);",
-				"color2 = texture2DProj(mirrorSampler2, mirrorCoord);",
-				"t = (sampleDepth - 0.25);",
-			"}",
-			"else if(sampleDepth > 0.5 && sampleDepth <= 0.75) {",
-				"color1 = texture2DProj(mirrorSampler2, mirrorCoord);",
-				"color2 = texture2DProj(mirrorSampler3, mirrorCoord);",
-				"t = (sampleDepth - 0.5);",
-			"}",
-			"else {",
-				"color1 = texture2DProj(mirrorSampler3, mirrorCoord);",
-				"color2 = texture2DProj(mirrorSampler4, mirrorCoord);",
-				"t = (sampleDepth - 0.75);",
-			"}",
-			"t *= 4.0; // Assuming the above hardcoded range",
-			"t = t>1.0 ? 1.0: t;",
-			"float NdotV = dot(normalize(worldNormal), normalize(vecPosition));",
-			"float schlick = SchlickApproxFresenel(0.1, NdotV);",
-		   "vec4 outColor = colorDiffuse * (1.0 - schlick) + schlick * ((1.0 - t) * color1 + color2 * t);",
-			 "return vec4(outColor);",
+			"float distance = length(closestPointOnMirror - sampleWorldPosition);",
+
+			"vec4 specular = specularColor;",
+			"#if SPECULAR_MAP == 1",
+				"specular *= texture2D( tSpecular, vUv );",
+			"#endif",
+
+			"float localRoughness = roughness;",
+			"#if ROUGHNESS_MAP == 1",
+				"localRoughness *= texture2D( tRoughness, vUv );",
+			"#endif",
+
+			"localRoughness += distance * roughnessGradient;",
+
+			"float lodLevel = REFLECTION_LOD_LEVELS * ( distance * roughnessGradient + localRoughness );",
+			"vec4 reflection = getReflection( mirrorCoord, lodLevel );",
+
+			"float NdotV = dot( normalize( worldNormal ), normalize( vecPosition ) );",
+
+			"float fresnelReflection = SchlickApproxFresenel( specular1, NdotV );",
+		  "return fresnelReflection * reflectionColor;",
+
+			"return vec4(outColor);",
 		"}",
 
 		"void main() {",
-			"vec2 screenPos = gl_FragCoord.xy/screenSize;",
+
+			"vec2 screenPos = gl_FragCoord.xy / screenSize;",
 			"float sampleDepth = getDepth();",
 			"float sampleViewZ = getViewZ( sampleDepth );",
 			"vec3 sampleWorldPosition = getWorldPosition( screenPos, sampleDepth, sampleViewZ );",
-			"vec4 color = sampleMirror(sampleWorldPosition);",
+			"vec4 color = sampleMirror( sampleWorldPosition );",
+
 			"gl_FragColor = color;",
 
 		"}"
 
-	].join( "\n" )
+		].join( "\n" )
 
 };
 
