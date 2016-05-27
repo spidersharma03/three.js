@@ -69,7 +69,6 @@
 			var sphereGroup, smallSphere;
 
 			var params = {
-				scale: 0.2,
 				distanceFade: 0.0,
 				roughness: 0.0,
 				metalness: 0.0
@@ -77,7 +76,6 @@
 
 			// Init gui
 			var gui = new dat.GUI();
-			gui.add( params, "scale", 0.1, 1 );
 			gui.add( params, "distanceFade", 0, 1 );
 			gui.add( params, "roughness", 0, 1 );
 			gui.add( params, "metalness", 0, 1 );
@@ -247,8 +245,7 @@
 			function render() {
 
 				// render (update) the mirrors
-				glossyMirror.scale = params.scale;
-				glossyMirror.distanceFade = params.distanceFade;
+				glossyMirror.distanceFade = params.distanceFade * 0.1;
 				glossyMirror.roughness = params.roughness;
 				glossyMirror.metalness = params.metalness;
 

@@ -3,8 +3,6 @@
  * @author bhouston / Ben Houston / ben@clara.io
  */
 
-console.trace( "here1");
-
 THREE.GlossyMirror = function ( renderer, camera, options ) {
 
 	THREE.Object3D.call( this );
@@ -22,8 +20,7 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
 	this.metalness = 0.0;
 	this.specularColor = new THREE.Color( 0xffffff );
 	this.roughness = 0.0;
-	this.scale = 0.2;
-
+	
 	this.renderer = renderer;
 
 	this.mirrorPlane = new THREE.Plane();
@@ -117,9 +114,6 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
 	this.material.uniforms.tReflection4.value = this.mirrorHelper.mirrorTextureMipMaps[3];
 
 };
-
-console.trace( "here");
-console.log( "here3");
 
 THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prototype ), {
 
@@ -233,8 +227,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.material.uniforms.metalness.value = this.metalness;
 		this.material.uniforms.specularColor.value = this.specularColor;
 		this.material.uniforms.roughness.value = this.roughness;
-		this.material.uniforms.scale.value = this.scale;
-
+	
 		if(this.clipPlane !== undefined) {
 
 			this.clipPlane.copy(this.falseClipPlane);

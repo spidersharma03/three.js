@@ -24,8 +24,7 @@ THREE.GlossyMirrorShader = {
 
 		"roughness": { type: "f", value: 0.0 },
 	 	"distanceFade": { type: "f", value: 0.01 },
- 		"scale": { type: "f", value: 0.2 },
-
+ 	
 		"reflectionTextureMatrix" : { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraViewMatrix": { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
@@ -76,7 +75,6 @@ THREE.GlossyMirrorShader = {
 
 		"uniform float metalness;",
 		"uniform float distanceFade;",
-		"uniform float scale;",
 	
 		"uniform vec3 specularColor;",
 		"#if SPECULAR_MAP == 1",
@@ -202,10 +200,10 @@ THREE.GlossyMirrorShader = {
 				"vec3 pointOnMirror = linePlaneIntersect( cameraPosition, normalize( reflectionWorldPosition - cameraPosition ), mirrorWorldPosition, mirrorNormal );",
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
 
-				"localRoughness = localRoughness * distance * scale * 0.1;",
-				"float lodLevel = float( REFLECTION_LOD_LEVELS ) * ( localRoughness );",
+				"localRoughness = localRoughness * distance * 0.2;",
+				"float lodLevel = log2( localRoughness + 1.0 );",
 
-				"fade = 1.0 - distanceFade * distance;",
+				"fade = pow( 1.0 - distanceFade, distance );",
 			"#else",
 
 				"float lodLevel = 0.0;",
