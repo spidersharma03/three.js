@@ -286,7 +286,7 @@ THREE.SAOPass.prototype = {
 			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
-			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.2;
+			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.5;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 
 			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget, true ); // , 0xffffff, 0.0, "sao vBlur"

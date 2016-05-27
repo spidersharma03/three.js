@@ -201,7 +201,7 @@ THREE.GlossyMirrorShader = {
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
 
 				"localRoughness = localRoughness * distance * 0.2;",
-				"float lodLevel = log2( localRoughness + 1.0 );",
+				"float lodLevel = localRoughness;",
 
 				"fade = pow( 1.0 - distanceFade, distance );",
 			"#else",

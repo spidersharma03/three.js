@@ -192,7 +192,7 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.01 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
 
 		"}",
 
@@ -433,7 +433,7 @@ THREE.SAOBilaterialFilterShader = {
 			"float weightSum = getKernelWeight( 0 );",
 			"float aoSum = texture2D( tAO, vUv ).r;",
 
-			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
+			"vec2 uvIncrement = ( kernelDirection / size ) * 2.0;",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
 			"float rWeight = 1.0, lWeight = 1.0;",
