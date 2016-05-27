@@ -31,18 +31,16 @@
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - mirror
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - glossy mirror with fresnel transparency - by @spidersharma03 and <a href="http://clara.io">Ben Houston</a>
 		</div>
 
 		<script src="../build/three.js"></script>
 		<script src="../examples/js/libs/stats.min.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/shaders/GlossyMirrorShader.js"></script>
 		<script src="js/shaders/BlurShader.js"></script>
-		<script src="js/shaders/BlurShader1.js"></script>
-		<script src="js/shaders/DepthLimitedBlurShader.js"></script>
-		<script src="js/shaders/DepthLimitedBlurShader1.js"></script>
 		<script src="js/MirrorHelper.js"></script>
-		<script src="js/MirrorGlossy.js"></script>
+		<script src="js/GlossyMirror.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 
 		<script>
@@ -65,7 +63,7 @@
 
 			var cameraControls;
 
-			var verticalMirror, groundMirror;
+			var glossyMirror;
 			var sphereGroup, smallSphere;
 
 			function init() {
@@ -98,21 +96,20 @@
 				var planeGeo = new THREE.PlaneBufferGeometry( 100.1, 100.1 );
 
 				// MIRROR planes
-				groundMirror = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color: 0x777777 } );
+				glossyMirror = new THREE.GlossyMirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color: 0x777777 } );
 
-				var mirrorMesh = new THREE.Mesh( planeGeo, groundMirror.material );
-				mirrorMesh.add( groundMirror );
+				var mirrorMesh = new THREE.Mesh( planeGeo, glossyMirror.material );
+				mirrorMesh.add( glossyMirror );
 				mirrorMesh.rotateX( -Math.PI / 2 );
 				// mirrorMesh.position.y = 5;
 				scene.add( mirrorMesh );
 
-				//verticalMirror = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color:0x889999 } );
-
-				//var verticalMirrorMesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 60, 60 ), verticalMirror.material );
-				//verticalMirrorMesh.add( verticalMirror );
-				//verticalMirrorMesh.position.y = 35;
-				//verticalMirrorMesh.position.z = -45;
-				//scene.add( verticalMirrorMesh );
+				var groundMaterial = new THREE.MeshPhongMaterial( { color: 0xc0c030, shading: THREE.FlatShading } );
+				var groundMesh = new THREE.Mesh( planeGeo, groundMaterial );
+				groundMesh.add( glossyMirror );
+				groundMesh.rotateX( -Math.PI / 2 );
+				// mirrorMesh.position.y = 5;
+				scene.add( groundMesh );
 
 				sphereGroup = new THREE.Object3D();
 				scene.add( sphereGroup );
@@ -233,9 +230,9 @@
 			function render() {
 
 				// render (update) the mirrors
-				groundMirror.render( );
-				//groundMirror.renderWithMirror( verticalMirror );
-				//verticalMirror.renderWithMirror( groundMirror );
+				glossyMirror.render();
+				//glossyMirror.renderWithMirror( verticalMirror );
+				//verticalMirror.renderWithMirror( glossyMirror );
 
 				renderer.render(scene, camera);
 
