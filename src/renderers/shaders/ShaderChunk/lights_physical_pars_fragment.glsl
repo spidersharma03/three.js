@@ -6,7 +6,7 @@ struct PhysicalMaterial {
 
 	#ifndef STANDARD
 		float clearCoat;
-		float clearCoutRoughness;
+		float clearCoatRoughness;
 	#endif
 
 };
@@ -30,7 +30,7 @@ void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricC
 
 
 		vec3 clearCoatSpecular = BRDF_Specular_GGX( directLight, geometry, vec3( material.clearCoat ), material.clearCoatRoughness );
-		
+
 		specular = mix( specular, clearCoatSpecular, material.clearCoat );
 		diffuse = mix( diffuse, vec3( 0.0 ), material.clearCoat );
 
