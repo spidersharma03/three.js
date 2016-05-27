@@ -61,7 +61,6 @@ THREE.GlossyMirrorShader = {
 	].join( "\n" ),
 
 	blending: THREE.NormalBlending,
-	premultipledAlpha: true,
 	transparent: true,
 
 	fragmentShader: [
