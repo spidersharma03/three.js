@@ -55,7 +55,7 @@ void RE_IndirectDiffuse_Physical( const in vec3 irradiance, const in GeometricCo
 
 }
 
-void RE_IndirectSpecular_Physical( const in vec3 radiance, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
+void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 clearCoatRadiance, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
 
 	vec3 specular = BRDF_Specular_GGX_Environment( geometry, material.specularColor, material.specularRoughness );
 
@@ -63,11 +63,11 @@ void RE_IndirectSpecular_Physical( const in vec3 radiance, const in GeometricCon
 
 		vec3 clearCoatSpecular = BRDF_Specular_GGX_Environment( geometry, vec3( material.clearCoat ), material.clearCoatRoughness );
 
-		specular = mix( specular, clearCoatSpecular, material.clearCoat );
+		specular = mix( radiance * specular, clearCoatRadiance * clearCoatSpecular, material.clearCoat );
 
 	#endif
 
-	reflectedLight.indirectSpecular += radiance * specular;
+	reflectedLight.indirectSpecular += specular;
 
 }
 
@@ -76,6 +76,7 @@ void RE_IndirectSpecular_Physical( const in vec3 radiance, const in GeometricCon
 #define RE_IndirectSpecular		RE_IndirectSpecular_Physical
 
 #define Material_BlinnShininessExponent( material )   GGXRoughnessToBlinnExponent( material.specularRoughness )
+#define Material_ClearCoat_BlinnShininessExponent( material )   GGXRoughnessToBlinnExponent( material.clearCoatRoughness )
 
 // ref: http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr_v2.pdf
 float computeSpecularOcclusion( const in float dotNV, const in float ambientOcclusion, const in float roughness ) {
