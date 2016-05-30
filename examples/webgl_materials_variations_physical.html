@@ -94,7 +94,7 @@
 
 				for( var alpha = 0, alphaIndex = 0; alpha <= 1.0; alpha += stepSize, alphaIndex ++ ) {
 
-					var clearCoat = 1.0 - alpha;
+					var clearCoat = 0.8 - alpha * 0.8;
 
 					//if( alphaIndex % 2 === 0 ) {
 						//localReflectionCube = null;
@@ -105,13 +105,13 @@
 
 					for( var beta = 0; beta <= 1.0; beta += stepSize ) {
 
-						var clearCoatRoughness = Math.pow( 1 - beta, 2.0 );
+						var clearCoatRoughness = Math.pow( 0.5 - beta * 0.5, 2.0 );
 
 						for( var gamma = 0; gamma <= 1.0; gamma += stepSize ) {
 
 							var reflectivity = 1 - gamma;
 
-							var material = new THREE.MeshPhysicalMaterial( { map: imgTexture, bumpMap: imgTexture, bumpScale: bumpScale, color: 0xffff00, metalness: 0, roughness: 0.5, clearCoat: clearCoat, clearCoatRoughness: clearCoatRoughness, reflectivity: reflectivity, shading: THREE.SmoothShading, envMap: localReflectionCube } )
+							var material = new THREE.MeshPhysicalMaterial( { map: imgTexture, bumpMap: imgTexture, bumpScale: bumpScale, color: 0xff8800, metalness: 0, roughness: 0.5, clearCoat: clearCoat, clearCoatRoughness: clearCoatRoughness, reflectivity: reflectivity, shading: THREE.SmoothShading, envMap: localReflectionCube } )
 
 							var mesh = new THREE.Mesh( geometry, material );
 
@@ -173,7 +173,7 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.sortObjects = true;
-
+			
 				container.appendChild( renderer.domElement );
 
 				renderer.gammaInput = true;
