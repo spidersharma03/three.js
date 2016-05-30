@@ -68,9 +68,9 @@
 
 			var ambient = new THREE.AmbientLight( 0x111111 );
 
-			var spotLight1 = createSpotlight( 0xFF7F00 );
-			var spotLight2 = createSpotlight( 0x00FF7F );
-			var spotLight3 = createSpotlight( 0x7F00FF );
+			var spotLight1 = createSpotlight( 0x0000ff );
+			var spotLight2 = createSpotlight( 0x00ff00 );
+			var spotLight3 = createSpotlight( 0xff0000 );
 
 			var lightHelper1, lightHelper2, lightHelper3;
 
@@ -85,8 +85,11 @@
 				camera.position.set( 46, 22, - 21 );
 
 				spotLight1.position.set( 15, 40, 45 );
+				spotLight1.shadow.radius = 1.0;
 				spotLight2.position.set( 0, 40, 35 );
+				spotLight2.shadow.radius = 0.5;
 				spotLight3.position.set( - 15, 40, 45 );
+				spotLight3.shadow.radius = 0.1;
 
 				lightHelper1 = new THREE.SpotLightHelper( spotLight1 );
 				lightHelper2 = new THREE.SpotLightHelper( spotLight2 );
@@ -143,20 +146,29 @@
 
 			}
 
-			function tween( light ) {
+			function tween( obj ) {
 
-				new TWEEN.Tween( light ).to( {
-					angle: ( Math.random() * 0.7 ) + 0.1,
-					penumbra: Math.random() + 1
-				}, Math.random() * 3000 + 2000 )
-				.easing( TWEEN.Easing.Quadratic.Out ).start();
+				if( obj instanceof THREE.Light ) {
+					new TWEEN.Tween( obj ).to( {
+						angle: ( Math.random() * 0.7 ) + 0.1
+					}, Math.random() * 3000 + 2000 )
+					.easing( TWEEN.Easing.Quadratic.Out ).start();
 
-				new TWEEN.Tween( light.position ).to( {
-					x: ( Math.random() * 30 ) - 15,
-					y: ( Math.random() * 10 ) + 15,
-					z: ( Math.random() * 30 ) - 15
-				}, Math.random() * 3000 + 2000 )
-				.easing( TWEEN.Easing.Quadratic.Out ).start();
+					new TWEEN.Tween( obj.position ).to( {
+						x: ( Math.random() * 30 ) - 15,
+						y: ( Math.random() * 10 ) + 15,
+						z: ( Math.random() * 30 ) - 15
+					}, Math.random() * 3000 + 2000 )
+					.easing( TWEEN.Easing.Quadratic.Out ).start();
+				}
+				else {
+					new TWEEN.Tween( obj.position ).to( {
+						x: ( Math.random() * 2.5 ),
+						y: ( Math.random() * 2.5 ) + 2.5,
+						z: ( Math.random() * 2.5 )
+					}, Math.random() * 3000 + 2000 )
+					.easing( TWEEN.Easing.Quadratic.Out ).start();
+				}
 
 			}
 
@@ -165,6 +177,8 @@
 				tween( spotLight1 );
 				tween( spotLight2 );
 				tween( spotLight3 );
+
+				tween( mshBox );
 
 				setTimeout( animate, 5000 );
 
