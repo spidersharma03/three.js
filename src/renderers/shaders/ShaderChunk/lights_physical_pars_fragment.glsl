@@ -11,6 +11,9 @@ struct PhysicalMaterial {
 
 };
 
+#define MAXIMUM_SPECULAR_COEFFICIENT 0.16
+#define DEFAULT_SPECULAR_COEFFICIENT 0.4
+
 void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
 
 	float dotNL = saturate( dot( geometry.normal, directLight.direction ) );
@@ -61,7 +64,7 @@ void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 clearCo
 
 	#ifndef STANDARD
 
-		vec3 clearCoatSpecular = BRDF_Specular_GGX_Environment( geometry, vec3( material.clearCoat ), material.clearCoatRoughness );
+		vec3 clearCoatSpecular = BRDF_Specular_GGX_Environment( geometry, vec3( material.clearCoat * DEFAULT_SPECULAR_COEFFICIENT ), material.clearCoatRoughness );
 
 		specular = mix( radiance * specular, clearCoatRadiance * clearCoatSpecular, material.clearCoat );
 
