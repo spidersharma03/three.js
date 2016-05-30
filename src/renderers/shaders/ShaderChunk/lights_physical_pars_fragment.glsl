@@ -12,7 +12,7 @@ struct PhysicalMaterial {
 };
 
 #define MAXIMUM_SPECULAR_COEFFICIENT 0.16
-#define DEFAULT_SPECULAR_COEFFICIENT 0.4
+#define DEFAULT_SPECULAR_COEFFICIENT 0.04
 
 void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
 
@@ -26,51 +26,50 @@ void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricC
 
 	#endif
 
-	vec3 specular = BRDF_Specular_GGX( directLight, geometry, material.specularColor, material.specularRoughness );
-	vec3 diffuse = BRDF_Diffuse_Lambert( material.diffuseColor );
+	vec3 specularRadiance = irradiance * BRDF_Specular_GGX( directLight, geometry, material.specularColor, material.specularRoughness );
+	vec3 diffuseRadiance = irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );
 
 	#ifndef STANDARD
 
+		vec3 clearCoatSpecularRadiance = irradiance * BRDF_Specular_GGX( directLight, geometry, vec3( material.clearCoat ), material.clearCoatRoughness );
 
-		vec3 clearCoatSpecular = BRDF_Specular_GGX( directLight, geometry, vec3( material.clearCoat ), material.clearCoatRoughness );
-
-		specular = mix( specular, clearCoatSpecular, material.clearCoat );
-		diffuse = mix( diffuse, vec3( 0.0 ), material.clearCoat );
+		specularRadiance = mix( specularRadiance, clearCoatSpecularRadiance, material.clearCoat );
+		diffuseRadiance = mix( diffuseRadiance, vec3( 0.0 ), material.clearCoat );
 
 	#endif
 
-	reflectedLight.directSpecular += irradiance * specular;
-	reflectedLight.directDiffuse += irradiance * diffuse;
+	reflectedLight.directSpecular += specularRadiance;
+	reflectedLight.directDiffuse += diffuseRadiance;
 
 }
 
 void RE_IndirectDiffuse_Physical( const in vec3 irradiance, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
 
-	vec3 diffuse = BRDF_Diffuse_Lambert( material.diffuseColor );
+	vec3 diffuseRadiance = irradiance * BRDF_Diffuse_Lambert( material.diffuseColor );
 
 	#ifndef STANDARD
 
-		diffuse = mix( diffuse, vec3( 0.0 ), material.clearCoat );
+		diffuseRadiance = mix( diffuseRadiance, vec3( 0.0 ), material.clearCoat );
 
 	#endif
 
-	reflectedLight.indirectDiffuse += irradiance * diffuse;
+	reflectedLight.indirectDiffuse += diffuseRadiance;
 
 }
 
 void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 clearCoatRadiance, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
 
-	vec3 specular = radiance * BRDF_Specular_GGX_Environment( geometry, material.specularColor, material.specularRoughness );
+	vec3 specularRadiance = radiance * BRDF_Specular_GGX_Environment( geometry, material.specularColor, material.specularRoughness );
 
 	#ifndef STANDARD
 
-		vec3 clearCoatSpecular = BRDF_Specular_GGX_Environment( geometry, vec3( material.clearCoat * DEFAULT_SPECULAR_COEFFICIENT ), material.clearCoatRoughness );
+		vec3 clearCoatSpecularRadiance = clearCoatRadiance * BRDF_Specular_GGX_Environment( geometry, vec3( material.clearCoat * DEFAULT_SPECULAR_COEFFICIENT ), material.clearCoatRoughness );
 
-		specular = mix( specular, clearCoatRadiance * clearCoatSpecular, material.clearCoat );
+		specularRadiance = mix( specularRadiance, clearCoatSpecularRadiance, material.clearCoat );
 
 	#endif
 
-	reflectedLight.indirectSpecular += specular;
+	reflectedLight.indirectSpecular += specularRadiance;
 
 }
 
