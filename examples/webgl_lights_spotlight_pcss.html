@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - lights - spotlight</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				color: #ffffff;
+				padding: 5px;
+				font-family: Monospace;
+				font-size: 13px;
+				text-align: center;
+			}
+
+			a {
+				color: #ff0080;
+				text-decoration: none;
+			}
+
+			a:hover {
+				color: #0080ff;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="http://threejs.org" target="_blank">three.js</a> webgl - spotlight by <a href="http://master-domain.com" target="_blank">Master James</a><br />
+		</div>
+
+		<script src="../build/three.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/Detector.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var renderer = new THREE.WebGLRenderer();
+
+			var camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 1000 );
+
+			var controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+			var scene = new THREE.Scene();
+
+			var mat = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+
+			var geoFloor = new THREE.BoxGeometry( 2000, 1, 2000 );
+			var geoSphere = new THREE.SphereGeometry( 1.0, 24, 24 );
+
+			var mshFloor = new THREE.Mesh( geoFloor, mat );
+			var mshSphere = new THREE.Mesh( geoSphere, mat );
+
+			var ambient = new THREE.AmbientLight( 0xffffff, 0.1 );
+
+			var spotLight = new THREE.SpotLight( 0xffffff, 100 );
+			
+			var params = {
+				lightDistance: 10.0,
+				lightRadius: 1.0,
+				lightAngle: 45,
+				objectDistance: 5.0,
+				objectRadius: 1.0
+			}
+
+			// Init gui
+			var gui = new dat.GUI();
+			gui.add( params, "lightDistance", 1, 20 );
+			gui.add( params, "lightRadius", 0.1, 4 );
+			gui.add( params, "lightAngle", 5, 60 );
+			gui.add( params, "objectDistance", 1, 10 );
+			gui.add( params, "objectRadius", 0.1, 4 );
+
+			function init() {
+
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCSSShadowMap;
+
+				renderer.gammaInput = true;
+				renderer.gammaOutput = true;
+
+				camera.position.set( 30, 10, 30 );
+
+
+				spotLight.position.set( 0, params.lightDistance, 0 );
+				spotLight.castShadow = true;
+				spotLight.distance = 200;
+				spotLight.shadow.mapSize.width = 1024;
+				spotLight.shadow.mapSize.height = 1024;
+				spotLight.shadow.camera.near = 0.5;
+				spotLight.shadow.camera.far = 25;
+
+				mshFloor.receiveShadow = true;
+				mshFloor.position.set( 0, - 0.05, 0 );
+
+				mshSphere.castShadow = true;
+				mshSphere.receiveShadow = true;
+
+				scene.add( camera );
+				scene.add( mshFloor );
+				scene.add( mshSphere );
+				scene.add( ambient );
+				scene.add( spotLight );
+				scene.add( new THREE.AxisHelper( 10 ) );
+			
+				document.body.appendChild( renderer.domElement );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				controls.addEventListener( 'change', render );
+				controls.minDistance = 20;
+				controls.maxDistance = 500;
+				controls.maxPolarAngle = Math.PI / 2;
+				controls.enablePan = false;
+				controls.target.set( 0, 0, 0 );
+				controls.update();
+
+				window.addEventListener( 'resize', onResize, false );
+
+			}
+
+			function onResize() {
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				camera.aspect = ( window.innerWidth / window.innerHeight );
+				camera.updateProjectionMatrix();
+
+			}
+
+			function render() {
+
+				requestAnimationFrame( render );
+
+				spotLight.position.set( 0, params.lightDistance, 0 );
+				//spotLight.target.position.set( 0, -params.lightDistance, 0 );
+				spotLight.angle = params.lightAngle * THREE.Math.DEG2RAD;
+				spotLight.shadow.radius = params.lightRadius;
+				spotLight.updateMatrixWorld();
+
+				mshSphere.position.set( 0, params.objectDistance, 0 );
+				mshSphere.scale.set( params.objectRadius, params.objectRadius, params.objectRadius );
+				mshSphere.updateMatrixWorld();
+
+				renderer.render( scene, camera );
+
+			}
+		
+
+			init();
+
+			render();
+
+		</script>
+	</body>
+</html>
