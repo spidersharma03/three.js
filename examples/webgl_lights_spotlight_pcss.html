@@ -66,15 +66,16 @@
 			var mshSphere = new THREE.Mesh( geoSphere, matDiffuse );
 			var mshLight = new THREE.Mesh( geoSphere, matLight );
 
-			var ambient = new THREE.AmbientLight( 0xffffff, 0.1 );
+			var ambient = new THREE.AmbientLight( 0xffffff, 0.0 );
 
 			var spotLight = new THREE.SpotLight( 0xffffff, 100 );
-			
+			var lightHelper;
+	
 			var params = {
 				lightDistance: 10.0,
 				lightRadius: 1.0,
 				lightAngle: 45,
-				lightNear: 0.5,
+				lightNear: 2,
 				lightFar: 25,
 				objectDistance: 5.0,
 				objectRadius: 1.0
@@ -85,7 +86,7 @@
 			gui.add( params, "lightDistance", 1, 20 );
 			gui.add( params, "lightRadius", 0.1, 4 );
 			gui.add( params, "lightAngle", 5, 60 );
-			gui.add( params, "lightNear", 0.5, 60 );
+			gui.add( params, "lightNear", 2, 60 );
 			gui.add( params, "lightFar", 0.5, 60 );
 			gui.add( params, "objectDistance", 1, 10 );
 			gui.add( params, "objectRadius", 0.1, 4 );
@@ -104,13 +105,16 @@
 				camera.position.set( 30, 10, 30 );
 
 				spotLight.position.set( 0, params.lightDistance, 0 );
+				spotLight.intensity = 0.5;
 				spotLight.castShadow = true;
 				spotLight.distance = 200;
-				spotLight.shadow.mapSize.width = 256;
-				spotLight.shadow.mapSize.height = 256;
-				spotLight.shadow.camera.near = 0.5;
+				spotLight.shadow.mapSize.width = 2048;
+				spotLight.shadow.mapSize.height = 2048;
+				spotLight.shadow.camera.near = 2;
 				spotLight.shadow.camera.far = 25;
 
+				lightHelper = new THREE.SpotLightHelper( spotLight );
+				
 				mshFloor.receiveShadow = true;
 				mshFloor.position.set( 0, - 0.05, 0 );
 
@@ -122,6 +126,7 @@
 				scene.add( mshSphere );
 				scene.add( ambient );
 				scene.add( spotLight );
+				scene.add( lightHelper );
 				scene.add( mshLight );
 				scene.add( new THREE.AxisHelper( 10 ) );
 			
@@ -158,9 +163,12 @@
 				spotLight.angle = params.lightAngle * THREE.Math.DEG2RAD;
 				spotLight.shadow.radius = params.lightRadius;
 				spotLight.shadow.camera.near = params.lightNear;
-				spotLight.shadow.camera.far = params.lightFar;
+				spotLight.distance = params.lightFar;
 				spotLight.updateMatrixWorld();
+				spotLight.shadow.update( spotLight );
 
+				if ( lightHelper ) lightHelper.update();
+			
 				mshLight.position.copy( spotLight.position );
 				mshLight.scale.set( params.lightRadius, params.lightRadius, params.lightRadius );
 				mshLight.updateMatrixWorld();

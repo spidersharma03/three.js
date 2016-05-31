@@ -5,7 +5,7 @@
 THREE.SpotLightShadow = function () {
 
 	this.cameraNearFar = new THREE.Vector3( 50 * THREE.Math.DEG2RAD, 0.5, 500 );
-	THREE.LightShadow.call( this, new THREE.PerspectiveCamera( this.cameraNearFar.x * THREE.Math.RAD2DEG, 1, this.cameraNearFar.y, this.cameraNearFar.z ) );
+	THREE.LightShadow.call( this, new THREE.PerspectiveCamera( this.cameraNearFar.x * THREE.Math.RAD2DEG * 2, 1, this.cameraNearFar.y, this.cameraNearFar.z ) );
 
 };
 
@@ -19,9 +19,6 @@ THREE.SpotLightShadow.prototype = Object.assign( Object.create( THREE.LightShado
 		var aspect = this.mapSize.width / this.mapSize.height;
 		var far = light.distance || 500;
 
-		this.cameraNearFar.x = fov * THREE.Math.DEG2RAD;
-		this.cameraNearFar.z = far;
-
 		var camera = this.camera;
 
 		if ( fov !== camera.fov || aspect !== camera.aspect || far !== camera.far ) {
@@ -32,6 +29,10 @@ THREE.SpotLightShadow.prototype = Object.assign( Object.create( THREE.LightShado
 			camera.updateProjectionMatrix();
 
 		}
+
+		this.cameraNearFar.x = light.angle;
+		this.cameraNearFar.y = camera.near;
+		this.cameraNearFar.z = camera.far;
 
 	}
 
