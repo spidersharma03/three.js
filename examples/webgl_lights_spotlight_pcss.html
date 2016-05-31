@@ -73,25 +73,25 @@
 			var lightHelper;
 	
 			var params = {
-				lightDistance: 10.0,
+				lightHeight: 10.0,
 				lightShift: 0,
-				lightRadius: 1.0,
+				lightRadius: 0.15,
 				lightAngle: 45,
 				lightNear: 4,
 				lightFar: 40,
-				objectDistance: 5.0,
+				objectHeight: 5.0,
 				objectRadius: 1.0
 			}
 
 			// Init gui
 			var gui = new dat.GUI();
-			gui.add( params, "lightDistance", 10, 30 );
-			gui.add( params, "lightShift", 0, 4 );
-			gui.add( params, "lightRadius", 0.1, 4 );
+			gui.add( params, "lightRadius", 0.05, 1.0 );
+			gui.add( params, "lightHeight", 10, 30 );
+			gui.add( params, "lightShift", 0, 6 );
 			gui.add( params, "lightAngle", 5, 60 );
 			//gui.add( params, "lightNear", 2, 60 );
 			//gui.add( params, "lightFar", 0.5, 60 );
-			gui.add( params, "objectDistance", 2, 8 );
+			gui.add( params, "objectHeight", 0, 6 );
 			gui.add( params, "objectRadius", 0.1, 4 );
 
 			function init() {
@@ -107,7 +107,7 @@
 
 				camera.position.set( 30, 10, 30 );
 				
-				spotLight.position.set( 0, params.lightDistance, 0 );
+				spotLight.position.set( 0, params.lightZ, 0 );
 				spotLight.intensity = 0.5;
 				spotLight.castShadow = true;
 				spotLight.distance = 200;
@@ -119,7 +119,7 @@
 				lightHelper = new THREE.SpotLightHelper( spotLight );
 				
 				mshFloor.receiveShadow = true;
-				mshFloor.position.set( 0, - 0.05, 0 );
+				mshFloor.position.set( 0, - 0.5, 0 );
 
 				mshSphere.castShadow = true;				
 				mshSphere.receiveShadow = true;
@@ -161,7 +161,7 @@
 
 			function updateScene() {
 
-				spotLight.position.set( 0, params.lightDistance, params.lightShift );
+				spotLight.position.set( 0, params.lightHeight, params.lightShift );
 				//spotLight.target.position.set( 0, -params.lightDistance, 0 );
 				spotLight.angle = params.lightAngle * THREE.Math.DEG2RAD;
 				spotLight.shadow.radius = params.lightRadius;
@@ -176,7 +176,9 @@
 				mshLight.scale.set( params.lightRadius, params.lightRadius, params.lightRadius );
 				mshLight.updateMatrixWorld();
 
-				mshSphere.position.set( 0, params.objectDistance, 0 );
+				params.objectRadius = Math.max( params.objectRadius, params.lightRadius * 2 );
+
+				mshSphere.position.set( 0, params.objectHeight + params.objectRadius, 0 );
 				mshSphere.scale.set( params.objectRadius, params.objectRadius, params.objectRadius );
 				mshSphere.updateMatrixWorld();
 

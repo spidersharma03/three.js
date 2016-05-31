@@ -2449,8 +2449,6 @@ THREE.WebGLRenderer = function ( parameters ) {
 					uniforms.shadowRadius = light.shadow.radius;
 					uniforms.shadowMapSize = light.shadow.mapSize;
 					uniforms.shadowCameraNearFar = light.shadow.cameraNearFar;
-					console.log( 'light.shadow.radius', light.shadow.radius );
-		console.log( 'light.shadow.cameraNearFar', light.shadow.cameraNearFar );
 
 				}
 
