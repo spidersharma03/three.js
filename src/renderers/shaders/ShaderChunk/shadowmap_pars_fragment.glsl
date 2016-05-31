@@ -57,7 +57,7 @@
 
 		float findBlocker( sampler2D shadowMap, const in vec2 uv, const in float lightFrustumHalfHeightAt1m, const in float receiverClipZ, const in float receiverLightZ, const in float lightRadius, const in vec3 shadowCameraNearFar ) {
 			// compute the search radius at the near clipping plane
-			float searchRadius = ( lightRadius / receiverLightZ ) * ( receiverLightZ - shadowCameraNearFar.y ) / ( lightFrustumHalfHeightAt1m * shadowCameraNearFar.y );
+			float searchRadius = 2.0 * ( lightRadius / receiverLightZ ) * ( receiverLightZ - shadowCameraNearFar.y ) / ( lightFrustumHalfHeightAt1m * shadowCameraNearFar.y );
 			float blockerDepthSum = 0.0;
 			int numBlockers = 0;
 
@@ -116,13 +116,21 @@
 
 			float receiverLightZ = -perspectiveDepthToViewZ( receiverClipZ, shadowCameraNearFar.y, shadowCameraNearFar.z );
 
+			//float searchRadius = ( lightRadius / receiverLightZ ) * ( receiverLightZ - shadowCameraNearFar.y ) / ( lightFrustumHalfHeightAt1m * shadowCameraNearFar.y );
+			
+			//return searchRadius );
+
 			// STEP 1: blocker search
 			float blockerClipZ = findBlocker( shadowMap, uv, lightFrustumHalfHeightAt1m, receiverClipZ, receiverLightZ, lightRadius, shadowCameraNearFar );
 
 			//There are no occluders so early out (this saves filtering)
 			if( blockerClipZ == -1.0 ) return 1.0;
 
+			return 0.0;
+
 			float blockerLightZ = -perspectiveDepthToViewZ( blockerClipZ, shadowCameraNearFar.y, shadowCameraNearFar.z );
+
+			//return - blockerClipZ;
 			// STEP 2: penumbra size
 			float filterRadius = ( lightRadius / blockerLightZ ) * ( receiverLightZ - blockerLightZ ) / ( receiverLightZ * lightFrustumHalfHeightAt1m );
 			//float penumbraRatio = penumbraSize( receiverLightZ, blockerClipZ );
