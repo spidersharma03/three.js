@@ -22,7 +22,7 @@
 	#endif
 
 	#if defined( SHADOWMAP_TYPE_PCSS )
-		#define PCSS_QUALITY_LEVEL 10
+		#define PCSS_QUALITY_LEVEL 1
 		#define PCSS_NUM_POISSON_SAMPLES 16
 
 		#define LIGHT_FRUSTUM_WIDTH 3.75 // remove me

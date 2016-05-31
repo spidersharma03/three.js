@@ -56,13 +56,14 @@
 			var scene = new THREE.Scene();
 			var stats;
 
-			var matLight = new THREE.MeshPhongMaterial( { emissive: 0xffffff } );
-			var matDiffuse = new THREE.MeshPhongMaterial( { color: 0x8888aa } );
+			var matLight = new THREE.MeshPhongMaterial( { emissive: 0xeeeeee } );
+			var matDiffuse = new THREE.MeshPhongMaterial( { color: 0x4444ff } );
+			var matFloor = new THREE.MeshPhongMaterial( { color: 0x555555 } );
 
 			var geoFloor = new THREE.BoxGeometry( 2000, 1, 2000 );
 			var geoSphere = new THREE.SphereGeometry( 1.0, 24, 24 );
 
-			var mshFloor = new THREE.Mesh( geoFloor, matDiffuse );
+			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
 			var mshSphere = new THREE.Mesh( geoSphere, matDiffuse );
 			var mshLight = new THREE.Mesh( geoSphere, matLight );
 
@@ -73,22 +74,24 @@
 	
 			var params = {
 				lightDistance: 10.0,
+				lightShift: 0,
 				lightRadius: 1.0,
 				lightAngle: 45,
-				lightNear: 2,
-				lightFar: 25,
+				lightNear: 4,
+				lightFar: 40,
 				objectDistance: 5.0,
 				objectRadius: 1.0
 			}
 
 			// Init gui
 			var gui = new dat.GUI();
-			gui.add( params, "lightDistance", 1, 20 );
+			gui.add( params, "lightDistance", 10, 30 );
+			gui.add( params, "lightShift", 0, 4 );
 			gui.add( params, "lightRadius", 0.1, 4 );
 			gui.add( params, "lightAngle", 5, 60 );
-			gui.add( params, "lightNear", 2, 60 );
-			gui.add( params, "lightFar", 0.5, 60 );
-			gui.add( params, "objectDistance", 1, 10 );
+			//gui.add( params, "lightNear", 2, 60 );
+			//gui.add( params, "lightFar", 0.5, 60 );
+			gui.add( params, "objectDistance", 2, 8 );
 			gui.add( params, "objectRadius", 0.1, 4 );
 
 			function init() {
@@ -103,7 +106,7 @@
 				renderer.gammaOutput = true;
 
 				camera.position.set( 30, 10, 30 );
-
+				
 				spotLight.position.set( 0, params.lightDistance, 0 );
 				spotLight.intensity = 0.5;
 				spotLight.castShadow = true;
@@ -118,7 +121,7 @@
 				mshFloor.receiveShadow = true;
 				mshFloor.position.set( 0, - 0.05, 0 );
 
-				mshSphere.castShadow = true;
+				mshSphere.castShadow = true;				
 				mshSphere.receiveShadow = true;
 
 				scene.add( camera );
@@ -140,8 +143,8 @@
 				controls.minDistance = 20;
 				controls.maxDistance = 500;
 				controls.maxPolarAngle = Math.PI / 2;
-				controls.enablePan = false;
-				controls.target.set( 0, 0, 0 );
+				controls.enablePan = true;
+				controls.target.set( 0, 5, 0 );
 				controls.update();
 
 				window.addEventListener( 'resize', onResize, false );
@@ -158,7 +161,7 @@
 
 			function updateScene() {
 
-				spotLight.position.set( 0, params.lightDistance, 0 );
+				spotLight.position.set( 0, params.lightDistance, params.lightShift );
 				//spotLight.target.position.set( 0, -params.lightDistance, 0 );
 				spotLight.angle = params.lightAngle * THREE.Math.DEG2RAD;
 				spotLight.shadow.radius = params.lightRadius;
