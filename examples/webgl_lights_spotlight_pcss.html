@@ -57,11 +57,11 @@
 			var stats;
 
 			var matLight = new THREE.MeshPhongMaterial( { emissive: 0xeeeeee } );
-			var matDiffuse = new THREE.MeshPhongMaterial( { color: 0x4444ff } );
-			var matFloor = new THREE.MeshPhongMaterial( { color: 0x555555 } );
+			var matDiffuse = new THREE.MeshPhongMaterial( { color: 0xffffff } );
+			var matFloor = new THREE.MeshPhongMaterial( { color: 0xffffff } );
 
 			var geoFloor = new THREE.BoxGeometry( 2000, 1, 2000 );
-			var geoSphere = new THREE.SphereGeometry( 1.0, 24, 24 );
+			var geoSphere = new THREE.CylinderGeometry( 0.0, 0.1, 5, 24, 24 );
 
 			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
 			var mshSphere = new THREE.Mesh( geoSphere, matDiffuse );
@@ -108,7 +108,7 @@
 				camera.position.set( 30, 10, 30 );
 				
 				spotLight.position.set( 0, params.lightZ, 0 );
-				spotLight.intensity = 0.5;
+				spotLight.intensity = 1;
 				spotLight.castShadow = true;
 				spotLight.distance = 200;
 				spotLight.shadow.mapSize.width = 2048;
@@ -129,9 +129,9 @@
 				scene.add( mshSphere );
 				scene.add( ambient );
 				scene.add( spotLight );
-				scene.add( lightHelper );
-				scene.add( mshLight );
-				scene.add( new THREE.AxisHelper( 10 ) );
+			//	scene.add( lightHelper );
+				//scene.add( mshLight );
+				//scene.add( new THREE.AxisHelper( 10 ) );
 			
 				container.appendChild( renderer.domElement );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -176,7 +176,7 @@
 				mshLight.scale.set( params.lightRadius, params.lightRadius, params.lightRadius );
 				mshLight.updateMatrixWorld();
 
-				params.objectRadius = Math.max( params.objectRadius, params.lightRadius * 2 );
+				//params.objectRadius = Math.max( params.objectRadius, params.lightRadius * 2 );
 
 				mshSphere.position.set( 0, params.objectHeight + params.objectRadius, 0 );
 				mshSphere.scale.set( params.objectRadius, params.objectRadius, params.objectRadius );

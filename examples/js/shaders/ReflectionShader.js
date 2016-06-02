@@ -1,4 +1,4 @@
-THREE.GlossyMirrorShader = {
+THREE.ReflectionShader = {
 
 	defines: {
 		"SPECULAR_MAP": 0,
@@ -10,6 +10,7 @@ THREE.GlossyMirrorShader = {
 
 	uniforms: {
 
+	 	"reflectivity": { type: "f", value: 0.5 },
 	 	"metalness": { type: "f", value: 0.0 },
 	
 	 	"specularColor": { type: "c", value: new THREE.Color( 0xffffff ) },
@@ -68,12 +69,16 @@ THREE.GlossyMirrorShader = {
 		"#include <packing>",
 		"#include <bsdfs>",
 
+		"#define MAXIMUM_SPECULAR_COEFFICIENT 0.16",
+		"#define DEFAULT_SPECULAR_COEFFICIENT 0.04",
+
 		"uniform float roughness;",
 		"#if ROUGHNESS_MAP == 1",
 			"uniform sampler2D tRoughness;",
 		"#endif",
 
 		"uniform float metalness;",
+		"uniform float reflectivity;",
 		"uniform float distanceFade;",
 	
 		"uniform vec3 specularColor;",
@@ -177,6 +182,8 @@ THREE.GlossyMirrorShader = {
 
 		"void main() {",
 	
+			"return vec4( 1.0, 0.0, 0.0, 1.0 );",
+			
 			"vec3 specular = specularColor;",
 			"#if SPECULAR_MAP == 1",
 				"specular *= texture2D( tSpecular, vUv );",
@@ -201,7 +208,7 @@ THREE.GlossyMirrorShader = {
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
 
 				"localRoughness = localRoughness * distance * 0.2;",
-				"float lodLevel = localRoughness;",
+				"float lodLevel = 0.0;//localRoughness;",
 
 				"fade = pow( 1.0 - distanceFade, distance );",
 			"#else",
@@ -213,12 +220,12 @@ THREE.GlossyMirrorShader = {
 			"vec4 reflection = getReflection( mirrorCoord, lodLevel );",
 
 			// apply dieletric-conductor model parameterized by metalness parameter.
-			"float reflectance = mix( 0.05, 1.0, metalness );",
+			"float reflectance = mix( MAXIMUM_SPECULAR_COEFFICIENT * pow2( reflectivity ), 1.0, metalness );",
 	
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
 			"float fresnel = F_Schlick( reflectance, dotNV );",
 			"specular = mix( vec3( 1.0 ), specular, metalness );",
-			"gl_FragColor = vec4( reflection.rgb * specular, fresnel * fade );", // fresnel controls alpha
+			"gl_FragColor = vec4( reflection.rgb * specular, reflection.a * fresnel * fade );", // fresnel controls alpha
 
 
 		"}"
