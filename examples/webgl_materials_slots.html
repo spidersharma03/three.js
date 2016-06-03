@@ -31,7 +31,7 @@
 		<div id="container"></div>
 		<div id="info"><a href="http://threejs.org" target="_blank">threejs</a> - Per-Map Per-Material UV Channel, UV Repeat/Offset, and Texel Scale/Offset/Invert<br/>via THREE.Map by <a href="http://clara.io/" target="_blank">Ben Houston</a>.</div>
 
-		<script src="../build/three.min.js"></script>
+		<script src="../build/three.js"></script>
 		<script src="../examples/js/controls/OrbitControls.js"></script>
 		<script src="../src/loaders/BinaryTextureLoader.js"></script>
 
@@ -150,7 +150,7 @@
 					var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
 					pmremCubeUVPacker.update( renderer );
 
-					standardMaterial.envMap = pmremCubeUVPacker.CubeUVRenderTarget;
+					standardMaterial.envMap = pmremCubeUVPacker.CubeUVRenderTarget.texture;
 					standardMaterial.envMapIntensity = 3;
 					standardMaterial.needsUpdate = true;
 

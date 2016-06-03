@@ -14,6 +14,8 @@ THREE.LightShadow = function ( camera ) {
 	this.map = null;
 	this.matrix = new THREE.Matrix4();
 
+	this.cameraFovNearFar = new THREE.Vector3( 2 * THREE.Math.DEG2RAD, 0.5, 500 );
+
 };
 
 Object.assign( THREE.LightShadow.prototype, {
@@ -27,9 +29,13 @@ Object.assign( THREE.LightShadow.prototype, {
 
 		this.mapSize.copy( source.mapSize );
 
+		this.cameraFovNearFar.copy( source.cameraFovNearFar );
+
 		return this;
 
 	},
+
+
 
 	clone: function () {
 

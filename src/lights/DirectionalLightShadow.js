@@ -10,6 +10,14 @@ THREE.DirectionalLightShadow = function ( light ) {
 
 THREE.DirectionalLightShadow.prototype = Object.assign( Object.create( THREE.LightShadow.prototype ), {
 
-	constructor: THREE.DirectionalLightShadow
+	constructor: THREE.DirectionalLightShadow,
+
+	update: function ( light ) {
+
+		this.cameraFovNearFar.x = 2 * THREE.Math.DEG2RAD; // soft shadow spread angle
+		this.cameraFovNearFar.y = camera.near;
+		this.cameraFovNearFar.z = camera.far;
+
+	}
 
 } );
