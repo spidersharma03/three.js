@@ -66,6 +66,7 @@ var files = {
 		"webgl_lights_pointlights",
 		"webgl_lights_pointlights2",
 		"webgl_lights_spotlight",
+		"webgl_lights_spotlight_pcss",
 		"webgl_lights_spotlights",
 		"webgl_lines_colors",
 		"webgl_lines_cubes",
