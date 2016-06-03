@@ -107,10 +107,10 @@
 			return float( numBlockers ) / ( 2.0 * float( PCSS_NUM_POISSON_SAMPLES * PCSS_QUALITY_LEVEL ) );
 		}
 
-		float percentCloserSoftShadow( sampler2D shadowMap, const in float lightRadius, const in vec3 shadowCameraNearFar, const in vec4 coords ) {
+		float percentCloserSoftShadow( sampler2D shadowMap, const in float lightRadius, const in vec3 shadowCameraFovNearFar, const in vec4 coords ) {
 
 			vec2 uv = coords.xy;
-			float receiverClipZ = coords.z, cameraNear = shadowCameraNearFar.y, cameraFar = shadowCameraNearFar.z;
+			float receiverClipZ = coords.z, cameraNear = shadowCameraFovNearFar.y, cameraFar = shadowCameraFovNearFar.z;
 			float lightFrustumHalfHeightAt1m = tan( cameraNear * 0.5 );
 
 			float receiverLightZ = -perspectiveDepthToViewZ( receiverClipZ, cameraNear, cameraFar );
@@ -168,7 +168,7 @@
 
 	}
 
-	float getShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec3 shadowCameraNearFar, vec4 shadowCoord ) {
+	float getShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec3 shadowCameraFovNearFar, vec4 shadowCoord ) {
 
 		shadowCoord.xyz /= shadowCoord.w;
 		shadowCoord.z += shadowBias;
@@ -229,7 +229,7 @@
 
 		#elif defined( SHADOWMAP_TYPE_PCSS )
 
-		  return percentCloserSoftShadow( shadowMap, /* interpreted as lightRadius */ shadowRadius, shadowCameraNearFar, shadowCoord );
+		  return percentCloserSoftShadow( shadowMap, /* interpreted as lightRadius */ shadowRadius, shadowCameraFovNearFar, shadowCoord );
 
 		#else // no percentage-closer filtering:
 

@@ -137,8 +137,8 @@ THREE.UniformsLib = {
 			"shadow": {},
 			"shadowBias": {},
 			"shadowRadius": {},
-			"shadowMapSize": {}
-			"shadowCameraNearFar": {}
+			"shadowMapSize": {},
+			"shadowCameraFovNearFar": {}
 		} },
 
 		"spotShadowMap": { value: [] },
