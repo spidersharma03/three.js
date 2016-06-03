@@ -44,7 +44,9 @@
   "devDependencies": {
     "argparse": "^1.0.3",
     "chokidar-cli": "1.2.0",
+    "google-closure-compiler": "20160208.7.0",
     "jscs": "^1.13.1",
+    "temp-path": "1.0.0",
     "uglify-js": "^2.6.0"
     }
 }
