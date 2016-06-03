@@ -50,7 +50,9 @@
 
 		<script>
 
-			var camera, scene, renderer, composer, copyPass, msaaRenderPass;
+			var scene, renderer;
+			var cameraP, composerP, copyPassP, msaaRenderPassP;
+			var cameraO, composerO, copyPassO, msaaRenderPassO;
 			var gui, stats, texture;
 
 			var param = {
@@ -58,6 +60,7 @@
 				unbiased: true,
 				manualCompositing: false,
 				renderToScreen: false
+				camera: 'perspective'
 			};
 
 			init();
@@ -82,6 +85,7 @@
 					'Level 4: 16 Samples': 4,
 					'Level 5: 32 Samples': 5
 				} );
+				gui.add( param, 'camera', [ 'perspective', 'ortho' ] );
 
 				gui.open();
 
@@ -93,6 +97,7 @@
 
 				var width = window.innerWidth || 1;
 				var height = window.innerHeight || 1;
+				var aspect = width / height;
 				var devicePixelRatio = window.devicePixelRatio || 1;
 
 				renderer = new THREE.WebGLRenderer( { antialias: false } );
@@ -105,8 +110,17 @@
 
 				//
 
-				camera = new THREE.PerspectiveCamera( 65, width / height, 3, 10 );
-				camera.position.z = 7;
+				cameraP = new THREE.PerspectiveCamera( 65, aspect, 3, 10 );
+				cameraP.position.z = 7;
+
+				cameraO = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 3, 10 );
+				cameraO.position.z = 7;
+
+				var fov = THREE.Math.degToRad( cameraP.fov );
+				var hyperfocus = ( cameraP.near + cameraP.far ) / 2;
+				var _height = 2 * Math.tan( fov / 2 ) * hyperfocus;
+				cameraO.zoom = height / _height;
+
 
 				scene = new THREE.Scene();
 
@@ -156,14 +170,19 @@
 
 				// postprocessing
 
-				composer = new THREE.EffectComposer( renderer );
+				composerP = new THREE.EffectComposer( renderer );
+				msaaRenderPassP = new THREE.ManualMSAARenderPass( scene, cameraP );
+				composerP.addPass( msaaRenderPassP );
+				copyPassP = new THREE.ShaderPass( THREE.CopyShader );
+				copyPassP.renderToScreen = true;
+				composerP.addPass( copyPassP );
 
-				msaaRenderPass = new THREE.ManualMSAARenderPass( scene, camera );
-				composer.addPass( msaaRenderPass );
-
-				copyPass = new THREE.ShaderPass( THREE.CopyShader );
-		    copyPass.renderToScreen = true;
-				composer.addPass( copyPass );
+				composerO = new THREE.EffectComposer( renderer );
+				msaaRenderPassO = new THREE.ManualMSAARenderPass( scene, cameraO );
+				composerO.addPass( msaaRenderPassO );
+				copyPassO = new THREE.ShaderPass( THREE.CopyShader );
+				copyPassO.renderToScreen = true;
+				composerO.addPass( copyPassO );
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
@@ -173,9 +192,16 @@
 
 				var width = window.innerWidth;
 				var height = window.innerHeight;
+				var aspect = width / height;
 
-				camera.aspect = width / height;
-				camera.updateProjectionMatrix();
+				cameraP.aspect = aspect;
+				cameraO.updateProjectionMatrix();
+
+				cameraO.left = - height * aspect;
+				cameraO.right = height * aspect;
+				cameraO.top = height;
+				cameraO.bottom = - height;
+				cameraO.updateProjectionMatrix();
 
 				renderer.setSize( width, height );
 
@@ -208,7 +234,12 @@
 
 				copyPass.enabled = ! param.renderToScreen;
 
-				composer.render();
+				if( param.camera === 'perspective' ){
+					composerP.render();
+				}else{
+					composerO.render();
+				}
+
 				stats.end();
 
 			}

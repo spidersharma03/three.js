@@ -6,175 +6,175 @@ THREE.UniformsLib = {
 
 	common: {
 
-		"diffuse": { type: "c", value: new THREE.Color( 0xeeeeee ) },
-		"opacity": { type: "1f", value: 1.0 },
+		"diffuse": { value: new THREE.Color( 0xeeeeee ) },
+		"opacity": { value: 1.0 },
 
-		"map": { type: "t", value: null },
-		"mapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"mapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
-		"offsetRepeat": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"map": { value: null },
+		"mapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"mapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"offsetRepeat": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
 
-		"specularMap": { type: "t", value: null },
-		"specularMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"specularMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
+		"specularMap": { value: null },
+		"specularMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"specularMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
 
-		"alphaMap": { type: "t", value: null },
-		"alphaMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"alphaMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
+		"alphaMap": { value: null },
+		"alphaMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"alphaMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
 
-		"envMap": { type: "t", value: null },
-		"flipEnvMap": { type: "1f", value: - 1 },
-		"reflectivity": { type: "1f", value: 1.0 },
-		"refractionRatio": { type: "1f", value: 0.98 }
+		"envMap": { value: null },
+		"flipEnvMap": { value: - 1 },
+		"reflectivity": { value: 1.0 },
+		"refractionRatio": { value: 0.98 }
 
 	},
 
 	aomap: {
 
-		"aoMap": { type: "t", value: null },
-		"aoMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"aoMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
-		"aoMapIntensity": { type: "1f", value: 1 }
+		"aoMap": { value: null },
+		"aoMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"aoMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"aoMapIntensity": { value: 1 }
 
 	},
 
 	lightmap: {
 
-		"lightMap": { type: "t", value: null },
-		"lightMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"lightMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
-		"lightMapIntensity": { type: "1f", value: 1 }
+		"lightMap": { value: null },
+		"lightMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"lightMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"lightMapIntensity": { value: 1 }
 
 	},
 
 	emissivemap: {
 
-		"emissiveMap": { type: "t", value: null },
-		"emissiveMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"emissiveMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
+		"emissiveMap": { value: null },
+		"emissiveMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"emissiveMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
 
 	},
 
 	bumpmap: {
 
-		"bumpMap": { type: "t", value: null },
-		"bumpScale": { type: "1f", value: 1 },
-		"bumpMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"bumpMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
+		"bumpMap": { value: null },
+		"bumpScale": { value: 1 },
+		"bumpMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"bumpMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
 
 	},
 
 	normalmap: {
 
-		"normalMap": { type: "t", value: null },
-		"normalScale": { type: "v2", value: new THREE.Vector2( 1, 1 ) }, // for backwards compatibility
-		"normalMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"normalMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
+		"normalMap": { value: null },
+		"normalScale": { value: new THREE.Vector2( 1, 1 ) }, // for backwards compatibility
+		"normalMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"normalMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
 
 	},
 
 	displacementmap: {
 
-		"displacementMap": { type: "t", value: null },
-		"displacementScale": { type: "1f", value: 1 }, // for backwards compatibility
-		"displacementBias": { type: "1f", value: 0 }, // for backwards compatibility
-		"displacementMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"displacementMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
+		"displacementMap": { value: null },
+		"displacementScale": { value: 1 }, // for backwards compatibility
+		"displacementBias": { value: 0 }, // for backwards compatibility
+		"displacementMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"displacementMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
 
 	},
 
 	roughnessmap: {
 
-		"roughnessMap": { type: "t", value: null },
-		"roughnessMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"roughnessMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
+		"roughnessMap": { value: null },
+		"roughnessMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"roughnessMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
 
 	},
 
 	metalnessmap: {
 
-		"metalnessMap": { type: "t", value: null },
-		"metalnessMapUVTransformParams": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"metalnessMapTexelTransformParams": { type: "v2", value: new THREE.Vector2( 1, 0 ) }
+		"metalnessMap": { value: null },
+		"metalnessMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"metalnessMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
 
 	},
 
 	fog: {
 
-		"fogDensity": { type: "1f", value: 0.00025 },
-		"fogNear": { type: "1f", value: 1 },
-		"fogFar": { type: "1f", value: 2000 },
-		"fogColor": { type: "c", value: new THREE.Color( 0xffffff ) }
+		"fogDensity": { value: 0.00025 },
+		"fogNear": { value: 1 },
+		"fogFar": { value: 2000 },
+		"fogColor": { value: new THREE.Color( 0xffffff ) }
 
 	},
 
 	lights: {
 
-		"ambientLightColor": { type: "3fv", value: [] },
+		"ambientLightColor": { value: [] },
 
-		"directionalLights": { type: "sa", value: [], properties: {
-			"direction": { type: "v3" },
-			"color": { type: "c" },
+		"directionalLights": { value: [], properties: {
+			"direction": {},
+			"color": {},
 
-			"shadow": { type: "1i" },
-			"shadowBias": { type: "1f" },
-			"shadowRadius": { type: "1f" },
-			"shadowMapSize": { type: "v2" }
+			"shadow": {},
+			"shadowBias": {},
+			"shadowRadius": {},
+			"shadowMapSize": {}
 		} },
 
-		"directionalShadowMap": { type: "tv", value: [] },
-		"directionalShadowMatrix": { type: "m4v", value: [] },
+		"directionalShadowMap": { value: [] },
+		"directionalShadowMatrix": { value: [] },
 
-		"spotLights": { type: "sa", value: [], properties: {
-			"color": { type: "c" },
-			"position": { type: "v3" },
-			"direction": { type: "v3" },
-			"distance": { type: "1f" },
-			"coneCos": { type: "1f" },
-			"penumbraCos": { type: "1f" },
-			"decay": { type: "1f" },
+		"spotLights": { value: [], properties: {
+			"color": {},
+			"position": {},
+			"direction": {},
+			"distance": {},
+			"coneCos": {},
+			"penumbraCos": {},
+			"decay": {},
 
-			"shadow": { type: "1i" },
-			"shadowBias": { type: "1f" },
-			"shadowRadius": { type: "1f" },
-			"shadowMapSize": { type: "v2" },
-			"shadowCameraNearFar": { type: "v3" }
+			"shadow": {},
+			"shadowBias": {},
+			"shadowRadius": {},
+			"shadowMapSize": {}
+			"shadowCameraNearFar": {}
 		} },
 
-		"spotShadowMap": { type: "tv", value: [] },
-		"spotShadowMatrix": { type: "m4v", value: [] },
+		"spotShadowMap": { value: [] },
+		"spotShadowMatrix": { value: [] },
 
-		"pointLights": { type: "sa", value: [], properties: {
-			"color": { type: "c" },
-			"position": { type: "v3" },
-			"decay": { type: "1f" },
-			"distance": { type: "1f" },
+		"pointLights": { value: [], properties: {
+			"color": {},
+			"position": {},
+			"decay": {},
+			"distance": {},
 
-			"shadow": { type: "1i" },
-			"shadowBias": { type: "1f" },
-			"shadowRadius": { type: "1f" },
-			"shadowMapSize": { type: "v2" }
+			"shadow": {},
+			"shadowBias": {},
+			"shadowRadius": {},
+			"shadowMapSize": {}
 		} },
 
-		"pointShadowMap": { type: "tv", value: [] },
-		"pointShadowMatrix": { type: "m4v", value: [] },
+		"pointShadowMap": { value: [] },
+		"pointShadowMatrix": { value: [] },
 
-		"hemisphereLights": { type: "sa", value: [], properties: {
-			"direction": { type: "v3" },
-			"skyColor": { type: "c" },
-			"groundColor": { type: "c" }
+		"hemisphereLights": { value: [], properties: {
+			"direction": {},
+			"skyColor": {},
+			"groundColor": {}
 		} }
 
 	},
 
 	points: {
 
-		"diffuse": { type: "c", value: new THREE.Color( 0xeeeeee ) },
-		"opacity": { type: "1f", value: 1.0 },
-		"size": { type: "1f", value: 1.0 },
-		"scale": { type: "1f", value: 1.0 },
-		"map": { type: "t", value: null },
-		"offsetRepeat": { type: "v4", value: new THREE.Vector4( 0, 0, 1, 1 ) }
+		"diffuse": { value: new THREE.Color( 0xeeeeee ) },
+		"opacity": { value: 1.0 },
+		"size": { value: 1.0 },
+		"scale": { value: 1.0 },
+		"map": { value: null },
+		"offsetRepeat": { value: new THREE.Vector4( 0, 0, 1, 1 ) }
 
 	}
 
