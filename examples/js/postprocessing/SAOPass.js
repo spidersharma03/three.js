@@ -20,6 +20,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.manualCompositing = false;
+	this.depthMIPs = false;
 
 	/*
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
@@ -128,7 +129,7 @@ THREE.SAOPass.prototype = {
 	updateParameters: function( camera ) {
 
 		var vSizeAt1M = 1 / ( Math.tan( THREE.Math.DEG2RAD * camera.fov * 0.5 ) * 2 );
-		var sizeAt1M = new THREE.Vector2( vSizeAt1M, vSizeAt1M * camera.aspect );
+		var sizeAt1M = new THREE.Vector2( vSizeAt1M / camera.aspect, vSizeAt1M );
 
 		this.saoMaterial.uniforms['worldToScreenRatio'].value = sizeAt1M;
 
@@ -201,18 +202,21 @@ THREE.SAOPass.prototype = {
 
 		}
 
-		this.depthMinifyMaterial.uniforms['tDepth'].value = depthTexture;
-		this.depthMinifyMaterial.uniforms['size'].value.set( width, height );
-		renderer.renderPass( this.depthMinifyMaterial, this.depth1RenderTarget, true );
+		if( this.depthMIPs ) {
 
-		this.depthMinifyMaterial.uniforms['tDepth'].value = this.depth1RenderTarget.texture;
-		this.depthMinifyMaterial.uniforms['size'].value.set( Math.ceil( width / 2 ), Math.ceil( height / 2 ) );
-		renderer.renderPass( this.depthMinifyMaterial, this.depth2RenderTarget, true );
+			this.depthMinifyMaterial.uniforms['tDepth'].value = depthTexture;
+			this.depthMinifyMaterial.uniforms['size'].value.set( width, height );
+			renderer.renderPass( this.depthMinifyMaterial, this.depth1RenderTarget, true );
 
-		this.depthMinifyMaterial.uniforms['tDepth'].value = this.depth2RenderTarget.texture;
-		this.depthMinifyMaterial.uniforms['size'].value.set( Math.ceil( width / 4 ), Math.ceil( height / 4 ) );
-		renderer.renderPass( this.depthMinifyMaterial, this.depth3RenderTarget, true );
+			this.depthMinifyMaterial.uniforms['tDepth'].value = this.depth1RenderTarget.texture;
+			this.depthMinifyMaterial.uniforms['size'].value.set( Math.ceil( width / 2 ), Math.ceil( height / 2 ) );
+			renderer.renderPass( this.depthMinifyMaterial, this.depth2RenderTarget, true );
 
+			this.depthMinifyMaterial.uniforms['tDepth'].value = this.depth2RenderTarget.texture;
+			this.depthMinifyMaterial.uniforms['size'].value.set( Math.ceil( width / 4 ), Math.ceil( height / 4 ) );
+			renderer.renderPass( this.depthMinifyMaterial, this.depth3RenderTarget, true );
+
+		}
 
 		if( this.outputOverride === "depth" ) {
 
@@ -271,11 +275,15 @@ THREE.SAOPass.prototype = {
 		}
 
 		this.saoMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
-		this.saoMaterial.uniforms[ "tDepth" ].value = depthTexture;
-		this.saoMaterial.uniforms[ "tDepth1" ].value = this.depth1RenderTarget.texture;
-		this.saoMaterial.uniforms[ "tDepth2" ].value = this.depth2RenderTarget.texture;
-		this.saoMaterial.uniforms[ "tDepth3" ].value = this.depth3RenderTarget.texture;
+		this.saoMaterial.defines[ 'DEPTH_MIPS' ] = this.depthMIPs ? 1 : 0;
 		this.saoMaterial.uniforms[ "tNormal" ].value = this.normalRenderTarget.texture;
+		this.saoMaterial.uniforms[ "tDepth" ].value = depthTexture;
+		if( this.depthMIPs ) {
+
+			this.saoMaterial.uniforms[ "tDepth1" ].value = this.depth1RenderTarget.texture;
+			this.saoMaterial.uniforms[ "tDepth2" ].value = this.depth2RenderTarget.texture;
+			this.saoMaterial.uniforms[ "tDepth3" ].value = this.depth3RenderTarget.texture;
+		}
 
 		renderer.setClearColor( 0xffffff );
 		renderer.setClearAlpha( 1.0 );

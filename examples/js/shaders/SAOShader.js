@@ -51,6 +51,7 @@ THREE.SAOShader = {
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
 		"DEPTH_PACKING": 1,
+		"DEPTH_MIPS": 0,
 		"PERSPECTIVE_CAMERA": 1
 	},
 
@@ -109,9 +110,12 @@ THREE.SAOShader = {
 		"#define MAX_MIP_LEVEL 3",
 
 		"uniform sampler2D tDepth;",
-		"uniform sampler2D tDepth1;",
-		"uniform sampler2D tDepth2;",
-		"uniform sampler2D tDepth3;",
+
+		"#if DEPTH_MIPS == 1",
+			"uniform sampler2D tDepth1;",
+			"uniform sampler2D tDepth2;",
+			"uniform sampler2D tDepth3;",
+		"#endif",
 
 		"#if NORMAL_TEXTURE == 1",
 			"uniform sampler2D tNormal;",
@@ -163,18 +167,22 @@ THREE.SAOShader = {
 		"float getDepthMIP( const in vec2 screenPosition, const int mipLevel ) {",
 
 			"vec4 rawDepth;",
-			"if( mipLevel == 0 ) {",
+			"#if DEPTH_MIPS == 0",
 				"rawDepth = texture2D( tDepth, screenPosition );",
-			"}",
-			"else if( mipLevel == 1 ) {",
-				"rawDepth = texture2D( tDepth1, screenPosition );",
-			"}",
-			"else if( mipLevel == 2 ) {",
-				"rawDepth = texture2D( tDepth2, screenPosition );",
-			"}",
-			"else {",
-				"rawDepth = texture2D( tDepth3, screenPosition );",
-			"}",
+			"#else",
+				"if( mipLevel == 0 ) {",
+					"rawDepth = texture2D( tDepth, screenPosition );",
+				"}",
+				"else if( mipLevel == 1 ) {",
+					"rawDepth = texture2D( tDepth1, screenPosition );",
+				"}",
+				"else if( mipLevel == 2 ) {",
+					"rawDepth = texture2D( tDepth2, screenPosition );",
+				"}",
+				"else {",
+					"rawDepth = texture2D( tDepth3, screenPosition );",
+				"}",
+			"#endif",
 
 			"#if DEPTH_PACKING == 1",
 				"return unpackRGBAToDepth( rawDepth );",
@@ -210,7 +218,7 @@ THREE.SAOShader = {
 		//"const float maximumScreenRadius = 10.0;",
 
 		"int getMipLevel( const in vec2 occlusionSphereScreenRadius ) {",
-    	"return int( clamp( floor( log2( length( occlusionSphereScreenRadius * size ) ) - 4.0 ), 0.0, 3.0 ) );",
+    		"return int( clamp( floor( log2( length( occlusionSphereScreenRadius * size ) ) - 4.0 ), 0.0, 3.0 ) );",
 		"}",
 
 		// moving costly divides into consts
@@ -238,7 +246,7 @@ THREE.SAOShader = {
 
 				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
 
-				"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
+				"int depthMipLevel = 0;//getMipLevel( radius * occlusionSphereScreenRadius );",
 				"float sampleDepth = getDepthMIP( sampleUv, depthMipLevel );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
 					"continue;",
