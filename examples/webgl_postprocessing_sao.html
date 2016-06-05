@@ -209,9 +209,9 @@
 				copyPass.renderToScreen = true;
 				composer.addPass( copyPass );
 
-				controls = new THREE.OrbitControls( camera );
-				controls.target.set( 0, 0, 0 );
-				controls.update();
+				//controls = new THREE.OrbitControls( camera );
+				//controls.target.set( 0, 0, 0 );
+				//controls.update();
 
 				window.addEventListener( 'resize', onWindowResize, false );
 			}
@@ -240,13 +240,13 @@
 			//	group.rotation.x = timer * 0.0002;
 			//	group.rotation.y = timer * 0.0001;
 
-			/*	camera.position.z = params.distance * params.scale;
+				camera.position.z = params.distance * params.scale;
 				camera.near = Math.max( ( params.distance - 4 ) * params.scale, 1 );
 				camera.far = ( params.distance + 4 ) * params.scale * 2;
 				camera.updateMatrixWorld( true );
-				camera.updateProjectionMatrix();*/
-				//group.scale.set( params.scale, params.scale, params.scale );
-				//group.updateMatrixWorld( true );
+				camera.updateProjectionMatrix();
+				group.scale.set( params.scale, params.scale, params.scale );
+				group.updateMatrixWorld( true );
 
 				if( params.manualCompositing ) params.renderToScreen = false;
 
@@ -265,7 +265,7 @@
 				msaaRenderPass.sampleLevel = Math.round( params.msaaLevel );
 
 				saoPass.enabled = params.saoEnabled;
-				saoPass.occlusionSphereWorldRadius = params.saoSphereRadius;
+				saoPass.occlusionSphereWorldRadius = params.saoSphereRadius * params.scale;
 				saoPass.intensity = params.saoIntensity;
 				saoPass.blurEnabled = params.saoBlur;
 
