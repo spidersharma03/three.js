@@ -270,7 +270,6 @@
 	"examples/js/postprocessing/ShaderPass.js",
 	"examples/js/postprocessing/SAOPass.js",
 	"examples/js/postprocessing/ManualMSAARenderPass.js",
-	"examples/js/GlossyMirror.js",
-	"examples/js/MirrorHelper.js"
+	"examples/js/GlossyMirror.js"
 
 ]

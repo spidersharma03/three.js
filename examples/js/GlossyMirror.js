@@ -3,7 +3,78 @@
  * @author bhouston / Ben Houston / ben@clara.io
  */
 
-THREE.GlossyMirror = function ( renderer, camera, options ) {
+THREE.MirrorHelper = function(mirror) {
+  this.scene = new THREE.Scene();
+  this.cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null);
+  this.scene.add(this.quad);
+  this.mirror = mirror;
+  this.numMipMaps = 4;
+	
+
+  this.mirrorTextureMipMaps = [];
+  this.tempRenderTargets = [];
+  var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
+  var mirrorTexture = mirror.texture;
+  var width = mirrorTexture.width/2, height = mirrorTexture.height/2;
+  for( var i=0; i<this.numMipMaps; i++) {
+    var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+    renderTarget.generateMipmaps = false;
+    this.mirrorTextureMipMaps.push(renderTarget);
+    width /= 2; height /= 2;
+  }
+
+  width = mirrorTexture.width/2; height = mirrorTexture.height/2;
+  for( var i=0; i<this.numMipMaps; i++) {
+    var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+    renderTarget.generateMipmaps = false;
+    this.tempRenderTargets.push(renderTarget);
+    width /= 2; height /= 2;
+  }
+
+  this.vBlurMaterial = new THREE.ShaderMaterial( THREE.BlurShader );
+  this.vBlurMaterial.side = THREE.DoubleSide;
+  this.vBlurMaterial.uniforms[ 'size' ].value.set( mirrorTexture.width/2, mirrorTexture.height/2 );
+  this.vBlurMaterial.blending = THREE.NoBlending;
+  THREE.BlurShaderUtils.configure( this.vBlurMaterial, 5, 3.0, new THREE.Vector2( 0, 1 ) );
+
+  this.hBlurMaterial = this.vBlurMaterial.clone();
+  this.hBlurMaterial.side = THREE.DoubleSide;
+  this.hBlurMaterial.uniforms[ 'size' ].value.set( mirrorTexture.width/2, mirrorTexture.height/2 );
+  this.hBlurMaterial.blending = THREE.NoBlending;
+  THREE.BlurShaderUtils.configure( this.hBlurMaterial, 5, 3.0, new THREE.Vector2( 1, 0 ) );
+}
+
+
+THREE.MirrorHelper.prototype = {
+
+  constructor: THREE.MirrorHelper,
+
+  update: function(renderer) {
+
+    var textureIn = this.mirror.texture;
+    for( var i=0; i<this.numMipMaps; i++) {
+      var renderTarget = this.mirrorTextureMipMaps[i];
+      var tempRenderTarget = this.tempRenderTargets[i];
+
+      this.hBlurMaterial.uniforms[ 'size' ].value.set( textureIn.width, textureIn.height );
+      this.hBlurMaterial.uniforms[ "tDiffuse" ].value = textureIn;
+      this.quad.material = this.hBlurMaterial;
+      renderer.render(this.scene, this.cameraOrtho, tempRenderTarget, true);
+
+      this.vBlurMaterial.uniforms[ 'size' ].value.set( tempRenderTarget.width, tempRenderTarget.height );
+      this.vBlurMaterial.uniforms[ "tDiffuse" ].value = tempRenderTarget;
+      this.quad.material = this.vBlurMaterial;
+      renderer.render(this.scene, this.cameraOrtho, renderTarget, true);
+
+      textureIn = renderTarget;
+    }
+  }
+}
+
+
+
+THREE.GlossyMirror = function ( options ) {
 
 	THREE.Object3D.call( this );
 
@@ -21,7 +92,6 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
 	this.specularColor = new THREE.Color( 0xffffff );
 	this.roughness = 0.0;
 	
-	this.renderer = renderer;
 
 	this.mirrorPlane = new THREE.Plane();
 	this.normal = new THREE.Vector3( 0, 0, 1 );
@@ -49,21 +119,8 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
 
 	}
 
-	if ( camera instanceof THREE.PerspectiveCamera ) {
-
-		this.camera = camera;
-
-	} else {
-
-		this.camera = new THREE.PerspectiveCamera();
-		console.log( this.name + ': camera is not a Perspective Camera!' );
-
-	}
-
 	this.reflectionTextureMatrix = new THREE.Matrix4();
 
-	this.mirrorCamera = this.camera.clone();
-	this.mirrorCamera.matrixAutoUpdate = true;
 
 	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
 
@@ -82,12 +139,8 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
 		this.tempTexture.generateMipmaps = false;
 
 	}
-
-	this.updateReflectionTextureMatrix();
-	this.render();
-
+	
 	this.clipPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
-	this.renderer.clippingPlanes = [this.clipPlane];
 	this.originalClipPlane = this.clipPlane.clone();
 	this.falseClipPlane = new THREE.Plane(new THREE.Vector3(0,0,1), 10000);
 
@@ -99,10 +152,7 @@ THREE.GlossyMirror = function ( renderer, camera, options ) {
  					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearesFilter, format: THREE.RGBAFormat } );
 	this.material.uniforms.tReflectionDepth.value = this.depthRenderTarget;
 
-	this.material.uniforms[ 'mirrorCameraInverseProjectionMatrix' ].value.getInverse( this.camera.projectionMatrix );
-	this.material.uniforms[ 'mirrorCameraProjectionMatrix' ].value = this.camera.projectionMatrix;
-	this.material.uniforms[ 'mirrorCameraNear' ].value = this.camera.near;
-	this.material.uniforms[ 'mirrorCameraFar' ].value = this.camera.far;
+
   	this.material.uniforms[ 'screenSize' ].value = new THREE.Vector2(width, height);
 
 	this.mirrorHelper = new THREE.MirrorHelper(this);
@@ -119,13 +169,13 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 	constructor: THREE.GlossyMirror,
 
-	updateReflectionTextureMatrix: function () {
+	updateReflectionTextureMatrix: function ( camera ) {
 
 		this.updateMatrixWorld();
-		this.camera.updateMatrixWorld();
+		camera.updateMatrixWorld();
 
 		this.mirrorWorldPosition.setFromMatrixPosition( this.matrixWorld );
-		this.cameraWorldPosition.setFromMatrixPosition( this.camera.matrixWorld );
+		this.cameraWorldPosition.setFromMatrixPosition( camera.matrixWorld );
 
 		this.rotationMatrix.extractRotation( this.matrixWorld );
 
@@ -136,7 +186,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		view.reflect( this.normal ).negate();
 		view.add( this.mirrorWorldPosition );
 
-		this.rotationMatrix.extractRotation( this.camera.matrixWorld );
+		this.rotationMatrix.extractRotation( camera.matrixWorld );
 
 		this.lookAtPosition.set( 0, 0, - 1 );
 		this.lookAtPosition.applyMatrix4( this.rotationMatrix );
@@ -168,8 +218,9 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 		this.mirrorPlane.setFromNormalAndCoplanarPoint( this.normal, this.mirrorWorldPosition );
 		this.mirrorPlane.applyMatrix4( this.mirrorCamera.matrixWorldInverse );
+		
 
-		this.material.uniforms[ 'mirrorCameraViewMatrix' ].value.getInverse( this.camera.matrixWorldInverse );
+		this.material.uniforms[ 'mirrorCameraViewMatrix' ].value.getInverse( camera.matrixWorldInverse );
 		this.material.uniforms[ 'mirrorCameraNear' ].value = this.mirrorCamera.near;
 		this.material.uniforms[ 'mirrorCameraFar' ].value = this.mirrorCamera.far;
 
@@ -177,35 +228,42 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.material.uniforms[ 'mirrorWorldPosition' ].value = this.mirrorWorldPosition;
 	},
 
-	render: function () {
+	render: function ( renderer, scene, camera ) {
 
-		if ( this.matrixNeedsUpdate ) this.updateReflectionTextureMatrix();
+		if ( ! camera instanceof THREE.PerspectiveCamera ) console.error( "THREE.GlossyMirror: camera is not a Perspective Camera!" );
+
+		if( ! this.mirrorCamera ) {
+			this.mirrorCamera = camera.clone();
+			this.mirrorCamera.matrixAutoUpdate = true;
+
+		}
+
+
+		if ( this.matrixNeedsUpdate ) this.updateReflectionTextureMatrix( camera );
 
 		this.matrixNeedsUpdate = true;
 
 		// Render the mirrored view of the current scene into the target texture
-		var scene = this;
-
-		while ( scene.parent !== null ) {
-
-			scene = scene.parent;
-
-		}
+	
 
 		if(this.clipPlane !== undefined) {
 
 			this.clipPlane.copy(this.originalClipPlane);
 
 			this.clipPlane.applyMatrix4(this.matrixWorld);
+			this.clippingPlanes = [this.clipPlane];
 		}
 
+		renderer.clippingPlanes = this.clippingPlanes;
+	
 		if ( scene !== undefined && scene instanceof THREE.Scene ) {
 
 			// We can't render ourself to ourself
 			var visible = this.material.visible;
 			this.material.visible = false;
 
-			this.renderer.render( scene, this.mirrorCamera, this.texture, true );
+			renderer.setClearColor(0xffffff, 0);
+			renderer.render( scene, this.mirrorCamera, this.texture, true );
 
 			this.material.visible = visible;
 
@@ -214,18 +272,18 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 		var visible = this.material.visible;
 
-		this.renderer.setClearColor(0xffffff, 1);
+		renderer.setClearColor(0xffffff, 1);
 
 		this.material.visible = false;
 
-		this.renderer.render( scene, this.mirrorCamera, this.depthRenderTarget, true );
+		renderer.render( scene, this.mirrorCamera, this.depthRenderTarget, true );
 
 		scene.overrideMaterial = null;
 
 		this.material.visible = visible;
 		this.material.uniforms.distanceFade.value = this.distanceFade;
 		this.material.uniforms.metalness.value = this.metalness;
-		this.material.uniforms.specularColor.value = this.specularColor;
+		this.material.uniforms.specularColor.value.copy( this.specularColor );
 		this.material.uniforms.roughness.value = this.roughness;
 	
 		if(this.clipPlane !== undefined) {
@@ -235,10 +293,10 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		}
 		if(this.mirrorHelper !== undefined) {
 
-			this.mirrorHelper.update(this.renderer);
+			this.mirrorHelper.update(renderer);
 
 		}
-	},
+	} /*
 
 	renderTemp: function () {
 
@@ -261,5 +319,6 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 		}
 
-	}
+	}*/
+
 } );
