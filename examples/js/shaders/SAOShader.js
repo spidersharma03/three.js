@@ -236,6 +236,8 @@ THREE.SAOShader = {
 				"radius += radiusStep;",
 				"angle += ANGLE_STEP;",
 
+				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
+
 				"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
 				"float sampleDepth = getDepthMIP( sampleUv, depthMipLevel );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
@@ -406,7 +408,7 @@ THREE.SAOBilaterialFilterShader = {
 		"}",
 
 		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
-
+		
 			"float depth = getDepth( tapUv );",
 
 			"if( depth >= ( 1.0 - EPSILON ) ) {",

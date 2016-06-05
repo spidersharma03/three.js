@@ -173,6 +173,16 @@
 					group.add( mesh );
 				}
 
+				var floorMaterial = new THREE.MeshStandardMaterial();
+				material.roughness = 0.5 * Math.random() + 0.25;
+				material.metalness = 0;
+				
+				var floorGeometry = new THREE.PlaneBufferGeometry( 12, 12 );
+				var floorMesh = new THREE.Mesh( floorGeometry, floorMaterial );
+				floorMesh.rotation.x -= Math.PI * 0.5;
+				floorMesh.position.y -= 2;
+				group.add( floorMesh );
+			
 				stats = new Stats();
 				container.appendChild( stats.dom );
 
@@ -206,7 +216,7 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( width, height );
-        composer.setSize( width, height );
+        		composer.setSize( width, height );
 
 			}
 
@@ -217,7 +227,7 @@
 				stats.begin();
 
 				var timer = performance.now();
-				group.rotation.x = timer * 0.0002;
+			//	group.rotation.x = timer * 0.0002;
 				group.rotation.y = timer * 0.0001;
 
 				camera.position.z = params.distance * params.scale;
