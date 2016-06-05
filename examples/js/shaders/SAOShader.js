@@ -46,8 +46,10 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 9,
-		'NUM_RINGS': 7,
+//		'NUM_SAMPLES': 9,
+//		'NUM_RINGS': 7,
+		'NUM_SAMPLES': 63,
+		'NUM_RINGS': 13,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
 		"DEPTH_PACKING": 1,
@@ -186,13 +188,18 @@ THREE.SAOShader = {
 
 		"float scaleDividedByCameraFar;",
 		"float minResolutionMultipliedByCameraFar;",
-
+	
 		"float getOcclusion( const in vec3 centerViewPosition, const in vec3 centerViewNormal, const in vec3 sampleViewPosition ) {",
 
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
-			"float viewDistance2 = dot( viewDelta, viewDelta );",
-
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			//"if( length( viewDelta ) == 0.0 ) return 0.0;",
+			"vec3 viewDirection = normalize( viewDelta );",
+			"float viewDistance2 = dot( viewDelta, viewDelta );",			
+		
+			"return max( dot( centerViewNormal, normalize( viewDelta ) ), 0.0 ) * smoothstep( occlusionSphereWorldRadius, 0.0, sqrt( viewDistance2 ) );",
+			//"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
+			//"float viewDistance2 = dot( viewDelta, viewDelta );",
+			//"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
 
 		"}",
 
@@ -223,22 +230,25 @@ THREE.SAOShader = {
 			"vec3 centerViewNormal = getViewNormal( centerViewPosition, vUv );",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
-
+			//"vec2 occlusionSphereScreenRadius = min( occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z, min( - cameraNear - centerViewPosition.z , cameraFar + centerViewPosition.z ) );",
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float angle = rand( vUv + randomSeed ) * PI2;",
 			"float radiusStep = INV_NUM_SAMPLES;",
 			"float radius = radiusStep * 0.5;",
 
 			"float occlusionSum = 0.0;",
-
+			
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"vec2 sampleUv = vUv + vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
+				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
 				"radius += radiusStep;",
 				"angle += ANGLE_STEP;",
+				
+				"vec2 sampleUv = vUv + sampleUvOffset;",
+
 
 				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
 
-				"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
+				"int depthMipLevel = 0;//getMipLevel( radius * occlusionSphereScreenRadius );",
 				"float sampleDepth = getDepthMIP( sampleUv, depthMipLevel );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
 					"continue;",
@@ -250,7 +260,10 @@ THREE.SAOShader = {
 
 			"}",
 
-			"return occlusionSum * intensity * 2.0 * occlusionSphereWorldRadius / ( float( NUM_SAMPLES ) );",
+		//	"float diameterLengthPerSample = ( 2.0 * occlusionSphereWorldRadius ) / float( NUM_SAMPLES );",
+		//	"float diskAreaPerSample = PI * pow2( occlusionSphereWorldRadius ) / float( NUM_SAMPLES );",
+		//	"float sphereVolumePerSample = PI * pow3( occlusionSphereWorldRadius ) / float( NUM_SAMPLES );",
+			"return occlusionSum * intensity;",
 			//"return occlusionSum * intensity * 5.0 / ( float( NUM_SAMPLES ) * pow( occlusionSphereWorldRadius, 6.0 ) );",
 
 		"}",

@@ -44,6 +44,7 @@
     <script src="js/postprocessing/SAOPass.js"></script>
     <script src="js/postprocessing/ShaderPass.js"></script>
 		<script src="js/postprocessing/ManualMSAARenderPass.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -87,7 +88,7 @@
 			gui.add( params, "msaaLevel", 0, 4 );
 			gui.add( params, "saoEnabled" );
 			gui.add( params, "saoIntensity", 0, 1 );
-			gui.add( params, "saoSphereRadius", 0.01, 5 );
+			gui.add( params, "saoSphereRadius", 0.001, 2 );
 			gui.add( params, "saoBlur" );
 			gui.add( params, "saoOutput", {
 				'Default': 0,
@@ -124,7 +125,7 @@
 					supportsDepthTextureExtension = true;
 				}
 
-				camera = new THREE.PerspectiveCamera( 65, width / height, 3, 10 );
+				camera = new THREE.PerspectiveCamera( 65, width / height, 3, 20 );
 				camera.position.z = 7;
 
 				scene = new THREE.Scene();
@@ -182,6 +183,11 @@
 				floorMesh.rotation.x -= Math.PI * 0.5;
 				floorMesh.position.y -= 2;
 				group.add( floorMesh );
+		
+				var wallMesh = new THREE.Mesh( floorGeometry, floorMaterial );
+				//wallMesh.rotation.x -= Math.PI * 0.5;
+				wallMesh.position.z -= 2;
+				group.add( wallMesh );
 			
 				stats = new Stats();
 				container.appendChild( stats.dom );
@@ -202,6 +208,10 @@
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
 				copyPass.renderToScreen = true;
 				composer.addPass( copyPass );
+
+				controls = new THREE.OrbitControls( camera );
+				controls.target.set( 0, 0, 0 );
+				controls.update();
 
 				window.addEventListener( 'resize', onWindowResize, false );
 			}
@@ -228,15 +238,15 @@
 
 				var timer = performance.now();
 			//	group.rotation.x = timer * 0.0002;
-				group.rotation.y = timer * 0.0001;
+			//	group.rotation.y = timer * 0.0001;
 
-				camera.position.z = params.distance * params.scale;
+			/*	camera.position.z = params.distance * params.scale;
 				camera.near = Math.max( ( params.distance - 4 ) * params.scale, 1 );
-				camera.far = ( params.distance + 4 ) * params.scale;
+				camera.far = ( params.distance + 4 ) * params.scale * 2;
 				camera.updateMatrixWorld( true );
-				camera.updateProjectionMatrix();
-				group.scale.set( params.scale, params.scale, params.scale );
-				group.updateMatrixWorld( true );
+				camera.updateProjectionMatrix();*/
+				//group.scale.set( params.scale, params.scale, params.scale );
+				//group.updateMatrixWorld( true );
 
 				if( params.manualCompositing ) params.renderToScreen = false;
 
@@ -255,8 +265,8 @@
 				msaaRenderPass.sampleLevel = Math.round( params.msaaLevel );
 
 				saoPass.enabled = params.saoEnabled;
+				saoPass.occlusionSphereWorldRadius = params.saoSphereRadius;
 				saoPass.intensity = params.saoIntensity;
-				saoPass.occlusionSphereWorldRadius = params.saoSphereRadius * params.scale;
 				saoPass.blurEnabled = params.saoBlur;
 
 				switch( params.saoOutput ) {

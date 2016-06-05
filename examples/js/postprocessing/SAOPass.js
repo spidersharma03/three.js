@@ -15,7 +15,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.camera = camera;
 
 	this.intensity = 0.25;
-	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
+	this.implicitNormals = false;//false; // explicit normals requires or there are artifacts on mobile.
 	this.occlusionSphereWorldRadius = 20;
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
@@ -128,7 +128,7 @@ THREE.SAOPass.prototype = {
 	updateParameters: function( camera ) {
 
 		var vSizeAt1M = 1 / ( Math.tan( THREE.Math.DEG2RAD * camera.fov * 0.5 ) * 2 );
-		var sizeAt1M = new THREE.Vector2( vSizeAt1M, vSizeAt1M * camera.aspect );
+		var sizeAt1M = new THREE.Vector2( vSizeAt1M / camera.aspect, vSizeAt1M );
 
 		this.saoMaterial.uniforms['worldToScreenRatio'].value = sizeAt1M;
 
