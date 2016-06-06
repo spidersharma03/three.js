@@ -34,8 +34,8 @@ void RE_Direct_Physical( const in IncidentLight directLight, const in GeometricC
 		float layerAttention;
 		vec3 clearCoatSpecularRadiance = irradiance * BRDF_ClearCoat_GGX( directLight, geometry, material.clearCoat, material.clearCoatRoughness, layerAttention );
 
-		specularRadiance = mix( specularRadiance, clearCoatSpecularRadiance, layerAttention );
-		diffuseRadiance = mix( diffuseRadiance, vec3( 0.0 ), layerAttention );
+		specularRadiance = mix( specularRadiance, clearCoatSpecularRadiance, material.clearCoat );
+		diffuseRadiance = mix( diffuseRadiance, vec3( 0.0 ), material.clearCoat );
 
 	#endif
 
@@ -68,7 +68,7 @@ void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 clearCo
 		float layerAttention;
 		vec3 clearCoatSpecularRadiance = clearCoatRadiance * BRDF_ClearCoat_GGX_Environment( geometry, material.clearCoat, material.clearCoatRoughness, layerAttention );
 
-		specularRadiance = mix( specularRadiance, clearCoatSpecularRadiance, layerAttention );
+		specularRadiance = mix( specularRadiance, clearCoatSpecularRadiance, material.clearCoat );
 
 	#endif
 
