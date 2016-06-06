@@ -1,3 +1,5 @@
+precision highp float;
+
 #if DEPTH_PACKING == 3200
 
 	uniform float opacity;
