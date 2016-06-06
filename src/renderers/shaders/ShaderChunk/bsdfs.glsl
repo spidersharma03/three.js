@@ -58,6 +58,19 @@ vec3 BRDF_Diffuse_Lambert( const in vec3 diffuseColor ) {
 } // validated
 
 
+float F_Schlick( const in float specular, const in float dotLH ) {
+
+	// Original approximation by Christophe Schlick '94
+	//;float fresnel = pow( 1.0 - dotLH, 5.0 );
+
+	// Optimized variant (presented by Epic at SIGGRAPH '13)
+	float fresnel = exp2( ( -5.55473 * dotLH - 6.98316 ) * dotLH );
+
+	return ( 1.0 - specular ) * fresnel + specular;
+
+} // validated
+
+
 vec3 F_Schlick( const in vec3 specularColor, const in float dotLH ) {
 
 	// Original approximation by Christophe Schlick '94
@@ -136,6 +149,29 @@ vec3 BRDF_Specular_GGX( const in IncidentLight incidentLight, const in Geometric
 
 } // validated
 
+float BRDF_ClearCoat_GGX( const in IncidentLight incidentLight, const in GeometricContext geometry, const in float specular, const in float roughness, out float layerAttenuation ) {
+
+	float alpha = pow2( roughness ); // UE4's roughness
+
+	vec3 halfDir = normalize( incidentLight.direction + geometry.viewDir );
+
+	float dotNL = clamp( dot( geometry.normal, incidentLight.direction ), EPSILON, 1.0 ); // avoid artifacts from divides by zero
+	float dotNV = clamp( dot( geometry.normal, geometry.viewDir ), EPSILON, 1.0 ); // avoid artifacts from divides by zero
+	float dotNH = clamp( dot( geometry.normal, halfDir ), EPSILON, 1.0 ); // avoid artifacts from divides by zero
+	float dotLH = saturate( dot( incidentLight.direction, halfDir ) );
+
+	float F = F_Schlick( specular, dotLH );
+
+	layerAttenuation = F;
+
+	float G = G_GGX_SmithCorrelated( alpha, dotNL, dotNV );
+
+	float D = D_GGX( alpha, dotNH );
+
+	return F * ( G * D );
+
+}
+
 
 // ref: https://www.unrealengine.com/blog/physically-based-shading-on-mobile - environmentBRDF for GGX on mobile
 vec3 BRDF_Specular_GGX_Environment( const in GeometricContext geometry, const in vec3 specularColor, const in float roughness ) {
@@ -153,6 +189,31 @@ vec3 BRDF_Specular_GGX_Environment( const in GeometricContext geometry, const in
 	vec2 AB = vec2( -1.04, 1.04 ) * a004 + r.zw;
 
 	return specularColor * AB.x + AB.y;
+
+} // validated
+
+
+// ref: https://www.unrealengine.com/blog/physically-based-shading-on-mobile - environmentBRDF for GGX on mobile
+float BRDF_ClearCoat_GGX_Environment( const in GeometricContext geometry, const in float specular, const in float roughness, out float layerAttention ) {
+
+	vec3 incidentLightDirection = reflect( geometry.viewDir, geometry.normal );
+	vec3 halfDir = normalize( incidentLightDirection + geometry.viewDir );
+	float dotNV = saturate( dot( geometry.normal, geometry.viewDir ) );
+	float dotLH = saturate( dot( incidentLightDirection, halfDir ) );
+
+	layerAttention = F_Schlick( specular, dotLH );
+
+	const vec4 c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
+
+	const vec4 c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
+
+	vec4 r = roughness * c0 + c1;
+
+	float a004 = min( r.x * r.x, exp2( - 9.28 * dotNV ) ) * r.x + r.y;
+
+	vec2 AB = vec2( -1.04, 1.04 ) * a004 + r.zw;
+
+	return specular * AB.x + AB.y;
 
 } // validated
 

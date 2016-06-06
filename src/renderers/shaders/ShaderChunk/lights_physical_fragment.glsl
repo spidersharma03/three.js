@@ -5,6 +5,6 @@ material.specularRoughness = clamp( roughnessFactor, 0.04, 1.0 );
 	material.specularColor = mix( vec3( DEFAULT_SPECULAR_COEFFICIENT ), diffuseColor.rgb, metalnessFactor );
 #else
 	material.specularColor = mix( vec3( MAXIMUM_SPECULAR_COEFFICIENT * pow2( reflectivity ) ), diffuseColor.rgb, metalnessFactor );
-	material.clearCoat = saturate( clearCoat ) * 0.25;
+	material.clearCoat = saturate( clearCoat );
 	material.clearCoatRoughness = clamp( clearCoatRoughness, 0.04, 1.0 );
 #endif
