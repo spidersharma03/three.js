@@ -39,8 +39,9 @@
 		<script src='js/libs/dat.gui.min.js'></script>
 
 		<script src="js/loaders/OBJLoader.js"></script>
-		<script src="js/shaders/ReflectionShader.js"></script>
+		<script src="js/shaders/GlossyMirrorShader.js"></script>
 		<script src="js/shaders/BlurShader.js"></script>
+		<script src="js/MirrorHelper.js"></script>
 		<script src="js/GlossyMirror.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 
@@ -56,7 +57,7 @@
 			// camera
 			var VIEW_ANGLE = 45;
 			var ASPECT = WIDTH / HEIGHT;
-			var NEAR = 1;
+			var NEAR = 50;
 			var FAR = 500;
 
 			var camera, scene, renderer;
@@ -70,9 +71,7 @@
 			var params = {
 				distanceFade: 0.0,
 				roughness: 0.0,
-				metalness: 0.0,
-				reflectivity: 0.5,
-				color: 'White'
+				metalness: 0.0
 			}
 
 			// Init gui
@@ -80,9 +79,6 @@
 			gui.add( params, "distanceFade", 0, 1 );
 			gui.add( params, "roughness", 0, 1 );
 			gui.add( params, "metalness", 0, 1 );
-			gui.add( params, "reflectivity", 0, 1 );
-			gui.add( params, 'color', [ 'White', 'Blue', 'Green', 'Red', 'White', 'Black' ] );
-			
 
 
 			function init() {
@@ -112,7 +108,7 @@
 
 			function fillScene() {
 
-				var planeGeo = new THREE.PlaneBufferGeometry( 100.1, 100.1 );
+				var planeGeo = new THREE.PlaneBufferGeometry( 100.1, 200.1 );
 
 				// MIRROR planes
 				glossyMirror = new THREE.GlossyMirror( { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color: 0x777777 } );
@@ -249,25 +245,11 @@
 			function render() {
 
 				// render (update) the mirrors
-				glossyMirror.distanceFade = params.distanceFade * 0.0001;
+				glossyMirror.distanceFade = params.distanceFade * 0.1;
 				glossyMirror.roughness = params.roughness;
-				//console.log( 'glossyMirror.roughness', glossyMirror.roughness );
 				glossyMirror.metalness = params.metalness;
-				glossyMirror.reflectivity = params.reflectivity;
 
-				//console.log( 'params', params );
-
-				var newColor = glossyMirror.specularColor;
-				switch( params.color ) {
-					case 'Blue': newColor = new THREE.Color( 0x0000ff ); break;
-					case 'Red': newColor = new THREE.Color( 0xff0000 ); break;
-					case 'Green': newColor = new THREE.Color( 0x00ff00 ); break;
-					case 'White': newColor =  new THREE.Color( 0xffffff ); break;
-					case 'Black': newColor =  new THREE.Color( 0x0f0f0f ); break;
-				}
-				glossyMirror.specularColor = newColor;
-
-				glossyMirror.render( renderer, scene, camera );
+				glossyMirror.render(renderer, scene, camera);
 				//glossyMirror.renderWithMirror( verticalMirror );
 				//verticalMirror.renderWithMirror( glossyMirror );
 

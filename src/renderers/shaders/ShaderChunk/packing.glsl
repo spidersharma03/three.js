@@ -6,8 +6,7 @@ vec3 unpackRGBToNormal( const in vec3 rgb ) {
   return 1.0 - 2.0 * rgb.xyz;
 }
 
-/*
-const highp float PackUpscale = 256. / 255.; // fraction -> 0..1 (including 1)
+/*const highp float PackUpscale = 256. / 255.; // fraction -> 0..1 (including 1)
 const highp float UnpackDownscale = 255. / 256.; // 0..1 -> fraction (excluding 1)
 
 const highp vec3 PackFactors = vec3( 256. * 256. * 256., 256. * 256.,  256. );
@@ -23,20 +22,20 @@ vec4 packDepthToRGBA( const in highp float v ) {
   highp vec4 res = mod( v * bit_shift * vec4( 255 ), vec4( 256 ) ) / vec4( 255 ); // vec4 res = fract( depth * bit_shift );",
   res -= res.xxyz * bit_mask;
   return res;
-
-  /*
- 	vec4 r = vec4( fract( v * PackFactors ), v );
+  
+/* 	vec4 r = vec4( fract( v * PackFactors ), v );
 	r.yzw -= r.xyz * ShiftRight8; // tidy overflow
-	return r * PackUpscale;
-  */
+	return r * PackUpscale;*/
+  
 
 }
 
 float unpackRGBAToDepth( const in vec4 v ) {
 
   const highp vec4 bit_shift = vec4( 1.0 / ( 256.0 * 256.0 * 256.0 ), 1.0 / ( 256.0 * 256.0 ), 1.0 / 256.0, 1.0 );
-
 	return dot( v, bit_shift );
+
+  //return dot( v, UnpackFactors );
 
 }
 
