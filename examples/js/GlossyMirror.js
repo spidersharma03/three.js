@@ -225,7 +225,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.material.uniforms[ 'mirrorCameraProjectionMatrix' ].value.copy( this.mirrorCamera.projectionMatrix );
 		this.material.uniforms[ 'mirrorCameraInverseProjectionMatrix' ].value.getInverse( this.mirrorCamera.projectionMatrix );
 
-		this.material.uniforms[ 'cameraViewMatrix' ].value.getInverse( camera.matrixWorldInverse );
+		this.material.uniforms[ 'mirrorCameraWorldMatrix' ].value.copy( camera.matrixWorld );
 		this.material.uniforms[ 'mirrorCameraNear' ].value = this.mirrorCamera.near;
 		this.material.uniforms[ 'mirrorCameraFar' ].value = this.mirrorCamera.far;
 
