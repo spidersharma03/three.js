@@ -103,6 +103,18 @@ THREE.SAOPass.prototype = {
 			this.depthRenderTarget.dispose();
 			this.depthRenderTarget = null;
 		}
+		if( this.depth1RenderTarget ) {
+			this.depth1RenderTarget.dispose();
+			this.depth1RenderTarget = null;
+		}
+		if( this.depth2RenderTarget ) {
+			this.depth2RenderTarget.dispose();
+			this.depth2RenderTarget = null;
+		}
+		if( this.depth3RenderTarget ) {
+			this.depth3RenderTarget.dispose();
+			this.depth3RenderTarget = null;
+		}
 		if( this.normalRenderTarget ) {
 			this.normalRenderTarget.dispose();
 			this.normalRenderTarget = null;
@@ -132,7 +144,6 @@ THREE.SAOPass.prototype = {
 		var sizeAt1M = new THREE.Vector2( vSizeAt1M / camera.aspect, vSizeAt1M );
 
 		this.saoMaterial.uniforms['worldToScreenRatio'].value = sizeAt1M;
-
 		this.saoMaterial.uniforms['intensity'].value = this.intensity;
 		this.saoMaterial.uniforms['occlusionSphereWorldRadius'].value = this.occlusionSphereWorldRadius;
 
