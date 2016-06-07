@@ -14,7 +14,7 @@ THREE.MirrorHelper = function(mirror) {
 
   this.mirrorTextureMipMaps = [];
   this.tempRenderTargets = [];
-  var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
+  var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
   var mirrorTexture = mirror.mirrorRenderTarget;
   var width = mirrorTexture.width/2, height = mirrorTexture.height/2;
   for( var i=0; i<this.numMipMaps; i++) {
@@ -122,11 +122,10 @@ THREE.GlossyMirror = function ( options ) {
 	this.reflectionTextureMatrix = new THREE.Matrix4();
 
 	this.mirrorNormal = new THREE.Vector3();
-	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
+	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
 
 	this.mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
-	this.tempTexture = new THREE.WebGLRenderTarget( width, height, parameters );
-
+	
 	this.material = new THREE.ShaderMaterial( THREE.GlossyMirrorShader );
 	this.material.defines = THREE.UniformsUtils.cloneDefines( this.material.defines );
 	this.material.uniforms = THREE.UniformsUtils.clone( this.material.uniforms );
@@ -135,9 +134,8 @@ THREE.GlossyMirror = function ( options ) {
 
 	if ( ! THREE.Math.isPowerOfTwo( width ) || ! THREE.Math.isPowerOfTwo( height ) ) {
 
-		this.mirrorRenderTarget.generateMipmaps = false;
-		this.tempTexture.generateMipmaps = false;
-
+		this.mirrorRenderTarget.texture.generateMipmaps = false;
+	
 	}
 	
 	this.clipPlane = new THREE.Plane( this.localMirrorNormal, 0 );
@@ -266,7 +264,6 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 			var visible = this.material.visible;
 			this.material.visible = false;
 
-			renderer.setClearColor(0xffffff, 1.0);
 			renderer.render( scene, this.mirrorCamera, this.mirrorRenderTarget, true );
 
 			this.material.visible = visible;
@@ -300,29 +297,6 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 			this.mirrorHelper.update(renderer);
 
 		}
-	} /*
-
-	renderTemp: function () {
-
-		if ( this.matrixNeedsUpdate ) this.updateReflectionTextureMatrix();
-
-		this.matrixNeedsUpdate = true;
-
-		// Render the mirrored view of the current scene into the target texture
-		var scene = this;
-
-		while ( scene.parent !== null ) {
-
-			scene = scene.parent;
-
-		}
-
-		if ( scene !== undefined && scene instanceof THREE.Scene ) {
-
-			this.renderer.render( scene, this.mirrorCamera, this.tempTexture, true );
-
-		}
-
-	}*/
+	}
 
 } );

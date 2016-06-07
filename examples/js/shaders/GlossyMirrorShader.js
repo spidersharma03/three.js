@@ -189,17 +189,10 @@ THREE.GlossyMirrorShader = {
 				"float reflectionDepth = getReflectionDepth();",
 				"float reflectionViewZ = getReflectionViewZ( reflectionDepth );",
 
-			//	"float normalizedReflectionDepth = ( -reflectionViewZ - mirrorCameraNear ) / ( mirrorCameraFar - mirrorCameraNear );",
-		//		"gl_FragColor = vec4( vec3( normalizedReflectionDepth * distanceFade * 40.0 ), 1.0 );",
-		//		"return;",
-		
 				"vec3 reflectionViewPosition = getReflectionViewPosition( screenPosition, reflectionDepth, reflectionViewZ );",
 				"vec3 reflectionWorldPosition = ( mirrorCameraWorldMatrix * vec4( reflectionViewPosition, 1.0 ) ).xyz;",
 				
 				"vec3 closestPointOnMirror = projectOnPlane( reflectionWorldPosition, mirrorWorldPosition, mirrorNormal );",
-
-			//	"gl_FragColor = vec4( vec3( normalizedReflectionDepth * distanceFade * 40.0 ), 1.0 );",
-			//	"return;",
 		
 
 				"vec3 pointOnMirror = linePlaneIntersect( cameraPosition, normalize( reflectionWorldPosition - cameraPosition ), mirrorWorldPosition, mirrorNormal );",
@@ -222,7 +215,7 @@ THREE.GlossyMirrorShader = {
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
 			"specular = mix( vec3( 0.05 ), specular, metalness );",
 			"vec3 fresnel = F_Schlick( specular, dotNV );",
-			"gl_FragColor = vec4( reflection.rgb, fresnel * fade );", // fresnel controls alpha
+			"gl_FragColor = vec4( reflection.rgb, fresnel * fade * reflection.a );", // fresnel controls alpha
 
 
 		"}"
