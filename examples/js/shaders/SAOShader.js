@@ -194,13 +194,14 @@ THREE.SAOShader = {
 
 		"float scaleDividedByCameraFar;",
 		"float minResolutionMultipliedByCameraFar;",
+		"float errorCorrectionFactor;",
 
 		"float getOcclusion( const in vec3 centerViewPosition, const in vec3 centerViewNormal, const in vec3 sampleViewPosition ) {",
 
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 * errorCorrectionFactor ) / ( viewDistance2 + 0.0001 * errorCorrectionFactor ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
 
 		"}",
 
@@ -224,11 +225,13 @@ THREE.SAOShader = {
 		// moving costly divides into consts
 		"const float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );",
 		"const float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );",
-
+	
 		"float getAmbientOcclusion( const in vec3 centerViewPosition ) {",
 
 			// precompute some variables require in getOcclusion.
 			"vec3 centerViewNormal = getViewNormal( centerViewPosition, vUv );",
+
+			"errorCorrectionFactor = 1024.0 / size.y;",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
 
