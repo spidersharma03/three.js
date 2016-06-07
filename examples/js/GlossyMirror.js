@@ -15,11 +15,11 @@ THREE.MirrorHelper = function(mirror) {
   this.mirrorTextureMipMaps = [];
   this.tempRenderTargets = [];
   var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
-  var mirrorTexture = mirror.texture;
+  var mirrorTexture = mirror.mirrorRenderTarget;
   var width = mirrorTexture.width/2, height = mirrorTexture.height/2;
   for( var i=0; i<this.numMipMaps; i++) {
     var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
-    renderTarget.generateMipmaps = false;
+    renderTarget.texture.generateMipmaps = false;
     this.mirrorTextureMipMaps.push(renderTarget);
     width /= 2; height /= 2;
   }
@@ -27,7 +27,7 @@ THREE.MirrorHelper = function(mirror) {
   width = mirrorTexture.width/2; height = mirrorTexture.height/2;
   for( var i=0; i<this.numMipMaps; i++) {
     var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
-    renderTarget.generateMipmaps = false;
+    renderTarget.texture.generateMipmaps = false;
     this.tempRenderTargets.push(renderTarget);
     width /= 2; height /= 2;
   }
@@ -52,18 +52,18 @@ THREE.MirrorHelper.prototype = {
 
   update: function(renderer) {
 
-    var textureIn = this.mirror.texture;
+    var textureIn = this.mirror.mirrorRenderTarget;
     for( var i=0; i<this.numMipMaps; i++) {
       var renderTarget = this.mirrorTextureMipMaps[i];
       var tempRenderTarget = this.tempRenderTargets[i];
 
       this.hBlurMaterial.uniforms[ 'size' ].value.set( textureIn.width, textureIn.height );
-      this.hBlurMaterial.uniforms[ "tDiffuse" ].value = textureIn;
+      this.hBlurMaterial.uniforms[ "tDiffuse" ].value = textureIn.texture;
       this.quad.material = this.hBlurMaterial;
       renderer.render(this.scene, this.cameraOrtho, tempRenderTarget, true);
 
       this.vBlurMaterial.uniforms[ 'size' ].value.set( tempRenderTarget.width, tempRenderTarget.height );
-      this.vBlurMaterial.uniforms[ "tDiffuse" ].value = tempRenderTarget;
+      this.vBlurMaterial.uniforms[ "tDiffuse" ].value = tempRenderTarget.texture;
       this.quad.material = this.vBlurMaterial;
       renderer.render(this.scene, this.cameraOrtho, renderTarget, true);
 
@@ -93,7 +93,6 @@ THREE.GlossyMirror = function ( options ) {
 	this.metalness = 0.0;
 	this.specularColor = new THREE.Color( 0xffffff );
 	this.roughness = 0.0;
-	
 
 	this.mirrorPlane = new THREE.Plane();
 	this.mirrorWorldPosition = new THREE.Vector3();
@@ -125,18 +124,18 @@ THREE.GlossyMirror = function ( options ) {
 	this.mirrorNormal = new THREE.Vector3();
 	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false };
 
-	this.texture = new THREE.WebGLRenderTarget( width, height, parameters );
+	this.mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
 	this.tempTexture = new THREE.WebGLRenderTarget( width, height, parameters );
 
 	this.material = new THREE.ShaderMaterial( THREE.GlossyMirrorShader );
 	this.material.defines = THREE.UniformsUtils.cloneDefines( this.material.defines );
 	this.material.uniforms = THREE.UniformsUtils.clone( this.material.uniforms );
-	this.material.uniforms.tReflection.value = this.texture;
+	this.material.uniforms.tReflection.value = this.mirrorRenderTarget;
 	this.material.uniforms.reflectionTextureMatrix.value = this.reflectionTextureMatrix;
 
 	if ( ! THREE.Math.isPowerOfTwo( width ) || ! THREE.Math.isPowerOfTwo( height ) ) {
 
-		this.texture.generateMipmaps = false;
+		this.mirrorRenderTarget.generateMipmaps = false;
 		this.tempTexture.generateMipmaps = false;
 
 	}
@@ -152,18 +151,18 @@ THREE.GlossyMirror = function ( options ) {
 
 	this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
  					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearesFilter, format: THREE.RGBAFormat } );
-	this.material.uniforms.tReflectionDepth.value = this.depthRenderTarget;
+	this.material.uniforms.tReflectionDepth.value = this.depthRenderTarget.texture;
 
 
   	this.material.uniforms[ 'screenSize' ].value = new THREE.Vector2(width, height);
 
 	this.mirrorHelper = new THREE.MirrorHelper(this);
 
-	this.material.uniforms.tReflection.value = this.texture;
-	this.material.uniforms.tReflection1.value = this.mirrorHelper.mirrorTextureMipMaps[0];
-	this.material.uniforms.tReflection2.value = this.mirrorHelper.mirrorTextureMipMaps[1];
-	this.material.uniforms.tReflection3.value = this.mirrorHelper.mirrorTextureMipMaps[2];
-	this.material.uniforms.tReflection4.value = this.mirrorHelper.mirrorTextureMipMaps[3];
+	this.material.uniforms.tReflection.value = this.mirrorRenderTarget;
+	this.material.uniforms.tReflection1.value = this.mirrorHelper.mirrorTextureMipMaps[0].texture;
+	this.material.uniforms.tReflection2.value = this.mirrorHelper.mirrorTextureMipMaps[1].texture;
+	this.material.uniforms.tReflection3.value = this.mirrorHelper.mirrorTextureMipMaps[2].texture;
+	this.material.uniforms.tReflection4.value = this.mirrorHelper.mirrorTextureMipMaps[3].texture;
 
 };
 
@@ -268,7 +267,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 			this.material.visible = false;
 
 			renderer.setClearColor(0xffffff, 1.0);
-			renderer.render( scene, this.mirrorCamera, this.texture, true );
+			renderer.render( scene, this.mirrorCamera, this.mirrorRenderTarget, true );
 
 			this.material.visible = visible;
 

@@ -209,7 +209,7 @@ THREE.GlossyMirrorShader = {
 				"localRoughness = localRoughness * distance * 0.2;",
 				"float lodLevel = localRoughness;",
 				
-				"fade = pow( 1.0 - distanceFade, distance );",
+				"fade = 1.0 - ( distanceFade * distance );",
 			"#else",
 
 				"float lodLevel = 0.0;",
@@ -219,12 +219,10 @@ THREE.GlossyMirrorShader = {
 			"vec4 reflection = getReflection( mirrorCoord, lodLevel );",
 
 			// apply dieletric-conductor model parameterized by metalness parameter.
-			"float reflectance = mix( 0.05, 1.0, metalness );",
-	
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
-			"float fresnel = F_Schlick( reflectance, dotNV );",
-			"specular = mix( vec3( 1.0 ), specular, metalness );",
-			"gl_FragColor = vec4( reflection.rgb * specular, fresnel * fade );", // fresnel controls alpha
+			"specular = mix( vec3( 0.05 ), specular, metalness );",
+			"vec3 fresnel = F_Schlick( specular, dotNV );",
+			"gl_FragColor = vec4( reflection.rgb, fresnel * fade );", // fresnel controls alpha
 
 
 		"}"

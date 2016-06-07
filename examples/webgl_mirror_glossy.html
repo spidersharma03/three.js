@@ -65,21 +65,26 @@
 
 			var cameraControls;
 
-			var glossyMirror;
+			var glossyMirror, mirrorMesh;
 			var sphereGroup, smallSphere;
 
 			var params = {
+				enabled: true,
 				distanceFade: 0.0,
 				roughness: 0.0,
-				metalness: 0.0
+				metalness: 0.0,
+				color: 'White'
+		
 			}
 
 			// Init gui
 			var gui = new dat.GUI();
-			gui.add( params, "distanceFade", 0, 1 );
-			gui.add( params, "roughness", 0, 1 );
+			gui.add( params, "enabled" );
 			gui.add( params, "metalness", 0, 1 );
-
+			gui.add( params, "roughness", 0, 1 );
+			gui.add( params, "distanceFade", 0, 1 );
+			gui.add( params, 'color', [ 'Blue', 'Green', 'Red', 'White', 'Gray', 'Black' ] );
+		
 
 			function init() {
 
@@ -113,7 +118,7 @@
 				// MIRROR planes
 				glossyMirror = new THREE.GlossyMirror( { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, specularColor: 0xffffff } );
 
-				var mirrorMesh = new THREE.Mesh( planeGeo, glossyMirror.material );
+				mirrorMesh = new THREE.Mesh( planeGeo, glossyMirror.material );
 				mirrorMesh.add( glossyMirror );
 				mirrorMesh.rotateX( -Math.PI / 2 );
 				// mirrorMesh.position.y = 5;
@@ -186,43 +191,6 @@
 				planeLeft.rotateY( Math.PI / 2 );
 				scene.add( planeLeft );
 
-				var loader = new THREE.OBJLoader();
-
-				// load a resource
-	/*			loader.load(
-					// resource URL
-					'models/obj/tree.obj',
-					// Function when resource is loaded
-					function ( object ) {
-						obj3d = object;
-						object.position.set(20,0,10);
-						object.scale.set(35,35,35);
-						scene.add( object );
-					}
-				);*/
-
-				// Skybox
-				// var path = "textures/cube/SwedishRoyalCastle/";
-				// var format = '.jpg';
-				// var urls = [
-				// 		path + 'px' + format, path + 'nx' + format,
-				// 		path + 'py' + format, path + 'ny' + format,
-				// 		path + 'pz' + format, path + 'nz' + format
-				// 	];
-				// var reflectionCube = new THREE.CubeTextureLoader().load( urls );
-				// reflectionCube.format = THREE.RGBFormat;
-				// var shader = THREE.ShaderLib[ "cube" ];
-				// shader.uniforms[ "tCube" ].value = reflectionCube;
-				// var material = new THREE.ShaderMaterial( {
-				// 	fragmentShader: shader.fragmentShader,
-				// 	vertexShader: shader.vertexShader,
-				// 	uniforms: shader.uniforms,
-				// 	depthWrite: true,
-				// 	side: THREE.BackSide
-				// } ),
-				// mesh = new THREE.Mesh( new THREE.BoxGeometry( 100, 100, 100 ), material );
-				// scene.add( mesh );
-
 				// lights
 				var mainLight = new THREE.PointLight( 0xcccccc, 1.5, 250 );
 				mainLight.position.y = 60;
@@ -245,11 +213,26 @@
 			function render() {
 
 				// render (update) the mirrors
-				glossyMirror.distanceFade = params.distanceFade * 0.1;
-				glossyMirror.roughness = params.roughness;
-				glossyMirror.metalness = params.metalness;
+				mirrorMesh.visible = params.enabled;
+				if( mirrorMesh.visible ) {
+					glossyMirror.distanceFade = params.distanceFade * 0.1;
+					glossyMirror.roughness = params.roughness;
+					glossyMirror.metalness = params.metalness;
+					
 
-				glossyMirror.render(renderer, scene, camera);
+					var newColor = glossyMirror.specularColor;
+					switch( params.color ) {
+						case 'Blue': newColor = new THREE.Color( 0x0000ff ); break;
+						case 'Red': newColor = new THREE.Color( 0xff0000 ); break;
+						case 'Green': newColor = new THREE.Color( 0x00ff00 ); break;
+						case 'White': newColor =  new THREE.Color( 0xffffff ); break;
+						case 'Gray': newColor =  new THREE.Color( 0x888888 ); break;
+						case 'Black': newColor =  new THREE.Color( 0x0f0f0f ); break;
+					}
+					glossyMirror.specularColor = newColor;
+
+					glossyMirror.render(renderer, scene, camera);
+				}
 				//glossyMirror.renderWithMirror( verticalMirror );
 				//verticalMirror.renderWithMirror( glossyMirror );
 
