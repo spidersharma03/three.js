@@ -21,6 +21,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.manualCompositing = false;
 	this.depthMIPs = false;
+	this.downSamplingRatio = 1;
 
 	/*
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
@@ -125,7 +126,9 @@ THREE.SAOPass.prototype = {
 
 	setSize: function ( width, height ) {
 
-		if( this.saoRenderTarget ) this.saoRenderTarget.setSize( width, height );
+		width = Math.ceil( width / this.downSamplingRatio );
+		height = Math.ceil( height / this.downSamplingRatio );
+		if( this.saoRenderTarget ) this.saoRenderTarget.setSize( width / this.downSamplingRatio, height );
 		if( this.blurIntermediateRenderTarget ) this.blurIntermediateRenderTarget.setSize( width, height );
 		if( this.depthRenderTarget ) this.depthRenderTarget.setSize( width, height );
 		if( this.depth1RenderTarget ) this.depth1RenderTarget.setSize( Math.ceil( width / 2 ), Math.ceil( height / 2 ) );
@@ -135,7 +138,7 @@ THREE.SAOPass.prototype = {
 
 		this.saoMaterial.uniforms[ 'size' ].value.set( width, height );
 		this.bilateralFilterMaterial.uniforms[ 'size' ].value.set( width, height );
-
+		//console.log( 'downsampledsize: ', width, height );
 	},
 
 	updateParameters: function( camera ) {
@@ -160,6 +163,10 @@ THREE.SAOPass.prototype = {
 	render: function( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
 		var width = readBuffer.width, height = readBuffer.height;
+
+		width = Math.ceil( width / this.downSamplingRatio );
+		height = Math.ceil( height / this.downSamplingRatio );
+	
 		var depthTexture = ( readBuffer.depthBuffer && readBuffer.depthTexture ) ? readBuffer.depthTexture : null;
 
 		if ( ! this.saoRenderTarget ) {

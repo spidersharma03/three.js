@@ -46,7 +46,7 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 9,
+		'NUM_SAMPLES': 11,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -144,7 +144,7 @@ THREE.SAOShader = {
 			"#endif",
 
 		"}",
-
+	
 		"vec3 getViewPosition( const in vec2 screenPosition, const in float depth, const in float viewZ ) {",
 
 			"float clipW = cameraProjectionMatrix[2][3] * viewZ + cameraProjectionMatrix[3][3];",
@@ -201,7 +201,7 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 * errorCorrectionFactor ) / ( viewDistance2 + 0.0001 * errorCorrectionFactor ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
 
 		"}",
 
@@ -231,7 +231,7 @@ THREE.SAOShader = {
 			// precompute some variables require in getOcclusion.
 			"vec3 centerViewNormal = getViewNormal( centerViewPosition, vUv );",
 
-			"errorCorrectionFactor = 1024.0 / size.y;",
+			"vec2 invSize = 1.0 / size;",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
 
@@ -243,10 +243,17 @@ THREE.SAOShader = {
 			"float occlusionSum = 0.0;",
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"vec2 sampleUv = vUv + vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
+				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
+			
+				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
+				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
+				"if( sampleUvOffset.x == 0.0 && sampleUvOffset.y == 0.0 ) continue;",
+
 				"radius += radiusStep;",
 				"angle += ANGLE_STEP;",
 
+				"vec2 sampleUv = vUv + sampleUvOffset;",
+		
 				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
 
 				"int depthMipLevel = 0;//getMipLevel( radius * occlusionSphereScreenRadius );",
@@ -446,7 +453,7 @@ THREE.SAOBilaterialFilterShader = {
 			"float weightSum = getKernelWeight( 0 );",
 			"float aoSum = texture2D( tAO, vUv ).r;",
 
-			"vec2 uvIncrement = ( kernelDirection / size ) * 2.0;",
+			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
 			"float rWeight = 1.0, lWeight = 1.0;",

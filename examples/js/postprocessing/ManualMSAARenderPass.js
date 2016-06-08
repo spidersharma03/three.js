@@ -19,7 +19,6 @@ THREE.ManualMSAARenderPass = function ( scene, camera ) {
 
 	this.sampleLevel = 4; // specified as n, where the number of samples is 2^n, so sampleLevel = 4, is 2^4 samples, 16.
 	this.unbiased = true;
-	this.manualCompositing = false;
 
 	if ( THREE.CopyShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CopyShader" );
 
@@ -31,18 +30,6 @@ THREE.ManualMSAARenderPass = function ( scene, camera ) {
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
 
-	if ( THREE.CompositeShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CompositeShader" );
-
-	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
-	this.compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );
-	this.compositeMaterial.defines = THREE.UniformsUtils.cloneDefines( this.compositeMaterial.defines );
-	this.compositeMaterial.defines['BLENDING'] = THREE.AdditiveBlending;
-	this.compositeMaterial.blending = THREE.NoBlending;
-	this.compositeMaterial.premultipliedAlpha = true;
-	this.compositeMaterial.transparent = true;
-	this.compositeMaterial.depthTest = false;
-	this.compositeMaterial.depthWrite = false;
-
 };
 
 THREE.ManualMSAARenderPass.prototype = Object.create( THREE.Pass.prototype );
@@ -52,25 +39,20 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 	dispose: function() {
 
 		if ( this.sampleRenderTarget ) {
-
 			this.sampleRenderTarget.dispose();
 			this.sampleRenderTarget = null;
-
 		}
-
 		if ( this.accumulationRenderTarget ) {
-
 			this.accumulationRenderTarget.dispose();
 			this.accumulationRenderTarget = null;
-
 		}
 
 	},
 
 	setSize: function ( width, height ) {
 
-		if ( this.sampleRenderTarget )	this.sampleRenderTarget.setSize( width, height );
-		if ( this.accumulationRenderTarget )	this.accumulationRenderTarget.setSize( width, height );
+		if ( this.sampleRenderTarget ) this.sampleRenderTarget.setSize( width, height );
+		if ( this.accumulationRenderTarget ) this.accumulationRenderTarget.setSize( width, height );
 
 	},
 
@@ -98,26 +80,8 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 		var baseSampleWeight = 1.0 / jitterOffsets.length;
 		var roundingRange = 1 / 32;
 
-
-		if( this.manualCompositing ) {
-
-			renderer.clearTarget( writeBuffer, true );
-
-			this.compositeMaterial.uniforms['tSource'].value = this.sampleRenderTarget.texture;
-			this.compositeMaterial.uniforms['tDestination'].value = writeBuffer.texture;
-			this.compositeMaterial.uniforms['opacityDestination'].value = 1.0;
-
-			this.copyMaterial.blending = THREE.NoBlending;
-			this.copyMaterial.uniforms[ "tDiffuse" ].value = this.accumulationRenderTarget.texture;
-			this.copyMaterial.uniforms[ "opacity" ].value = 1.0;
-
-		}
-		else {
-
-			this.copyMaterial.blending = THREE.AdditiveBlending;
-			this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
-
-		}
+		this.copyMaterial.blending = THREE.AdditiveBlending;
+		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 
 		var width = readBuffer.width, height = readBuffer.height;
 
@@ -143,20 +107,8 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 
-			if( this.manualCompositing ) {
-
-				this.compositeMaterial.uniforms['opacitySource'].value = sampleWeight;
-
-				renderer.renderPass( this.compositeMaterial, this.accumulationRenderTarget, true );
-				renderer.renderPass( this.copyMaterial, ( this.renderToScreen && ( i === ( jitterOffsets.length - 1 ) ) ) ? null : writeBuffer, true );
-
-			}
-			else {
-
-				this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
-				renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, (i === 0) );
-
-			}
+			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
+			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, (i === 0) );
 
 		}
 

@@ -124,7 +124,7 @@
 					supportsDepthTextureExtension = true;
 				}
 
-				camera = new THREE.PerspectiveCamera( 65, width / height, 3, 10 );
+				camera = new THREE.PerspectiveCamera( 65, width / height, 1, 10 );
 				camera.position.z = 7;
 
 				scene = new THREE.Scene();
@@ -233,6 +233,7 @@
 				camera.position.z = params.distance * params.scale;
 				camera.near = Math.max( ( params.distance - 4 ) * params.scale, 1 );
 				camera.far = ( params.distance + 4 ) * params.scale;
+				console.log( 'near', camera.near, 'far', camera.far );
 				camera.updateMatrixWorld( true );
 				camera.updateProjectionMatrix();
 				group.scale.set( params.scale, params.scale, params.scale );

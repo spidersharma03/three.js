@@ -58,8 +58,7 @@
 			var param = {
 				sampleLevel: 4,
 				unbiased: true,
-				manualCompositing: false,
-				renderToScreen: false
+				renderToScreen: false,
 				camera: 'perspective'
 			};
 
@@ -75,7 +74,6 @@
 				gui = new dat.GUI();
 
 				gui.add( param, "unbiased" );
-				gui.add( param, "manualCompositing" );
 				gui.add( param, "renderToScreen" );
 				gui.add( param, 'sampleLevel', {
 					'Level 0: 1 Sample': 0,
@@ -195,7 +193,7 @@
 				var aspect = width / height;
 
 				cameraP.aspect = aspect;
-				cameraO.updateProjectionMatrix();
+				cameraP.updateProjectionMatrix();
 
 				cameraO.left = - height * aspect;
 				cameraO.right = height * aspect;
@@ -206,8 +204,8 @@
 				renderer.setSize( width, height );
 
 				var pixelRatio = renderer.getPixelRatio();
-				var newWidth  = Math.floor( width / pixelRatio ) || 1;
-				var newHeight = Math.floor( height / pixelRatio ) || 1;
+				var newWidth  = width * pixelRatio;
+				var newHeight = height * pixelRatio;
 				composer.setSize( newWidth, newHeight );
 
 			}
@@ -227,12 +225,17 @@
 
 				}
 
-				msaaRenderPass.sampleLevel = param.sampleLevel;
-				msaaRenderPass.unbiased = param.unbiased;
-				msaaRenderPass.renderToScreen = param.renderToScreen;
-				msaaRenderPass.manualCompositing = param.manualCompositing;
+				msaaRenderPassP.sampleLevel = param.sampleLevel;
+				msaaRenderPassP.unbiased = param.unbiased;
+				msaaRenderPassP.renderToScreen = param.renderToScreen;
+		
 
-				copyPass.enabled = ! param.renderToScreen;
+				msaaRenderPassO.sampleLevel = param.sampleLevel;
+				msaaRenderPassO.unbiased = param.unbiased;
+				msaaRenderPassO.renderToScreen = param.renderToScreen;
+		
+				copyPassO.enabled = ! param.renderToScreen;
+				copyPassP.enabled = ! param.renderToScreen;
 
 				if( param.camera === 'perspective' ){
 					composerP.render();
