@@ -211,9 +211,12 @@ THREE.SAOPass.prototype = {
 
 		if( ! depthTexture ) {
 
-			renderer.setClearColor( 0xffffff );
-			renderer.setClearAlpha( 1.0 );
+			var oldClearColor = renderer.getClearColor(), oldClearAlpha = renderer.getClearAlpha();
+			renderer.setClearColor( 0xffffff, 1.0 );
+
 			renderer.renderOverride( this.depthMaterial, this.scene, this.camera, this.depthRenderTarget, true );
+
+			renderer.setClearColor( oldClearColor, oldClearAlpha );
 
 			depthTexture = this.depthRenderTarget.texture;
 			depthPackingMode = 1;
@@ -275,10 +278,12 @@ THREE.SAOPass.prototype = {
 
 		if( ! this.implicitNormals ) {
 
-			renderer.setClearColor( new THREE.Color( 0.5, 0.5, 1.0 ) );
-			renderer.setClearAlpha( 1.0 );
+			var oldClearColor = renderer.getClearColor(), oldClearAlpha = renderer.getClearAlpha();
+			renderer.setClearColor( new THREE.Color( 0.5, 0.5, 1.0 ), 1.0 );
+
 			renderer.renderOverride( this.normalMaterial, this.scene, this.camera, this.normalRenderTarget, true );
-			renderer.setClearColor( 0xffffff );
+
+			renderer.setClearColor( oldClearColor, oldClearAlpha );
 
 		}
 
@@ -303,8 +308,9 @@ THREE.SAOPass.prototype = {
 			this.saoMaterial.uniforms[ "tDepth3" ].value = this.depth3RenderTarget.texture;
 		}
 
-		renderer.setClearColor( 0xffffff );
-		renderer.setClearAlpha( 1.0 );
+		var oldClearColor = renderer.getClearColor(), oldClearAlpha = renderer.getClearAlpha();
+		renderer.setClearColor( 0xffffff, 1.0 );
+
 		renderer.renderPass( this.saoMaterial, this.saoRenderTarget, true ); // , 0xffffff, 0.0, "sao"
 
 		if( this.blurEnabled ) {
@@ -324,6 +330,8 @@ THREE.SAOPass.prototype = {
 
 		}
 
+		renderer.setClearColor( oldClearColor, oldClearAlpha );
+
 		if( this.outputOverride === "sao" ) {
 
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
@@ -333,7 +341,6 @@ THREE.SAOPass.prototype = {
 			return;
 
 		}
-
 
 		renderer.autoClear = false;
 

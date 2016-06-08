@@ -273,14 +273,17 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 		var visible = this.material.visible;
 
-		renderer.setClearColor(0xffffff, 1);
+		var oldClearColor = renderer.getClearColor(), oldClearAlpha = renderer.getClearAlpha();
 
+		renderer.setClearColor(0xffffff, 1);
 		this.material.visible = false;
 
 		renderer.render( scene, this.mirrorCamera, this.depthRenderTarget, true );
 
 		scene.overrideMaterial = null;
+		renderer.setClearColor( oldClearColor, oldClearAlpha );
 
+	
 		this.material.visible = visible;
 		this.material.uniforms.distanceFade.value = this.distanceFade;
 		this.material.uniforms.metalness.value = this.metalness;

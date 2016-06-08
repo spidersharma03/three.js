@@ -10,7 +10,7 @@
 *
 */
 
-THREE.ManualMSAARenderPass = function ( scene, camera ) {
+THREE.ManualMSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) {
 
 	THREE.Pass.call( this );
 
@@ -83,7 +83,7 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-		if ( this.clearColor ) {
+		if ( this.clearColor !== undefined ) {
 
 			this.oldClearColor.copy( renderer.getClearColor() );
 			this.oldClearAlpha = renderer.getClearAlpha();
@@ -120,9 +120,11 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 			}
 
 
+			renderer.setClearColor( this.clearColor, this.clearAlpha );
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 
 			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
+			renderer.setClearColor( new THREE.Color( 0, 0, 0 ), 0.0 );
 			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, (i === 0) );
 
 		}

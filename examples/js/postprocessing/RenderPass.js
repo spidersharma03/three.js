@@ -28,7 +28,7 @@ THREE.RenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype 
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
-		if ( this.clearColor ) {
+		if ( this.clearColor !== undefined ) {
 
 			this.oldClearColor.copy( renderer.getClearColor() );
 			this.oldClearAlpha = renderer.getClearAlpha();

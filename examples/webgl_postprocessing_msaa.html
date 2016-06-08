@@ -124,7 +124,9 @@
 				composer = new THREE.EffectComposer( renderer );
 
 				msaaRenderPass = new THREE.ManualMSAARenderPass( scene, camera );
-				msaaRenderPass.unbiased = false;
+				msaaRenderPass.unbiased = true;
+				msaaRenderPass.clearColor = new THREE.Color( 1.0, 0.0, 0.0 );
+				msaaRenderPass.clearAlpha = 0.1;
 				composer.addPass( msaaRenderPass );
 
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
