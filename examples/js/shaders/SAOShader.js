@@ -415,13 +415,14 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform float cameraFar;",
 
 		"uniform float occlusionSphereWorldRadius;",
+		"uniform float kernelSizeModifier;",
 		"uniform vec2 kernelDirection;",
 
 		"#include <sao>",
 
 		"float getKernelWeight( const in int i ) {",
 
-			"return smoothstep( float( KERNEL_SAMPLE_RADIUS ) + 1.0, 0.0, float( i ) );",
+			"return smoothstep( ( float( KERNEL_SAMPLE_RADIUS ) + 1.0 ), 0.0, float( i ) );",
 
 		"}",
 
