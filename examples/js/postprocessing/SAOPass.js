@@ -167,7 +167,7 @@ THREE.SAOPass.prototype = {
 
 		width = Math.ceil( width / this.downSamplingRatio );
 		height = Math.ceil( height / this.downSamplingRatio );
-	
+
 		var depthTexture = ( readBuffer.depthBuffer && readBuffer.depthTexture ) ? readBuffer.depthTexture : null;
 
 		if ( ! this.saoRenderTarget ) {
@@ -183,7 +183,7 @@ THREE.SAOPass.prototype = {
 			this.depth3RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 8 ), Math.ceil( height / 8 ),
 				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 			this.normalRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBFormat } );
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 
 		}
 
@@ -327,7 +327,7 @@ THREE.SAOPass.prototype = {
 
 			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.blurIntermediateRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 0, 1 );
-	
+
 			renderer.renderPass( this.bilateralFilterMaterial, this.saoRenderTarget, true ); // 0xffffff, 0.0, "sao hBlur"
 
 		}
@@ -378,4 +378,3 @@ THREE.SAOPass.prototype = {
 	}
 
 };
-
