@@ -38,9 +38,7 @@ THREE.ManualMSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) 
 
 };
 
-THREE.ManualMSAARenderPass.prototype = Object.create( THREE.Pass.prototype );
-
-Object.assign( THREE.ManualMSAARenderPass.prototype, {
+THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
 
 	dispose: function() {
 
@@ -83,12 +81,10 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
 
-		if ( this.clearColor !== undefined ) {
+		if ( this.clearColor ) {
 
 			this.oldClearColor.copy( renderer.getClearColor() );
 			this.oldClearAlpha = renderer.getClearAlpha();
-
-			renderer.setClearColor( this.clearColor, this.clearAlpha );
 
 		}
 
@@ -119,14 +115,14 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 				sampleWeight += roundingRange * uniformCenteredDistribution;
 			}
 
-
 			renderer.setClearColor( this.clearColor, this.clearAlpha );
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 
 			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
-			renderer.setClearColor( new THREE.Color( 0, 0, 0 ), 0.0 );
+			if (i === 0) {
+				renderer.setClearColor( new THREE.Color( 0, 0, 0 ), 0.0 );
+			}
 			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, (i === 0) );
-
 		}
 
 		if ( this.camera.clearViewOffset ) this.camera.clearViewOffset();
@@ -137,9 +133,10 @@ Object.assign( THREE.ManualMSAARenderPass.prototype, {
 			renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
 
 		}
-	},
+	}
 
 } );
+
 
 // These jitter vectors are specified in integers because it is easier.
 // I am assuming a [-8,8) integer grid, but it needs to be mapped onto [-0.5,0.5)
