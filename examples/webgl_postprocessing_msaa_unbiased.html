@@ -16,6 +16,8 @@
 				overflow: hidden;
 			}
 
+			a { color: #88f; }
+
 			#info {
 				color: #fff;
 				position: absolute;
@@ -50,9 +52,9 @@
 
 		<script>
 
-			var scene, renderer;
-			var cameraP, composerP, copyPassP, msaaRenderPassP;
-			var cameraO, composerO, copyPassO, msaaRenderPassO;
+			var scene, renderer, composer, copyPass;
+			var cameraP, msaaRenderPassP;
+			var cameraO, msaaRenderPassO;
 			var gui, stats, texture;
 
 			var params = {
@@ -61,7 +63,8 @@
 				renderToScreen: false,
 				camera: 'perspective',
 				clearColor: 'black',
-				clearAlpha: 1.0
+				clearAlpha: 1.0,
+				autoRotate: true
 		
 			};
 
@@ -86,10 +89,11 @@
 					'Level 4: 16 Samples': 4,
 					'Level 5: 32 Samples': 5
 				} );
-				gui.add( params, 'camera', [ 'perspective', 'ortho' ] );
+				gui.add( params, 'camera', [ 'perspective', 'orthographic' ] );
 				gui.add( params, "clearColor", [ 'black', 'white', 'blue', 'green', 'red' ] );		
 				gui.add( params, "clearAlpha", 0, 1 );		
-
+				gui.add( params, "autoRotate" );
+			
 				gui.open();
 
 			}
@@ -173,20 +177,15 @@
 
 				// postprocessing
 
-				composerP = new THREE.EffectComposer( renderer );
+				composer = new THREE.EffectComposer( renderer );
 				msaaRenderPassP = new THREE.ManualMSAARenderPass( scene, cameraP );
-				composerP.addPass( msaaRenderPassP );
-				copyPassP = new THREE.ShaderPass( THREE.CopyShader );
-				copyPassP.renderToScreen = true;
-				composerP.addPass( copyPassP );
-
-				composerO = new THREE.EffectComposer( renderer );
+				composer.addPass( msaaRenderPassP );
 				msaaRenderPassO = new THREE.ManualMSAARenderPass( scene, cameraO );
-				composerO.addPass( msaaRenderPassO );
-				copyPassO = new THREE.ShaderPass( THREE.CopyShader );
-				copyPassO.renderToScreen = true;
-				composerO.addPass( copyPassO );
-
+				composer.addPass( msaaRenderPassO );
+				copyPass = new THREE.ShaderPass( THREE.CopyShader );
+				copyPass.renderToScreen = true;
+				composer.addPass( copyPass );
+				
 				window.addEventListener( 'resize', onWindowResize, false );
 
 			}
@@ -221,23 +220,25 @@
 
 				stats.begin();
 
-				for ( var i = 0; i < scene.children.length; i ++ ) {
+				if( params.autoRotate ) {
+					for ( var i = 0; i < scene.children.length; i ++ ) {
 
-					var child = scene.children[ i ];
+						var child = scene.children[ i ];
 
-					child.rotation.x += 0.005;
-					child.rotation.y += 0.01;
+						child.rotation.x += 0.005;
+						child.rotation.y += 0.01;
 
+					}
 				}
 
 		
 				var newColor = msaaRenderPassP.clearColor;
 				switch( params.clearColor ) {
-					case 'blue': newColor = new THREE.Color( 0x0000ff ); break;
-					case 'red': newColor = new THREE.Color( 0xff0000 ); break;
-					case 'green': newColor = new THREE.Color( 0x00ff00 ); break;
-					case 'white': newColor =  new THREE.Color( 0xffffff ); break;
-					case 'black': newColor =  new THREE.Color( 0x000000 ); break;
+					case 'blue': newColor = 0x0000ff; break;
+					case 'red': newColor = 0xff0000; break;
+					case 'green': newColor = 0x00ff00; break;
+					case 'white': newColor = 0xffffff; break;
+					case 'black': newColor = 0x000000; break;
 				}
 				msaaRenderPassP.clearColor = msaaRenderPassO.clearColor = newColor;
 				msaaRenderPassP.clearAlpha = msaaRenderPassO.clearAlpha = params.clearAlpha;
@@ -248,11 +249,10 @@
 
 				copyPassO.enabled = copyPassP.enabled = ! params.renderToScreen;
 
-				if( params.camera === 'perspective' ){
-					composerP.render();
-				}else{
-					composerO.render();
-				}
+				msaaRenderPassP.enabled = ( params.camera === 'perspective' );
+				msaaRenderPassO.enabled = ( params.camera === 'orthographic' );
+
+				composer.render();
 
 				stats.end();
 

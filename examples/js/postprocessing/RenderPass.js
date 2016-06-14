@@ -14,9 +14,6 @@ THREE.RenderPass = function ( scene, camera, overrideMaterial, clearColor, clear
 	this.clearColor = clearColor;
 	this.clearAlpha = ( clearAlpha !== undefined ) ? clearAlpha : 1;
 
-	this.oldClearColor = new THREE.Color();
-	this.oldClearAlpha = 1;
-
 	this.clear = true;
 	this.needsSwap = false;
 
@@ -30,8 +27,8 @@ THREE.RenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype 
 
 		if ( this.clearColor !== undefined ) {
 
-			this.oldClearColor.copy( renderer.getClearColor() );
-			this.oldClearAlpha = renderer.getClearAlpha();
+			var oldClearColorHex = renderer.getClearColor();
+			var oldClearAlpha = renderer.getClearAlpha();
 
 			renderer.setClearColor( this.clearColor, this.clearAlpha );
 
@@ -41,7 +38,7 @@ THREE.RenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype 
 
 		if ( this.clearColor ) {
 
-			renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
+			renderer.setClearColor( oldClearColorHex, oldClearAlpha );
 
 		}
 
