@@ -146,6 +146,7 @@ THREE.GlossyMirror = function ( options ) {
 	this.depthMaterial = new THREE.MeshDepthMaterial();
  	this.depthMaterial.depthPacking = THREE.RGBADepthPacking;
  	this.depthMaterial.blending = THREE.NoBlending;
+	this.depthMaterial.side = THREE.DoubleSide;
 
 	this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
  					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearesFilter, format: THREE.RGBAFormat } );

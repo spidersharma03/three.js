@@ -42,6 +42,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.depthMaterial = new THREE.MeshDepthMaterial();
 	this.depthMaterial.depthPacking = THREE.RGBADepthPacking;
 	this.depthMaterial.blending = THREE.NoBlending;
+	this.depthMaterial.side = THREE.DoubleSide;
 
 	this.normalMaterial = new THREE.MeshNormalMaterial();
 
