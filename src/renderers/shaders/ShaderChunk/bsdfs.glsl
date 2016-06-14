@@ -42,7 +42,7 @@ float punctualLightIntensityToIrradianceFactor( const in float lightDistance, co
 		if( cutoffDistance > 0.0 ) {
 			maxDistanceCutoffFactor = pow2( saturate( 1.0 - pow4( lightDistance / cutoffDistance ) ) );
 		}
-		float distanceFalloff = 1.0 / max( pow2( lightDistance ), 0.01 );
+		float distanceFalloff = 1.0 / ( pow2( lightDistance ) + 1.0 );
 
 		return maxDistanceCutoffFactor * distanceFalloff;
 	}
