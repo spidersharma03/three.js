@@ -60,9 +60,9 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 	void getPointDirectLightIrradiance( const in PointLight pointLight, const in GeometricContext geometry, out IncidentLight directLight ) {
 
 		vec3 lVector = pointLight.position - geometry.position;
-		directLight.direction = normalize( lVector );
-
 		float lightDistance = length( lVector );
+		directLight.direction = lVector / lightDistance;
+
 
 		if ( testLightInRange( lightDistance, pointLight.distance ) ) {
 
@@ -107,9 +107,9 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 	void getSpotDirectLightIrradiance( const in SpotLight spotLight, const in GeometricContext geometry, out IncidentLight directLight  ) {
 
 		vec3 lVector = spotLight.position - geometry.position;
-		directLight.direction = normalize( lVector );
-
 		float lightDistance = length( lVector );
+		directLight.direction = lVector / lightDistance;
+
 		float angleCos = dot( directLight.direction, spotLight.direction );
 
 		if ( all( bvec2( angleCos > spotLight.coneCos, testLightInRange( lightDistance, spotLight.distance ) ) ) ) {
