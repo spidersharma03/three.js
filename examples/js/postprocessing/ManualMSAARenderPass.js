@@ -44,17 +44,12 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 			this.sampleRenderTarget.dispose();
 			this.sampleRenderTarget = null;
 		}
-		if ( this.accumulationRenderTarget ) {
-			this.accumulationRenderTarget.dispose();
-			this.accumulationRenderTarget = null;
-		}
 
 	},
 
 	setSize: function ( width, height ) {
 
 		if ( this.sampleRenderTarget ) this.sampleRenderTarget.setSize( width, height );
-		if ( this.accumulationRenderTarget ) this.accumulationRenderTarget.setSize( width, height );
 
 	},
 
@@ -63,13 +58,6 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 		if ( ! this.sampleRenderTarget ) {
 
 			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
-
-		}
-
-		if ( ! this.accumulationRenderTarget ) {
-
-			this.accumulationRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 
 		}
