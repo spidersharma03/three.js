@@ -247,7 +247,7 @@
 				msaaRenderPassP.unbiased = msaaRenderPassO.unbiased = params.unbiased;
 				msaaRenderPassP.renderToScreen = msaaRenderPassO.renderToScreen = params.renderToScreen;
 
-				copyPassO.enabled = copyPassP.enabled = ! params.renderToScreen;
+				copyPass.enabled = copyPass.enabled = ! params.renderToScreen;
 
 				msaaRenderPassP.enabled = ( params.camera === 'perspective' );
 				msaaRenderPassO.enabled = ( params.camera === 'orthographic' );
