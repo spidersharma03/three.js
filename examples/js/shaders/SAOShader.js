@@ -168,7 +168,7 @@ THREE.SAOShader = {
 
 			"vec4 rawDepth;",
 			"#if DEPTH_MIPS == 0",
-				"rawDepth = texture2D( tDepth, screenPosition );",
+				"rawDepth = texture2D( tDepth3, screenPosition );",
 			"#else",
 				"if( mipLevel == 0 ) {",
 					"rawDepth = texture2D( tDepth, screenPosition );",
@@ -257,8 +257,8 @@ THREE.SAOShader = {
 		
 				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
 
-				"int depthMipLevel = 0;//getMipLevel( radius * occlusionSphereScreenRadius );",
-				"float sampleDepth = getDepthMIP( sampleUv, depthMipLevel );",
+				"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
+				"float sampleDepth = getDepthMIP( sampleUv, int( 4.0 * radius ) );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
 					"continue;",
 				"}",
@@ -282,6 +282,11 @@ THREE.SAOShader = {
 				"discard;",
 			"}",
 
+		/*	"float mipDepth = unpackRGBAToDepth( texture2D( tDepth3, vUv ) );",
+			"gl_FragColor.xyz = vec3( (centerDepth - mipDepth) * 50.0 + 0.5 );",
+			"gl_FragColor.a = 1.0;",
+			"return;",*/
+
 			"float centerViewZ = getViewZ( centerDepth );",
 			"vec3 viewPosition = getViewPosition( vUv, centerDepth, centerViewZ );",
 
@@ -302,13 +307,15 @@ THREE.SAODepthMinifyShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-	//	"DEPTH_PACKING": 1,
+		"DEPTH_PACKING": 1,
 	//	"JITTERED_SAMPLING": 1
 	},
 
 	uniforms: {
 
 		"tDepth":	{ type: "t", value: null },
+		"cameraNear":   { type: "f", value: 1 },
+		"cameraFar":    { type: "f", value: 100 },
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
 	},
@@ -331,13 +338,14 @@ THREE.SAODepthMinifyShader = {
 
 
 		"#include <common>",
+		"#include <packing>",
 
 		"varying vec2 vUv;",
 
 		"uniform sampler2D tDepth;",
 		"uniform vec2 size;",
-
-		"vec2 round( const in vec2 a ) { return floor( a + 0.5 ); }",
+		"uniform float cameraNear;",
+		"uniform float cameraFar;",
 
 		"void main() {",
 
@@ -354,10 +362,21 @@ THREE.SAODepthMinifyShader = {
 	 		"vec2 uv = vUv;",
 
 		//	"uv += ( round( vec2( rand( vUv * size ), rand( vUv * size + vec2( 0.333, 2.0 ) ) ) ) - 0.5 ) / size;",
+			"vec2 invSize = 0.5 / size;",
 
 			// NOTE: no need for depth decoding if nearest interpolation is used.
-			"gl_FragColor = texture2D( tDepth, vUv );",
-
+		/*	"float viewZ = 1.0 / perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( -1.0, -1.0 ) ) ), cameraNear, cameraFar );",
+			"viewZ += 1.0 / perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( 1.0, 1.0 ) ) ), cameraNear, cameraFar );",
+			"viewZ += 1.0 / perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( -1.0, 1.0 ) ) ), cameraNear, cameraFar );",
+			"viewZ += 1.0 / perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( 1.0, -1.0 ) ) ), cameraNear, cameraFar );",
+			"viewZ *= 0.25;",
+			"gl_FragColor = packDepthToRGBA( viewZToPerspectiveDepth( 1.0 / viewZ, cameraNear, cameraFar ) );",*/
+			"float depth = unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( -1.0, -1.0 ) ) );",
+			"depth += unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( 1.0, 1.0 ) ) );",
+			"depth += unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( -1.0, 1.0 ) ) );",
+			"depth += unpackRGBAToDepth( texture2D( tDepth, vUv + invSize * vec2( 1.0, -1.0 ) ) );",
+			"depth *= 0.25;",
+			"gl_FragColor = packDepthToRGBA( depth );",
 		"}"
 
 	].join( "\n" )

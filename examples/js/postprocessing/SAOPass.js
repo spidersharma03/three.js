@@ -19,8 +19,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.occlusionSphereWorldRadius = 20;
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
-	this.manualCompositing = false;
-	this.depthMIPs = false;
+	this.depthMIPs = true;
 	this.downSamplingRatio = 1;
 	this.blurKernelSize = 12;
 
@@ -152,7 +151,9 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.uniforms['intensity'].value = this.intensity;
 		this.saoMaterial.uniforms['occlusionSphereWorldRadius'].value = this.occlusionSphereWorldRadius;
 
-
+		this.depthMinifyMaterial.uniforms[ 'cameraNear' ].value = camera.near;
+		this.depthMinifyMaterial.uniforms[ 'cameraFar' ].value = camera.far;
+	
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
 		this.saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
@@ -178,11 +179,11 @@ THREE.SAOPass.prototype = {
 			this.blurIntermediateRenderTarget = new THREE.WebGLRenderTarget( width, height,
 				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 			this.depth1RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 2 ), Math.ceil( height / 2 ),
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth2RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 4 ), Math.ceil( height / 4 ),
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth3RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 8 ), Math.ceil( height / 8 ),
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.normalRenderTarget = new THREE.WebGLRenderTarget( width, height,
 				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 
@@ -191,7 +192,7 @@ THREE.SAOPass.prototype = {
 		if( ! depthTexture && ! this.depthRenderTarget ) {
 
 			this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 
 		}
 
@@ -347,30 +348,11 @@ THREE.SAOPass.prototype = {
 
 		renderer.autoClear = false;
 
-		if( this.manualCompositing ) {
+		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
+		this.copyMaterial.blending = THREE.MultiplyBlending;
+		this.copyMaterial.premultipliedAlpha = true;
 
-			this.compositeMaterial.uniforms['opacitySource'].value = 1.0;
-			this.compositeMaterial.uniforms['tDestination'].value = readBuffer.texture;
-			this.compositeMaterial.uniforms['tSource'].value = this.saoRenderTarget.texture;
-			this.compositeMaterial.blending = THREE.NoBlending;
-
-			renderer.renderPass( this.compositeMaterial, this.blurIntermediateRenderTarget, true );
-
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.blurIntermediateRenderTarget.texture;
-			this.copyMaterial.blending = THREE.NoBlending;
-
-			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
-
-		}
-		else {
-
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
-			this.copyMaterial.blending = THREE.MultiplyBlending;
-			this.copyMaterial.premultipliedAlpha = true;
-
-			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, false );
-
-		}
+		renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, false );
 
 		renderer.autoClear = autoClear;
 		renderer.setClearColor( clearColor );
