@@ -273,7 +273,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
 
 			vec3 queryReflectVec = flipNormal * vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
-			vec4 envMapColor = textureCubeUV(queryReflectVec, sqrt( BlinnExponentToGGXRoughness(blinnShininessExponent) ) );
+			vec4 envMapColor = textureCubeUV(queryReflectVec, pow( BlinnExponentToGGXRoughness(blinnShininessExponent), 1.0 ) );
 
 		#elif defined( ENVMAP_TYPE_EQUIREC )
 
