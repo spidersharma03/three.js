@@ -497,3 +497,121 @@ THREE.SAOBilaterialFilterShader = {
 	].join( "\n" )
 
 };
+
+
+THREE.SAOBilaterialFilterShader2 = {
+
+	blending: THREE.NoBlending,
+
+	defines: {
+		"DEPTH_PACKING": 1,
+		"PERSPECTIVE_CAMERA": 1,
+		"KERNEL_SAMPLE_RADIUS": 4,
+	},
+
+	uniforms: {
+
+		"tAO":	{ type: "t", value: null },
+		"tDepth":	{ type: "t", value: null },
+		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
+
+		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
+		"occlusionSphereWorldRadius": { type: "f", value: 50 },
+
+		"cameraNear":   { type: "f", value: 1 },
+		"cameraFar":    { type: "f", value: 100 }
+
+	},
+
+	vertexShader: [
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+			"vUv = uv;",
+
+			"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join( "\n" ),
+
+	fragmentShader: [
+
+		"#include <common>",
+
+		"varying vec2 vUv;",
+
+		"uniform sampler2D tAO;",
+		"uniform sampler2D tDepth;",
+		"uniform vec2 size;",
+
+		"uniform float cameraNear;",
+		"uniform float cameraFar;",
+
+		"uniform float occlusionSphereWorldRadius;",
+		"uniform float kernelSizeModifier;",
+		"uniform vec2 kernelDirection;",
+
+		"#include <sao>",
+
+		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
+		
+//			"float depth = getDepth( tapUv );",
+
+//			"if( depth >= ( 1.0 - EPSILON ) ) {",
+//				"return;",
+//			"}",
+
+//			"float tapViewZ = -getViewZ( depth );",
+//			"tapWeight *= smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
+
+			"aoSum += texture2D( tAO, tapUv ).r * sampleWeight;",
+			"weightSum += sampleWeight;",
+
+		"}",
+
+		"void main() {",
+
+			"float gaussian[KERNEL_SAMPLE_RADIUS + 1];",
+    		"gaussian[0] = 0.153170;",
+			"gaussian[1] = 0.144893;",
+			"gaussian[2] = 0.122649;",
+			"gaussian[3] = 0.092902;",
+			"gaussian[4] = 0.062970;",
+
+			"float depth = getDepth( vUv );",
+			"if( depth >= ( 1.0 - EPSILON ) ) {",
+				"discard;",
+			"}",
+
+			"float centerViewZ = -getViewZ( depth );",
+
+			"float weightSum = gaussian[ 0 ];",
+			"float aoSum = texture2D( tAO, vUv ).r * weightSum;",
+
+			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
+
+			"vec2 rTapUv = vUv, lTapUv = vUv;",
+			"float rWeight = 1.0, lWeight = 1.0;",
+
+			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
+
+				"float sampleWeight = 0.3 + gaussian[ i ];",
+
+				"rTapUv += uvIncrement;",
+				"addTapInfluence( rTapUv, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
+
+				"lTapUv -= uvIncrement;",
+				"addTapInfluence( lTapUv, centerViewZ, sampleWeight, aoSum, lWeight, weightSum );",
+
+			"}",
+
+			"gl_FragColor = vec4( vec3( aoSum / weightSum ), 1.0 );",
+
+		"}"
+
+	].join( "\n" )
+
+};
