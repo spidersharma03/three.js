@@ -97,7 +97,7 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 				sampleWeight += roundingRange * uniformCenteredDistribution;
 			}
 
-			this.copyUniforms[ "opacity" ].value = sampleWeight;
+			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
 			renderer.setClearColor( this.clearColor, this.clearAlpha );
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
 			if (i === 0) {
