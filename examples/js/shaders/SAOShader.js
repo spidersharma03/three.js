@@ -201,7 +201,7 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 ) * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 );// * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
 
 		"}",
 
@@ -236,9 +236,10 @@ THREE.SAOShader = {
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
 
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
-			"float angle = rand( vUv + randomSeed ) * PI2;",
+			"float random = rand( vUv + randomSeed );",
+			"float angle = random * PI2;",
 			"float radiusStep = INV_NUM_SAMPLES;",
-			"float radius = radiusStep * 0.5;",
+			"float radius = radiusStep * ( 0.5 + random );",
 
 			"float occlusionSum = 0.0;",
 
@@ -539,17 +540,17 @@ THREE.SAOBilaterialFilterShader2 = {
 
 		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
 		
-//			"float depth = getDepth( tapUv );",
+			"float depth = getDepth( tapUv );",
 
-//			"if( depth >= ( 1.0 - EPSILON ) ) {",
-//				"return;",
-//			"}",
+			"if( depth >= ( 1.0 - EPSILON ) ) {",
+				"return;",
+			"}",
 
-//			"float tapViewZ = -getViewZ( depth );",
-//			"tapWeight *= smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
+			"float tapViewZ = -getViewZ( depth );",
+			"tapWeight = smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
 
-			"aoSum += texture2D( tAO, tapUv ).r * sampleWeight;",
-			"weightSum += sampleWeight;",
+			"aoSum += texture2D( tAO, tapUv ).r * sampleWeight * tapWeight;",
+			"weightSum += sampleWeight * tapWeight;",
 
 		"}",
 
