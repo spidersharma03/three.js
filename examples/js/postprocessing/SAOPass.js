@@ -61,7 +61,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = this.implicitNormals ? 0 : 1;
 	this.saoMaterial.defines[ 'MODE' ] = 2;
 
-	this.bilateralFilterMaterial = new THREE.ShaderMaterial( THREE.SAOBilaterialFilterShader );
+	this.bilateralFilterMaterial = new THREE.ShaderMaterial( THREE.SAOBilaterialFilterShader2 );
 	this.bilateralFilterMaterial.uniforms = THREE.UniformsUtils.clone( this.bilateralFilterMaterial.uniforms );
 	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
 	this.bilateralFilterMaterial.blending = THREE.NoBlending;
