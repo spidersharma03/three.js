@@ -66,7 +66,6 @@
 			var params = {
 				scale: 1.0,
 				distance: 7.0,
-				manualCompositing: false,
 				renderToScreen: true,
 				msaaEnabled: false,
 				msaaLevel: 4,
@@ -81,7 +80,6 @@
 			var gui = new dat.GUI();
 			gui.add( params, "scale", 0.01, 10 );
 			gui.add( params, "distance", 1, 100 );
-			gui.add( params, "manualCompositing" );
 			gui.add( params, "renderToScreen" );
 			gui.add( params, "msaaEnabled" );
 			gui.add( params, "msaaLevel", 0, 4 );
@@ -240,9 +238,6 @@
 				group.updateMatrixWorld( true );
 
 				if( params.manualCompositing ) params.renderToScreen = false;
-
-				msaaRenderPass.manualCompositing = params.manualCompositing;
-				saoPass.manualCompositing = params.manualCompositing;
 
 				renderPass.renderToScreen = params.renderToScreen;
 				msaaRenderPass.renderToScreen = params.renderToScreen;
