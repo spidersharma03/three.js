@@ -187,7 +187,6 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 			depthPacking: ( material.depthPacking !== undefined ) ? material.depthPacking : false
 
 		};
-		console.log( parameters );
 
 		var supportedMapNames = THREE.Map.SupportedMapNames;
 
