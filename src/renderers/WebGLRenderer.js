@@ -1194,6 +1194,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 		//
 
 		var background = scene.background;
+		background = null;
 
 		if ( background === null ) {
 
