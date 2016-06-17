@@ -19,7 +19,6 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.occlusionSphereWorldRadius = 20;
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
-	this.manualCompositing = false;
 	this.depthMIPs = false;
 	this.downSamplingRatio = 1;
 	this.blurKernelSize = 12;
@@ -75,18 +74,6 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.copyMaterial.transparent = true;
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
-
-	if ( THREE.CompositeShader === undefined ) console.error( "THREE.SAOPass relies on THREE.CompositeShader" );
-
-	this.compositeMaterial = new THREE.ShaderMaterial( THREE.CompositeShader );
-	this.compositeMaterial.uniforms = THREE.UniformsUtils.clone( this.compositeMaterial.uniforms );
-	this.compositeMaterial.defines = THREE.UniformsUtils.cloneDefines( this.compositeMaterial.defines );
-	this.compositeMaterial.defines['BLENDING'] = THREE.MultiplyBlending;
-	this.compositeMaterial.blending = THREE.NoBlending;
-	this.compositeMaterial.premultipliedAlpha = true;
-	this.compositeMaterial.transparent = true;
-	this.compositeMaterial.depthTest = false;
-	this.compositeMaterial.depthWrite = false;
 
 };
 
@@ -317,17 +304,17 @@ THREE.SAOPass.prototype = {
 
 		if( this.blurEnabled ) {
 
-			this.bilateralFilterMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 			this.bilateralFilterMaterial.defines[ 'KERNEL_SAMPLE_RADIUS' ] = this.blurKernelSize;
-			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.saoRenderTarget.texture;
-			this.bilateralFilterMaterial.uniforms[ "tDepth" ].value = depthTexture;
+			this.bilateralFilterMaterial.uniforms[ "tAODepth" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.5;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
+			this.bilateralFilterMaterial.uniforms[ "packOutput" ].value = 1;
 
 			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget, true ); // , 0xffffff, 0.0, "sao vBlur"
 
-			this.bilateralFilterMaterial.uniforms[ "tAO" ].value = this.blurIntermediateRenderTarget.texture;
+			this.bilateralFilterMaterial.uniforms[ "tAODepth" ].value = this.blurIntermediateRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 0, 1 );
+			this.bilateralFilterMaterial.uniforms[ "packOutput" ].value = 0;
 
 			renderer.renderPass( this.bilateralFilterMaterial, this.saoRenderTarget, true ); // 0xffffff, 0.0, "sao hBlur"
 
@@ -347,30 +334,11 @@ THREE.SAOPass.prototype = {
 
 		renderer.autoClear = false;
 
-		if( this.manualCompositing ) {
+		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
+		this.copyMaterial.blending = THREE.MultiplyBlending;
+		this.copyMaterial.premultipliedAlpha = true;
 
-			this.compositeMaterial.uniforms['opacitySource'].value = 1.0;
-			this.compositeMaterial.uniforms['tDestination'].value = readBuffer.texture;
-			this.compositeMaterial.uniforms['tSource'].value = this.saoRenderTarget.texture;
-			this.compositeMaterial.blending = THREE.NoBlending;
-
-			renderer.renderPass( this.compositeMaterial, this.blurIntermediateRenderTarget, true );
-
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.blurIntermediateRenderTarget.texture;
-			this.copyMaterial.blending = THREE.NoBlending;
-
-			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
-
-		}
-		else {
-
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
-			this.copyMaterial.blending = THREE.MultiplyBlending;
-			this.copyMaterial.premultipliedAlpha = true;
-
-			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, false );
-
-		}
+		renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, false );
 
 		renderer.autoClear = autoClear;
 		renderer.setClearColor( clearColor );

@@ -287,8 +287,10 @@ THREE.SAOShader = {
 
 			"float ambientOcclusion = getAmbientOcclusion( viewPosition );",
 
-			"gl_FragColor = getDefaultColor( vUv );",
-			"gl_FragColor.xyz *= max( 1.0 - ambientOcclusion, 0.0 );",
+			//"gl_FragColor = getDefaultColor( vUv );",
+
+			"gl_FragColor = packDepthToRGBA( centerDepth );",
+			"gl_FragColor.x = max( 1.0 - ambientOcclusion, 0.0 );",
 
 		"}"
 
@@ -376,8 +378,7 @@ THREE.SAOBilaterialFilterShader = {
 
 	uniforms: {
 
-		"tAO":	{ type: "t", value: null },
-		"tDepth":	{ type: "t", value: null },
+		"tAODepth":	{ type: "t", value: null },
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
 		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
@@ -408,8 +409,7 @@ THREE.SAOBilaterialFilterShader = {
 
 		"varying vec2 vUv;",
 
-		"uniform sampler2D tAO;",
-		"uniform sampler2D tDepth;",
+		"uniform sampler2D tAODepth;",
 		"uniform vec2 size;",
 
 		"uniform float cameraNear;",
@@ -419,7 +419,7 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform float kernelSizeModifier;",
 		"uniform vec2 kernelDirection;",
 
-		"#include <sao>",
+		"#include <packing>",
 
 		"float getKernelWeight( const in int i ) {",
 
@@ -429,7 +429,8 @@ THREE.SAOBilaterialFilterShader = {
 
 		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
 		
-			"float depth = getDepth( tapUv );",
+			"vec4 depthTexel = texture2D( tAODepth, tapUv );",
+			"float depth = unpackRGBAToDepth( depthTexel );",
 
 			"if( depth >= ( 1.0 - EPSILON ) ) {",
 				"return;",
@@ -438,22 +439,23 @@ THREE.SAOBilaterialFilterShader = {
 			"float tapViewZ = -getViewZ( depth );",
 			"tapWeight *= smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
 
-			"aoSum += texture2D( tAO, tapUv ).r * tapWeight * sampleWeight;",
+			"aoSum += depthTexel.r * tapWeight * sampleWeight;",
 			"weightSum += tapWeight * sampleWeight;",
 
 		"}",
 
 		"void main() {",
 
-			"float depth = getDepth( vUv );",
+			"vec4 depthTexel = texture2D( tAODepth, vUv );",
+			"float depth = unpackRGBAToDepth( depthTexel );",
 			"if( depth >= ( 1.0 - EPSILON ) ) {",
 				"discard;",
 			"}",
-
+	
 			"float centerViewZ = -getViewZ( depth );",
 
 			"float weightSum = getKernelWeight( 0 );",
-			"float aoSum = texture2D( tAO, vUv ).r;",
+			"float aoSum = depthTexel.r;",
 
 			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
 
@@ -486,22 +488,21 @@ THREE.SAOBilaterialFilterShader2 = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		"DEPTH_PACKING": 1,
 		"PERSPECTIVE_CAMERA": 1,
 		"KERNEL_SAMPLE_RADIUS": 4,
 	},
 
 	uniforms: {
 
-		"tAO":	{ type: "t", value: null },
-		"tDepth":	{ type: "t", value: null },
+		"tAODepth":	{ type: "t", value: null },
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
 		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
 		"occlusionSphereWorldRadius": { type: "f", value: 50 },
 
 		"cameraNear":   { type: "f", value: 1 },
-		"cameraFar":    { type: "f", value: 100 }
+		"cameraFar":    { type: "f", value: 100 },
+		"packOutput":    { type: "f", value: 1 }
 
 	},
 
@@ -525,23 +526,36 @@ THREE.SAOBilaterialFilterShader2 = {
 
 		"varying vec2 vUv;",
 
-		"uniform sampler2D tAO;",
-		"uniform sampler2D tDepth;",
+		"uniform sampler2D tAODepth;",
 		"uniform vec2 size;",
 
 		"uniform float cameraNear;",
 		"uniform float cameraFar;",
+		"uniform int packOutput;",
 
 		"uniform float occlusionSphereWorldRadius;",
 		"uniform float kernelSizeModifier;",
 		"uniform vec2 kernelDirection;",
 
-		"#include <sao>",
+		"#include <packing>",
+
+		"float getViewZ( const in float depth ) {",
+
+			"#if PERSPECTIVE_CAMERA == 1",
+				"return perspectiveDepthToViewZ( depth, cameraNear, cameraFar );",
+			"#else",
+				"return orthographicDepthToViewZ( depth, cameraNear, cameraFar );",
+			"#endif",
+
+		"}",
 
 		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
 		
-			"float depth = getDepth( tapUv );",
-
+			"vec4 depthTexel = texture2D( tAODepth, tapUv );",
+			"float ao = depthTexel.r;",
+			"depthTexel.r = 1.0;",
+			"float depth = unpackRGBAToDepth( depthTexel );",
+	
 			"if( depth >= ( 1.0 - EPSILON ) ) {",
 				"return;",
 			"}",
@@ -549,7 +563,7 @@ THREE.SAOBilaterialFilterShader2 = {
 			"float tapViewZ = -getViewZ( depth );",
 			"tapWeight = smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
 
-			"aoSum += texture2D( tAO, tapUv ).r * sampleWeight * tapWeight;",
+			"aoSum += ao * sampleWeight * tapWeight;",
 			"weightSum += sampleWeight * tapWeight;",
 
 		"}",
@@ -563,7 +577,10 @@ THREE.SAOBilaterialFilterShader2 = {
 			"gaussian[3] = 0.092902;",
 			"gaussian[4] = 0.062970;",
 
-			"float depth = getDepth( vUv );",
+			"vec4 depthTexel = texture2D( tAODepth, vUv );",
+			"float ao = depthTexel.r;",
+			"depthTexel.r = 1.0;",
+			"float depth = unpackRGBAToDepth( depthTexel );",
 			"if( depth >= ( 1.0 - EPSILON ) ) {",
 				"discard;",
 			"}",
@@ -571,7 +588,7 @@ THREE.SAOBilaterialFilterShader2 = {
 			"float centerViewZ = -getViewZ( depth );",
 
 			"float weightSum = gaussian[ 0 ];",
-			"float aoSum = texture2D( tAO, vUv ).r * weightSum;",
+			"float aoSum = ao * weightSum;",
 
 			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
 
@@ -590,7 +607,14 @@ THREE.SAOBilaterialFilterShader2 = {
 
 			"}",
 
-			"gl_FragColor = vec4( vec3( aoSum / weightSum ), 1.0 );",
+			"ao = aoSum / weightSum;",
+			"if( packOutput == 1 ) {",
+				"gl_FragColor = depthTexel;",
+				"gl_FragColor.r = ao;",
+			"}",
+			"else {",
+				"gl_FragColor = vec4( vec3( ao ), 1.0 );",
+			"}",
 
 		"}"
 
