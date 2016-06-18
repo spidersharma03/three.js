@@ -36,7 +36,7 @@ THREE.PMREMGenerator = function( sourceTexture ) {
 	 };
 
 	// how many LODs fit in the given CubeUV Texture.
-	this.numLods = Math.log2( size ) - 2;
+	this.numLods = Math.log( size ) / Math.log( 2 ) - 2;  // IE11 doesn't support Math.log2
 
 	for ( var i = 0; i < this.numLods; i ++ ) {
 
