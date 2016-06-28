@@ -58,7 +58,7 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 
 	var offset2 = 0;
 	var c = 4.0;
-	this.numLods = Math.log2( cubeTextureLods[ 0 ].width ) - 2;
+	this.numLods = Math.log( cubeTextureLods[ 0 ].width ) / Math.log( 2 ) - 2; // IE11 doesn't support Math.log2
 	for ( var i = 0; i < this.numLods; i ++ ) {
 
 		var offset1 = ( textureResolution - textureResolution / c ) * 0.5;
