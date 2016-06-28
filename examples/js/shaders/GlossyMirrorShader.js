@@ -11,6 +11,9 @@ THREE.GlossyMirrorShader = {
 	uniforms: {
 
 	 	"metalness": { type: "f", value: 0.0 },
+	 	"opacity": { type: "f", value: 1.0 },
+		"roughness": { type: "f", value: 0.0 },
+	 	"distanceFade": { type: "f", value: 0.01 },
 	
 	 	"specularColor": { type: "c", value: new THREE.Color( 0xffffff ) },
 		"tSpecular": { type: "t", value: null },
@@ -21,10 +24,7 @@ THREE.GlossyMirrorShader = {
 		"tReflection3": { type: "t", value: null },
 		"tReflection4": { type: "t", value: null },
 		"tReflectionDepth": { type: "t", value: null },
-
-		"roughness": { type: "f", value: 0.0 },
-	 	"distanceFade": { type: "f", value: 0.01 },
- 	
+	
 		"reflectionTextureMatrix" : { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraWorldMatrix": { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
@@ -74,6 +74,7 @@ THREE.GlossyMirrorShader = {
 		"#endif",
 
 		"uniform float metalness;",
+		"uniform float opacity;",
 		"uniform float distanceFade;",
 	
 		"uniform vec3 specularColor;",
@@ -215,7 +216,7 @@ THREE.GlossyMirrorShader = {
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
 			"specular = mix( vec3( 0.05 ), specular, metalness );",
 			"vec3 fresnel = F_Schlick( specular, dotNV );",
-			"gl_FragColor = vec4( reflection.rgb, fresnel * fade * reflection.a );", // fresnel controls alpha
+			"gl_FragColor = vec4( reflection.rgb, fresnel * fade * reflection.a * opacity );", // fresnel controls alpha
 
 
 		"}"
