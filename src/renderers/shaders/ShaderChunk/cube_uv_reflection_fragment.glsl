@@ -63,7 +63,7 @@ vec2 getCubeUV2(vec3 direction, float roughnessLevel) {
 	int faceIndex = getFaceIndexAndUvFromDirection(direction, faceUv);
 
 	// adjust faceUv to fit within a cube face, rather than extending beyond the edge:
-	faceUv = ( ( faceUv * 255.0 + 0.5 ) / 1024.0 );
+	faceUv = ( ( faceUv * 255.0 ) / 1024.0 );
 
 	// resolve faceIndex to a particular map
 	vec2 faceOffset = vec2( 0.25 * float( faceIndex ), 0.25 );	

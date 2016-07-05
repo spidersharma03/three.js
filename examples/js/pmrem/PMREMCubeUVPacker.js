@@ -18,7 +18,8 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 
 	this.cubeLods = cubeTextureLods;
 	this.numLods = numLods;
-	var size = cubeTextureLods[ 0 ].width * 4;
+	var width = cubeTextureLods[ 0 ].width * 4;
+	var height = cubeTextureLods[ 0 ].width * 2;
 
 	var sourceTexture = cubeTextureLods[ 0 ].texture;
 	var params = {
@@ -26,8 +27,8 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 		magFilter: sourceTexture.magFilter,
 		minFilter: sourceTexture.minFilter,
 		type: sourceTexture.type,
-		generateMipmaps: sourceTexture.generateMipmaps,
-		anisotropy: sourceTexture.anisotropy,
+		generateMipmaps: false,//sourceTexture.generateMipmaps,
+		anisotropy: 0,//sourceTexture.anisotropy,
 		encoding: sourceTexture.encoding
 	};
 
@@ -36,70 +37,53 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 		params.minFilter = THREE.LinearFilter;
 	}
 
-	this.CubeUVRenderTarget = new THREE.WebGLRenderTarget( size, size, params );
+	this.CubeUVRenderTarget = new THREE.WebGLRenderTarget( width, width, params );
 	this.CubeUVRenderTarget.texture.mapping = THREE.CubeUVReflectionMapping;
-	this.camera = new THREE.OrthographicCamera( - size * 0.5, size * 0.5, - size * 0.5, size * 0.5, 0.0, 1000 );
+	this.camera = new THREE.OrthographicCamera( 0, 1024, 0, 1024, 0.0, 1000 );
 
 	this.scene = new THREE.Scene();
 	this.scene.add( this.camera );
 
 	this.objects = [];
-	var xOffset = 0;
-	var faceOffsets = [];
-	faceOffsets.push( new THREE.Vector2( 0, 0 ) );
-	faceOffsets.push( new THREE.Vector2( 1, 0 ) );
-	faceOffsets.push( new THREE.Vector2( 2, 0 ) );
-	faceOffsets.push( new THREE.Vector2( 0, 1 ) );
-	faceOffsets.push( new THREE.Vector2( 1, 1 ) );
-	faceOffsets.push( new THREE.Vector2( 2, 1 ) );
-	var yOffset = 0;
-	var textureResolution = size;
+	var textureResolution = new THREE.Vector2( width, height );
 	size = cubeTextureLods[ 0 ].width;
 
 	var offset2 = 0;
 	var c = 4.0;
 	this.numLods = Math.log( cubeTextureLods[ 0 ].width ) / Math.log( 2 ) - 2; // IE11 doesn't support Math.log2
-	for ( var i = 0; i < this.numLods; i ++ ) {
+	for ( var cubeIndex = 0; cubeIndex < this.numLods; cubeIndex ++ ) {
 
-		var offset1 = ( textureResolution - textureResolution / c ) * 0.5;
-		if ( size > 16 )
-		c *= 2;
-		var nMips = size > 16 ? 6 : 1;
-		var mipOffsetX = 0;
-		var mipOffsetY = 0;
-		var mipSize = size;
+		// origin of the cube
+		var cubeOffset = new THREE.Vector2( 0.0, 0.0 );
 
-		for ( var j = 0; j < nMips; j ++ ) {
+		// which set of maps to use.
+		var cubeScale = Math.pow( 0.5, cubeIndex );
+		cubeOffset.y = 1024 - 1024 * cubeScale;
 
-			// Mip Maps
-			for ( var k = 0; k < 6; k ++ ) {
-
-				// 6 Cube Faces
-				var material = this.getShader();
-				material.uniforms[ 'envMap' ].value = this.cubeLods[ i ].texture;
-				material.envMap = this.cubeLods[ i ].texture;
-				material.uniforms[ 'faceIndex' ].value = k;
-				material.uniforms[ 'mapSize' ].value = mipSize;
-				var color = material.uniforms[ 'testColor' ].value;
-				//color.copy(testColor[j]);
-				var planeMesh = new THREE.Mesh(
-				new THREE.PlaneGeometry( mipSize, mipSize, 0 ),
-				material );
-				planeMesh.position.x = faceOffsets[ k ].x * mipSize - offset1 + mipOffsetX;
-				planeMesh.position.y = faceOffsets[ k ].y * mipSize - offset1 + offset2 + mipOffsetY;
-				planeMesh.material.side = THREE.DoubleSide;
-				this.scene.add( planeMesh );
-				this.objects.push( planeMesh );
-
+		for ( var faceIndex = 0; faceIndex < 6; faceIndex ++ ) {
+		
+			// resolve faceIndex to a particular map
+			var faceOffset = new THREE.Vector2( 256 * faceIndex, 0.0 );	
+			if( faceIndex >= 3 ) { // adjust to second row
+				faceOffset.add( new THREE.Vector2( -256 * 3, 256 ) );
 			}
-			mipOffsetY += 1.75 * mipSize;
-			mipOffsetX += 1.25 * mipSize;
-			mipSize /= 2;
+
+			// 6 Cube Faces
+			var material = this.getShader();
+			material.uniforms[ 'envMap' ].value = this.cubeLods[ cubeIndex ].texture;
+			material.envMap = this.cubeLods[ cubeIndex ].texture;
+			material.uniforms[ 'faceIndex' ].value = faceIndex;
+			material.uniforms[ 'mapSize' ].value = size;
+			var color = material.uniforms[ 'testColor' ].value;
+			var planeMesh = new THREE.Mesh( new THREE.PlaneGeometry( cubeScale * 256, cubeScale * 256, 0 ), material );
+			planeMesh.position.x = cubeOffset.x + ( faceOffset.x + 128 ) * cubeScale;
+			planeMesh.position.y = cubeOffset.y + ( faceOffset.y + 128 ) * cubeScale;
+			//console.log( 'planeMesh.position', planeMesh.position );
+			planeMesh.material.side = THREE.DoubleSide;
+			this.scene.add( planeMesh );
+			this.objects.push( planeMesh );
 
 		}
-		offset2 += 2 * size;
-		if ( size > 16 )
-		size /= 2;
 
 	}
 
