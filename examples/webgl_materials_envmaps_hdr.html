@@ -67,6 +67,7 @@
 				bumpScale: 0.3,
 				background: false,
 				exposure: 1.0,
+				autoRotate: true
 			};
 			var camera, scene, renderer, controls, objects = [];
 			var hdrCubeMap;
@@ -87,7 +88,7 @@
 
 				scene = new THREE.Scene();
 
-				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setClearColor( new THREE.Color( 0xffffff ) );
 				renderer.toneMapping = THREE.LinearToneMapping;
 
@@ -223,6 +224,7 @@
 				gui.add( params, 'reflectivity', 0, 1 );
 				gui.add( params, 'bumpScale', - 1, 1 );
 				gui.add( params, 'exposure', 0.1, 2 );
+				gui.add( params, 'autoRotate' );
 				gui.open();
 
 			}
@@ -287,11 +289,13 @@
 
 				camera.lookAt( scene.position );
 
-				for ( var i = 0, l = objects.length; i < l; i ++ ) {
+				if( params.autoRotate ) {
+					for ( var i = 0, l = objects.length; i < l; i ++ ) {
 
-					var object = objects[ i ];
-					object.rotation.y += 0.005;
+						var object = objects[ i ];
+						object.rotation.y += 0.005;
 
+					}
 				}
 
 				renderer.render( scene, camera );
