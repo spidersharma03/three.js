@@ -56,6 +56,7 @@ THREE.LuminosityHighPassShader = {
 			"float alpha = smoothstep( luminosityThreshold, luminosityThreshold + smoothWidth, v );",
 
 			"gl_FragColor = mix( outputColor, texel, alpha );",
+
 		"}"
 
 	].join("\n")
