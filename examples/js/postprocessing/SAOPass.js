@@ -20,8 +20,8 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.depthMIPs = false;
-	this.downSamplingRatio = 1;
-	this.blurKernelSize = 10;
+	this.downSamplingRatio = 2;
+	this.blurKernelSize = 4;
 
 	/*
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
@@ -65,6 +65,15 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
 	this.bilateralFilterMaterial.blending = THREE.NoBlending;
 	this.bilateralFilterMaterial.premultipliedAlpha = true;
+
+	// this.bilateralUpsamplerMaterial = this.getBilateralUpsamplerMaterial();
+	// this.bilateralUpsamplerMaterial.uniforms["inputTexture"] = this.saoRenderTarget.texture;
+	// this.bilateralUpsamplerMaterial.uniforms["NormalTextureFullRes"] = this.saoRenderTarget.texture;
+	// this.bilateralUpsamplerMaterial.uniforms["DepthTextureFullRes"] = this.saoRenderTarget.texture;
+	// this.bilateralUpsamplerMaterial.uniforms["NormaTextureHalfRes"] = this.saoRenderTarget.texture;
+	// this.bilateralUpsamplerMaterial.uniforms["DepthTextureHalfRes"] = this.saoRenderTarget.texture;
+	// this.bilateralUpsamplerMaterial.uniforms["texSize"] = this.saoRenderTarget.texture;
+	// this.bilateralUpsamplerMaterial.uniforms["cameraNearFar"] = this.saoRenderTarget.texture;
 
 	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
@@ -141,7 +150,7 @@ THREE.SAOPass.prototype = {
 
 		this.depthMinifyMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.depthMinifyMaterial.uniforms[ 'cameraFar' ].value = camera.far;
-	
+
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
 		this.saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
@@ -163,9 +172,9 @@ THREE.SAOPass.prototype = {
 		if ( ! this.saoRenderTarget ) {
 
 			this.saoRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.blurIntermediateRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth1RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 2 ), Math.ceil( height / 2 ),
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth2RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 4 ), Math.ceil( height / 4 ),
@@ -173,14 +182,14 @@ THREE.SAOPass.prototype = {
 			this.depth3RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 8 ), Math.ceil( height / 8 ),
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.normalRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 
 		}
 
 		if( ! depthTexture && ! this.depthRenderTarget ) {
 
 			this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 
 		}
 
@@ -346,6 +355,75 @@ THREE.SAOPass.prototype = {
 		renderer.setClearColor( clearColor );
 		renderer.setClearAlpha( clearAlpha );
 
+	},
+
+	getBilateralUpsamplerMaterial: function(kernelRadius) {
+
+		return new THREE.ShaderMaterial( {
+
+			uniforms: {
+				"inputTexture": { value: null },
+				"NormalTextureFullRes": { value: null },
+				"DepthTextureFullRes": { value: null },
+				"NormaTextureHalfRes": { value: null },
+				"DepthTextureHalfRes": { value: null },
+				"texSize": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
+				"cameraNearFar": 	{ value: new THREE.Vector2( 0.5, 0.5 ) },
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"varying vec2 vUv;\n\
+				uniform sampler2D inputTexture;\n\
+				uniform sampler2D NormalTextureFullRes;\n\
+				uniform sampler2D DepthTextureFullRes;\n\
+				uniform sampler2D NormaTextureHalfRes;\n\
+				uniform sampler2D DepthTextureHalfRes;\n\
+				uniform vec2 texSize;\
+				uniform vec2 cameraNearFar;\
+				\
+				void main()\
+				{\
+				    int i;\
+				    vec2 coords[4];\
+				    coords[0] = vUv + texSize * vec2(0.0, 1.0);\
+						coords[1] = vUv + texSize * vec2(1.0, 0.0);\
+						coords[2] = vUv + texSize * vec2(-1.0, 0.0);\
+						coords[3] = vUv + texSize * vec2(0.0, -1.0);\
+						\
+				    float norm_weights[4];\
+				    vec3 norm_fullRes = unpackRGBToNormal(texture2D(NormalTextureFullRes, vUv));\
+				    for (i = 0; i < 4; i++) {\
+				        vec3 norm_coarse = unpackRGBToNormal(texture2D(NormalTextureFullRes, coords[i])););\
+				        norm_weights[i] = pow(abs(dot(norm_coarse, norm_hires)), 32);\
+				    }\
+						\
+				    float depth_weights[4];\
+				    float depth_hires = unpackRGBAToDepth(texture2D(DepthTextureFullRes, vUv));\
+						depth_hires = -perspectiveDepthToViewZ(depth_hires, cameraNearFar.x, cameraNearFar.z);\
+				    for (i = 0; i < 4; i++) {\
+							float depth_coarse = unpackRGBAToDepth(texture2D(DepthTextureFullRes, coords[i]));\
+							depth_coarse = -perspectiveDepthToViewZ(depth_coarse, cameraNearFar.x, cameraNearFar.z);\
+				      depth_weights[i] = 1.0 / (0.001 + abs(depth_hires-depth_coarse));\
+				    }\
+						\
+				    vec3 color_t = vec3(0.0);\
+				    float weight_sum = 0;\
+				    for (i = 0; i < 4; i++) {\
+				        float weight = norm_weights[i] * depth_weights[i];\
+				        color_t += texture2D(inputTexture, coords[i], 0).rgb*weight;\
+				        weight_sum += weight;\
+				    }\
+				    color_t /= weight_sum;\
+				    gl_FragColor = vec4(color_t, 1.0);\
+				}"
+		} );
 	}
 
 };

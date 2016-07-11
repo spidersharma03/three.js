@@ -46,7 +46,7 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 9,
+		'NUM_SAMPLES': 40,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -144,7 +144,7 @@ THREE.SAOShader = {
 			"#endif",
 
 		"}",
-	
+
 		"vec3 getViewPosition( const in vec2 screenPosition, const in float depth, const in float viewZ ) {",
 
 			"float clipW = cameraProjectionMatrix[2][3] * viewZ + cameraProjectionMatrix[3][3];",
@@ -225,7 +225,7 @@ THREE.SAOShader = {
 		// moving costly divides into consts
 		"const float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );",
 		"const float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );",
-	
+
 		"float getAmbientOcclusion( const in vec3 centerViewPosition ) {",
 
 			// precompute some variables require in getOcclusion.
@@ -234,6 +234,7 @@ THREE.SAOShader = {
 			"vec2 invSize = 1.0 / size;",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
+			"float screenRadius = occlusionSphereWorldRadius * cameraNear / centerViewPosition.z;",
 
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float random = rand( vUv + randomSeed );",
@@ -245,7 +246,7 @@ THREE.SAOShader = {
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
 				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
-			
+
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
 				"if( sampleUvOffset.x == 0.0 && sampleUvOffset.y == 0.0 ) continue;",
@@ -254,7 +255,7 @@ THREE.SAOShader = {
 				"angle += ANGLE_STEP;",
 
 				"vec2 sampleUv = vUv + sampleUvOffset;",
-		
+
 				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
 
 				//"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
@@ -452,12 +453,12 @@ THREE.SAOBilaterialFilterShader = {
 		"}",
 
 		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
-		
+
 			"vec4 depthTexel = texture2D( tAODepth, tapUv );",
 			"float ao = depthTexel.r;",
 			"depthTexel.r = 1.0;",
 			"float depth = unpackRGBAToDepth( depthTexel );",
-	
+
 			"if( depth >= ( 1.0 - EPSILON ) ) {",
 				"return;",
 			"}",
@@ -469,7 +470,10 @@ THREE.SAOBilaterialFilterShader = {
 			"weightSum += sampleWeight * tapWeight;",
 
 		"}",
-
+		"float normpdf(in float x, in float sigma)",
+		"{",
+			"return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;",
+		"}",
 		"void main() {",
 
 			"float gaussian[KERNEL_SAMPLE_RADIUS + 1];",
@@ -489,7 +493,7 @@ THREE.SAOBilaterialFilterShader = {
 
 			"float centerViewZ = -getViewZ( depth );",
 
-			"float weightSum = 0.3 + gaussian[ 0 ];",
+			"float weightSum = normpdf(0.0, 0.01);",
 			"float aoSum = ao * weightSum;",
 
 			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
@@ -499,7 +503,7 @@ THREE.SAOBilaterialFilterShader = {
 
 			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
 
-				"float sampleWeight = 0.3 + gaussian[ i ];",
+				"float sampleWeight = normpdf(float(i), 0.01);",
 
 				"rTapUv += uvIncrement;",
 				"addTapInfluence( rTapUv, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
