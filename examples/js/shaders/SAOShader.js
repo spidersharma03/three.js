@@ -234,8 +234,7 @@ THREE.SAOShader = {
 			"vec2 invSize = 1.0 / size;",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
-			"float screenRadius = occlusionSphereWorldRadius * cameraNear / centerViewPosition.z;",
-
+		
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float random = rand( vUv + randomSeed );",
 			"float angle = random * PI2;",
@@ -246,7 +245,7 @@ THREE.SAOShader = {
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
 				"radius = (float(i) + 0.5) * radiusStep;",
-				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * screenRadius * 4.0;",
+				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 4.0;",
 
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
@@ -407,7 +406,6 @@ THREE.SAOBilaterialFilterShader = {
 		"cameraNear":   { type: "f", value: 1 },
 		"cameraFar":    { type: "f", value: 100 },
 		"edgeSharpness":    { type: "f", value: 3 },
-		"scaleFactor":    { type: "f", value: 1 },
 		"packOutput":    { type: "f", value: 1 }
 
 	},
@@ -439,7 +437,6 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform float cameraNear;",
 		"uniform float cameraFar;",
 		"uniform float edgeSharpness;",
-		"uniform float scaleFactor;",
 		"uniform int packOutput;",
 
 		"uniform float occlusionSphereWorldRadius;",
@@ -472,26 +469,27 @@ THREE.SAOBilaterialFilterShader = {
 			"}",
 
 			"float tapViewZ = -getViewZ( depth );",
-			"tapWeight = max(0.0, 1.0 - (edgeSharpness * 20.0) * abs(tapViewZ - centerViewZ) * scaleFactor);",
+			"tapWeight = max(0.0, 1.0 - (edgeSharpness * 20.0) * abs(tapViewZ - centerViewZ));",
 			"aoSum += ao * sampleWeight * tapWeight;",
 			"weightSum += sampleWeight * tapWeight;",
 
 			"vec3 normal = unpackRGBToNormal(texture2D(tAONormal, tapUv).rgb);",
 			"float norm_weight = pow(abs(dot(normal, centerNormal)), 32.0);",
 			"float normalCloseness = dot(normal, centerNormal);",
-      "normalCloseness = normalCloseness*normalCloseness;",
-      "normalCloseness = normalCloseness*normalCloseness;",
-      "float k_normal = 4.0;",
-      "float normalError = (1.0 - normalCloseness) * k_normal;",
-      "norm_weight = max((1.0 - edgeSharpness * normalError), 0.00);",
+			"normalCloseness = normalCloseness*normalCloseness;",
+			"normalCloseness = normalCloseness*normalCloseness;",
+			"float k_normal = 4.0;",
+			"float normalError = (1.0 - normalCloseness) * k_normal;",
+			"norm_weight = max((1.0 - edgeSharpness * normalError), 0.00);",
 
 			"aoSum += ao * sampleWeight * norm_weight;",
 			"weightSum += sampleWeight * norm_weight;",
 		"}",
-		"float normpdf(in float x, in float sigma)",
-		"{",
+
+		"float normpdf(in float x, in float sigma) {",
 			"return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;",
 		"}",
+
 		"void main() {",
 
 			"float gaussian[KERNEL_SAMPLE_RADIUS + 1];",
@@ -511,10 +509,10 @@ THREE.SAOBilaterialFilterShader = {
 
 			"float centerViewZ = -getViewZ( depth );",
 
-			"float weightSum = normpdf(0.0, 5.0);",
+			"float weightSum = normpdf(0.0, 5.0) + 0.3;",
 			"float aoSum = ao * weightSum;",
 
-			"vec2 uvIncrement = ( kernelDirection / size ) * 2.0/sqrt(centerViewZ);",
+			"vec2 uvIncrement = ( kernelDirection / size );",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
 			"float rWeight = 1.0, lWeight = 1.0;",
@@ -522,7 +520,7 @@ THREE.SAOBilaterialFilterShader = {
 
 			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
 
-				"float sampleWeight = normpdf(float(i), 5.0);",
+				"float sampleWeight = normpdf(float(i), 5.0) + 0.3;",
 
 				"rTapUv += uvIncrement;",
 				"addTapInfluence( rTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",

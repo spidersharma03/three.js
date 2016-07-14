@@ -74,13 +74,12 @@
 				msaaEnabled: false,
 				msaaLevel: 4,
 				saoEnabled: true,
-				saoIntensity: 0.5,
+				saoIntensity: 1,
 				saoSphereRadius: 0.5,
 				saoBlur: true,
 				saoOutput: 0,
-				saoEdgeSharpness: 3.0,
-				saoScaleFactor: 1.0
-			}
+				saoEdgeSharpness: 1.0
+			};
 
 			// Init gui
 			var gui = new dat.GUI();
@@ -93,12 +92,7 @@
 			gui.add( params, "saoIntensity", 0, 1 );
 			gui.add( params, "saoSphereRadius", 0.01, 5 );
 			gui.add( params, "saoBlur" );
-			gui.add( params, "saoEdgeSharpness", 0.0, 3.0 ).onChange( function(value) {
-	        saoPass.setEdgeSharpness(value);
-	    });;
-			gui.add( params, "saoScaleFactor", 0.0, 3.0 ).onChange( function(value) {
-	        saoPass.setScaleFactor(value);
-	    });
+			gui.add( params, "saoEdgeSharpness", 0.0, 1.0 );
 			gui.add( params, "saoOutput", {
 				'Default': 0,
 				'Depth': 1,
@@ -134,7 +128,7 @@
 					supportsDepthTextureExtension = true;
 				}
 
-				camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 100 );
+				camera = new THREE.PerspectiveCamera(  65, width / height, 1, 10 );
 				camera.position.z = 7;
 				//camera.position.x = 3;
 
@@ -197,23 +191,24 @@
 				scene.add( light3 );
 
 				var geometry = new THREE.SphereBufferGeometry( 3, 48, 24 );
-				for ( var i = 0; i < 60; i ++ ) {
+				var geometry2 = new THREE.BoxBufferGeometry( 3, 3, 3 );
+				for ( var i = 0; i < 120; i ++ ) {
 
 					var material = new THREE.MeshStandardMaterial();
-					material.roughness = 1;//0.5 * Math.random() + 0.25;
+					material.roughness = 0.5 * Math.random() + 0.25;
 					material.metalness = 0;
 					material.color.setHSL( Math.random(), 1.0, 0.3 );
 
-					var mesh = new THREE.Mesh( geometry, material );
+					var mesh = new THREE.Mesh( ( ( i % 2 === 0 ) ? geometry : geometry2 ), material );
 					mesh.position.x = Math.random() * 4 - 2;
 					mesh.position.y = Math.random() * 4 - 2;
 					mesh.position.z = Math.random() * 4 - 2;
-					mesh.rotation.x = Math.random();
-					mesh.rotation.y = Math.random();
-					mesh.rotation.z = Math.random();
+					mesh.rotation.x = Math.random() * Math.PI * 2;
+					mesh.rotation.y = Math.random() * Math.PI * 2;
+					mesh.rotation.z = Math.random() * Math.PI * 2;
 
 					mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 0.3 + 0.1;
-					group.add( mesh );
+ 					group.add( mesh );
 				}
 
 				var floorMaterial = new THREE.MeshStandardMaterial();
@@ -240,6 +235,8 @@
 				composer.addPass( msaaRenderPass );
 
 				saoPass = new THREE.SAOPass( scene, camera );
+				saoPass.downSamplingRatio = 2;
+				saoPass.blurKernelSize = 8;
 				composer.addPass( saoPass );
 
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
@@ -299,6 +296,7 @@
 				saoPass.intensity = params.saoIntensity;
 				saoPass.occlusionSphereWorldRadius = params.saoSphereRadius * params.scale;
 				saoPass.blurEnabled = params.saoBlur;
+				saoPass.edgeSharpness = params.saoEdgeSharpness;
 
 				switch( params.saoOutput ) {
 					case '1': saoPass.outputOverride = "depth"; break;
@@ -315,7 +313,7 @@
 				renderer.setClearAlpha( 0.0 );
 
 				composer.render();
-				controls.update();
+				if( controls ) controls.update();
 				stats.end();
 			}
 

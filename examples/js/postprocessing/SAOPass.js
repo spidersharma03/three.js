@@ -22,6 +22,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.depthMIPs = false;
 	this.downSamplingRatio = 2;
 	this.blurKernelSize = (this.downSamplingRatio === 1) ? 8 : 4;
+	this.edgeSharpness = 1;
 
 	/*
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
@@ -123,14 +124,6 @@ THREE.SAOPass.prototype = {
 			this.saoRenderTargetFullRes.dispose();
 			this.saoRenderTargetFullRes = null;
 		}
-	},
-
-	setEdgeSharpness: function(value) {
-		this.bilateralFilterMaterial.uniforms[ 'edgeSharpness' ].value = Number(value);
-	},
-
-	setScaleFactor: function(value) {
-		this.bilateralFilterMaterial.uniforms[ 'scaleFactor' ].value = Number(value);
 	},
 
 	setSize: function ( width, height ) {
@@ -355,6 +348,7 @@ THREE.SAOPass.prototype = {
 			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.5;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 			this.bilateralFilterMaterial.uniforms[ "packOutput" ].value = 1;
+			this.bilateralFilterMaterial.uniforms[ 'edgeSharpness' ].value = this.edgeSharpness;
 
 			renderer.renderPass( this.bilateralFilterMaterial, this.blurIntermediateRenderTarget, true ); // , 0xffffff, 0.0, "sao vBlur"
 
