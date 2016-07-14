@@ -46,7 +46,7 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 9,
+		'NUM_SAMPLES': 20,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -144,7 +144,7 @@ THREE.SAOShader = {
 			"#endif",
 
 		"}",
-	
+
 		"vec3 getViewPosition( const in vec2 screenPosition, const in float depth, const in float viewZ ) {",
 
 			"float clipW = cameraProjectionMatrix[2][3] * viewZ + cameraProjectionMatrix[3][3];",
@@ -225,7 +225,7 @@ THREE.SAOShader = {
 		// moving costly divides into consts
 		"const float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );",
 		"const float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );",
-	
+
 		"float getAmbientOcclusion( const in vec3 centerViewPosition ) {",
 
 			// precompute some variables require in getOcclusion.
@@ -234,6 +234,7 @@ THREE.SAOShader = {
 			"vec2 invSize = 1.0 / size;",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
+			"float screenRadius = occlusionSphereWorldRadius * cameraNear / centerViewPosition.z;",
 
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float random = rand( vUv + randomSeed );",
@@ -244,17 +245,17 @@ THREE.SAOShader = {
 			"float occlusionSum = 0.0;",
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
-			
+				"radius = (float(i) + 0.5) * radiusStep;",
+				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * screenRadius * 4.0;",
+
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
 				"if( sampleUvOffset.x == 0.0 && sampleUvOffset.y == 0.0 ) continue;",
 
-				"radius += radiusStep;",
 				"angle += ANGLE_STEP;",
 
 				"vec2 sampleUv = vUv + sampleUvOffset;",
-		
+
 				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
 
 				//"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
@@ -397,6 +398,7 @@ THREE.SAOBilaterialFilterShader = {
 	uniforms: {
 
 		"tAODepth":	{ type: "t", value: null },
+		"tAONormal":	{ type: "t", value: null },
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
 		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
@@ -404,6 +406,8 @@ THREE.SAOBilaterialFilterShader = {
 
 		"cameraNear":   { type: "f", value: 1 },
 		"cameraFar":    { type: "f", value: 100 },
+		"edgeSharpness":    { type: "f", value: 3 },
+		"scaleFactor":    { type: "f", value: 1 },
 		"packOutput":    { type: "f", value: 1 }
 
 	},
@@ -429,10 +433,13 @@ THREE.SAOBilaterialFilterShader = {
 		"varying vec2 vUv;",
 
 		"uniform sampler2D tAODepth;",
+		"uniform sampler2D tAONormal;",
 		"uniform vec2 size;",
 
 		"uniform float cameraNear;",
 		"uniform float cameraFar;",
+		"uniform float edgeSharpness;",
+		"uniform float scaleFactor;",
 		"uniform int packOutput;",
 
 		"uniform float occlusionSphereWorldRadius;",
@@ -440,6 +447,8 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform vec2 kernelDirection;",
 
 		"#include <packing>",
+		"const float EDGE_SHARPNESS = 1.0;",
+		"const float SCALE_FACTOR = 0.0;",
 
 		"float getViewZ( const in float depth ) {",
 
@@ -451,25 +460,38 @@ THREE.SAOBilaterialFilterShader = {
 
 		"}",
 
-		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
-		
+		"void addTapInfluence( const in vec2 tapUv, const in vec3 centerNormal, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
+
 			"vec4 depthTexel = texture2D( tAODepth, tapUv );",
 			"float ao = depthTexel.r;",
 			"depthTexel.r = 1.0;",
 			"float depth = unpackRGBAToDepth( depthTexel );",
-	
+
 			"if( depth >= ( 1.0 - EPSILON ) ) {",
 				"return;",
 			"}",
 
 			"float tapViewZ = -getViewZ( depth );",
-			"tapWeight = smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
-
+			"tapWeight = max(0.0, 1.0 - (edgeSharpness * 20.0) * abs(tapViewZ - centerViewZ) * scaleFactor);",
 			"aoSum += ao * sampleWeight * tapWeight;",
 			"weightSum += sampleWeight * tapWeight;",
 
-		"}",
+			"vec3 normal = unpackRGBToNormal(texture2D(tAONormal, tapUv).rgb);",
+			"float norm_weight = pow(abs(dot(normal, centerNormal)), 32.0);",
+			"float normalCloseness = dot(normal, centerNormal);",
+      "normalCloseness = normalCloseness*normalCloseness;",
+      "normalCloseness = normalCloseness*normalCloseness;",
+      "float k_normal = 4.0;",
+      "float normalError = (1.0 - normalCloseness) * k_normal;",
+      "norm_weight = max((1.0 - edgeSharpness * normalError), 0.00);",
 
+			"aoSum += ao * sampleWeight * norm_weight;",
+			"weightSum += sampleWeight * norm_weight;",
+		"}",
+		"float normpdf(in float x, in float sigma)",
+		"{",
+			"return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;",
+		"}",
 		"void main() {",
 
 			"float gaussian[KERNEL_SAMPLE_RADIUS + 1];",
@@ -489,23 +511,24 @@ THREE.SAOBilaterialFilterShader = {
 
 			"float centerViewZ = -getViewZ( depth );",
 
-			"float weightSum = 0.3 + gaussian[ 0 ];",
+			"float weightSum = normpdf(0.0, 5.0);",
 			"float aoSum = ao * weightSum;",
 
-			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
+			"vec2 uvIncrement = ( kernelDirection / size ) * 2.0/sqrt(centerViewZ);",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
 			"float rWeight = 1.0, lWeight = 1.0;",
+			"vec3 normalCenter = unpackRGBToNormal(texture2D(tAONormal, vUv).rgb);",
 
 			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
 
-				"float sampleWeight = 0.3 + gaussian[ i ];",
+				"float sampleWeight = normpdf(float(i), 5.0);",
 
 				"rTapUv += uvIncrement;",
-				"addTapInfluence( rTapUv, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
+				"addTapInfluence( rTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
 
 				"lTapUv -= uvIncrement;",
-				"addTapInfluence( lTapUv, centerViewZ, sampleWeight, aoSum, lWeight, weightSum );",
+				"addTapInfluence( lTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, lWeight, weightSum );",
 
 			"}",
 

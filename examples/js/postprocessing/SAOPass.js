@@ -14,14 +14,14 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scene = scene;
 	this.camera = camera;
 
-	this.intensity = 0.25;
+	this.intensity = 0.5;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.occlusionSphereWorldRadius = 20;
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.depthMIPs = false;
-	this.downSamplingRatio = 1;
-	this.blurKernelSize = 10;
+	this.downSamplingRatio = 2;
+	this.blurKernelSize = (this.downSamplingRatio === 1) ? 8 : 4;
 
 	/*
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
@@ -66,6 +66,8 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.bilateralFilterMaterial.blending = THREE.NoBlending;
 	this.bilateralFilterMaterial.premultipliedAlpha = true;
 
+	this.bilateralUpsamplerMaterial = this.getBilateralUpsamplerMaterial();
+
 	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
 	this.copyMaterial.uniforms['opacity'].value = 1.0;
@@ -109,15 +111,36 @@ THREE.SAOPass.prototype = {
 			this.normalRenderTarget.dispose();
 			this.normalRenderTarget = null;
 		}
-
+		if( this.normalRenderTargetFullRes ) {
+			this.normalRenderTargetFullRes.dispose();
+			this.normalRenderTargetFullRes = null;
+		}
+		if( this.depthRenderTargetFullRes ) {
+			this.depthRenderTargetFullRes.dispose();
+			this.depthRenderTargetFullRes = null;
+		}
+		if( this.saoRenderTargetFullRes ) {
+			this.saoRenderTargetFullRes.dispose();
+			this.saoRenderTargetFullRes = null;
+		}
 	},
 
+	setEdgeSharpness: function(value) {
+		this.bilateralFilterMaterial.uniforms[ 'edgeSharpness' ].value = Number(value);
+	},
+
+	setScaleFactor: function(value) {
+		this.bilateralFilterMaterial.uniforms[ 'scaleFactor' ].value = Number(value);
+	},
 
 	setSize: function ( width, height ) {
 
+		if( this.saoRenderTargetFullRes ) this.saoRenderTargetFullRes.setSize( width, height );
+		if( this.depthRenderTargetFullRes ) this.depthRenderTargetFullRes.setSize( width, height );
+		if( this.normalRenderTargetFullRes ) this.normalRenderTargetFullRes.setSize( width, height );
 		width = Math.ceil( width / this.downSamplingRatio );
 		height = Math.ceil( height / this.downSamplingRatio );
-		if( this.saoRenderTarget ) this.saoRenderTarget.setSize( width / this.downSamplingRatio, height );
+		if( this.saoRenderTarget ) this.saoRenderTarget.setSize( width, height );
 		if( this.blurIntermediateRenderTarget ) this.blurIntermediateRenderTarget.setSize( width, height );
 		if( this.depthRenderTarget ) this.depthRenderTarget.setSize( width, height );
 		if( this.depth1RenderTarget ) this.depth1RenderTarget.setSize( Math.ceil( width / 2 ), Math.ceil( height / 2 ) );
@@ -141,7 +164,7 @@ THREE.SAOPass.prototype = {
 
 		this.depthMinifyMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.depthMinifyMaterial.uniforms[ 'cameraFar' ].value = camera.far;
-	
+
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
 		this.saoMaterial.uniforms[ 'cameraFar' ].value = camera.far;
 		this.saoMaterial.uniforms[ 'cameraProjectionMatrix' ].value = camera.projectionMatrix;
@@ -163,9 +186,11 @@ THREE.SAOPass.prototype = {
 		if ( ! this.saoRenderTarget ) {
 
 			this.saoRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+			this.saoRenderTargetFullRes = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+					{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.blurIntermediateRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth1RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 2 ), Math.ceil( height / 2 ),
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth2RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 4 ), Math.ceil( height / 4 ),
@@ -173,14 +198,17 @@ THREE.SAOPass.prototype = {
 			this.depth3RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 8 ), Math.ceil( height / 8 ),
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.normalRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
-
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+			this.normalRenderTargetFullRes = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 		}
 
 		if( ! depthTexture && ! this.depthRenderTarget ) {
 
 			this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+			this.depthRenderTargetFullRes = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 
 		}
 
@@ -207,8 +235,15 @@ THREE.SAOPass.prototype = {
 
 			renderer.renderOverride( this.depthMaterial, this.scene, this.camera, this.depthRenderTarget, true );
 
-			renderer.setClearColor( oldClearColor, oldClearAlpha );
+			renderer.setClearColor( 0xffffff, 1.0 );
 
+			if( this.downSamplingRatio !== 1.0 ) {
+
+				renderer.renderOverride( this.depthMaterial, this.scene, this.camera, this.depthRenderTargetFullRes, true );
+
+				renderer.setClearColor( oldClearColor, oldClearAlpha );
+
+			}
 			depthTexture = this.depthRenderTarget.texture;
 			depthPackingMode = 1;
 
@@ -274,6 +309,14 @@ THREE.SAOPass.prototype = {
 
 			renderer.renderOverride( this.normalMaterial, this.scene, this.camera, this.normalRenderTarget, true );
 
+			if( this.downSamplingRatio !== 1.0 ) {
+
+					renderer.setClearColor( new THREE.Color( 0.5, 0.5, 1.0 ), 1.0 );
+
+					renderer.renderOverride( this.normalMaterial, this.scene, this.camera, this.normalRenderTargetFullRes, true );
+
+			}
+
 			renderer.setClearColor( oldClearColor, oldClearAlpha );
 
 		}
@@ -308,6 +351,7 @@ THREE.SAOPass.prototype = {
 
 			this.bilateralFilterMaterial.defines[ 'KERNEL_SAMPLE_RADIUS' ] = this.blurKernelSize;
 			this.bilateralFilterMaterial.uniforms[ "tAODepth" ].value = this.saoRenderTarget.texture;
+			this.bilateralFilterMaterial.uniforms[ "tAONormal" ].value = this.normalRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.5;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 			this.bilateralFilterMaterial.uniforms[ "packOutput" ].value = 1;
@@ -321,12 +365,25 @@ THREE.SAOPass.prototype = {
 			renderer.renderPass( this.bilateralFilterMaterial, this.saoRenderTarget, true ); // 0xffffff, 0.0, "sao hBlur"
 
 		}
+		if(this.downSamplingRatio > 1.0)
+		{
+			//Bilateral Up sampler
+			this.bilateralUpsamplerMaterial.uniforms["inputTexture"].value = this.saoRenderTarget.texture;
+			this.bilateralUpsamplerMaterial.uniforms["NormalTextureFullRes"].value = this.normalRenderTargetFullRes.texture;
+			this.bilateralUpsamplerMaterial.uniforms["DepthTextureFullRes"].value = this.depthRenderTargetFullRes.texture;
+			this.bilateralUpsamplerMaterial.uniforms["NormalTextureHalfRes"].value = this.normalRenderTarget.texture;
+			this.bilateralUpsamplerMaterial.uniforms["DepthTextureHalfRes"].value = this.depthRenderTarget.texture;
+			this.bilateralUpsamplerMaterial.uniforms["texSize"].value = new THREE.Vector2(this.saoRenderTarget.width, this.saoRenderTarget.height);
+			this.bilateralUpsamplerMaterial.uniforms["cameraNearFar"].value = new THREE.Vector2(this.camera.near, this.camera.far);
+			renderer.renderPass( this.bilateralUpsamplerMaterial, this.saoRenderTargetFullRes, true ); // 0xffffff, 0.0, "sao hBlur"
 
+		}
 		renderer.setClearColor( oldClearColor, oldClearAlpha );
 
 		if( this.outputOverride === "sao" ) {
 
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
+			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.downSamplingRatio > 1.0 ? this.saoRenderTargetFullRes.texture
+			: this.saoRenderTarget.texture;
 			this.copyMaterial.blending = THREE.NoBlending;
 
 			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
@@ -336,7 +393,8 @@ THREE.SAOPass.prototype = {
 
 		renderer.autoClear = false;
 
-		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.saoRenderTarget.texture;
+		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.downSamplingRatio > 1.0 ? this.saoRenderTargetFullRes.texture
+		: this.saoRenderTarget.texture;
 		this.copyMaterial.blending = THREE.MultiplyBlending;
 		this.copyMaterial.premultipliedAlpha = true;
 
@@ -346,6 +404,96 @@ THREE.SAOPass.prototype = {
 		renderer.setClearColor( clearColor );
 		renderer.setClearAlpha( clearAlpha );
 
+	},
+
+	getBilateralUpsamplerMaterial: function(kernelRadius) {
+
+		return new THREE.ShaderMaterial( {
+
+			uniforms: {
+				"inputTexture": { value: null },
+				"NormalTextureFullRes": { value: null },
+				"DepthTextureFullRes": { value: null },
+				"NormalTextureHalfRes": { value: null },
+				"DepthTextureHalfRes": { value: null },
+				"texSize": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
+				"cameraNearFar": 	{ value: new THREE.Vector2( 0.5, 0.5 ) },
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"#include <common>\n\
+				#include <packing>\n\
+				varying vec2 vUv;\n\
+				uniform sampler2D inputTexture;\n\
+				uniform sampler2D NormalTextureFullRes;\n\
+				uniform sampler2D DepthTextureFullRes;\n\
+				uniform sampler2D NormalTextureHalfRes;\n\
+				uniform sampler2D DepthTextureHalfRes;\n\
+				uniform vec2 texSize;\
+				uniform vec2 cameraNearFar;\
+				\
+				void main()\
+				{\
+					vec2 uvOffsets[4];\
+					uvOffsets[0] = vUv + vec2(0.0, 1.0)/texSize;\
+					uvOffsets[1] = vUv + vec2(1.0, 0.0)/texSize;\
+					uvOffsets[2] = vUv + vec2(-1.0, 0.0)/texSize;\
+					uvOffsets[3] = vUv + vec2(0.0, -1.0)/texSize;\
+					\
+					float depth_weights[4];\
+					float depth_hires = unpackRGBAToDepth(texture2D(DepthTextureFullRes, vUv));\
+					depth_hires = -perspectiveDepthToViewZ(depth_hires, cameraNearFar.x, cameraNearFar.y);\
+					if(depth_hires == 1.0)\
+						discard;\
+					float depth_coarse1 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[0]));\
+					depth_coarse1 = -perspectiveDepthToViewZ(depth_coarse1, cameraNearFar.x, cameraNearFar.y);\
+					depth_weights[0] = 1.0 / (0.001 + abs(depth_hires-depth_coarse1));\
+					float depth_coarse2 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[1]));\
+					depth_coarse2 = -perspectiveDepthToViewZ(depth_coarse2, cameraNearFar.x, cameraNearFar.y);\
+					depth_weights[1] = 1.0 / (0.001 + abs(depth_hires-depth_coarse2));\
+					float depth_coarse3 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[2]));\
+					depth_coarse3 = -perspectiveDepthToViewZ(depth_coarse3, cameraNearFar.x, cameraNearFar.y);\
+					depth_weights[2] = 1.0 / (0.001 + abs(depth_hires-depth_coarse3));\
+					float depth_coarse4 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[3]));\
+					depth_coarse4 = -perspectiveDepthToViewZ(depth_coarse4, cameraNearFar.x, cameraNearFar.y);\
+					depth_weights[3] = 1.0 / (0.001 + abs(depth_hires-depth_coarse4));\
+					\
+					float norm_weights[4];\
+					vec3 norm_fullRes = unpackRGBToNormal(texture2D(NormalTextureFullRes, vUv).rgb);\
+					vec3 norm_coarse1 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[0]).rgb);\
+					norm_weights[0] = pow(abs(dot(norm_coarse1, norm_fullRes)), 32.0);\
+					vec3 norm_coarse2 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[1]).rgb);\
+					norm_weights[1] = pow(abs(dot(norm_coarse2, norm_fullRes)), 32.0);\
+					vec3 norm_coarse3 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[2]).rgb);\
+					norm_weights[2] = pow(abs(dot(norm_coarse3, norm_fullRes)), 32.0);\
+					vec3 norm_coarse4 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[3]).rgb);\
+					norm_weights[3] = pow(abs(dot(norm_coarse4, norm_fullRes)), 32.0);\
+					\
+					vec3 colorOut = vec3(0.0);\
+					float weight_sum = 0.0;\
+					float weight = norm_weights[0] * depth_weights[0];\
+					colorOut += texture2D(inputTexture, uvOffsets[0]).rgb*weight;\
+					weight_sum += weight;\
+				  weight = norm_weights[1] * depth_weights[1];\
+					colorOut += texture2D(inputTexture, uvOffsets[1]).rgb*weight;\
+					weight_sum += weight;\
+				  weight = norm_weights[2] * depth_weights[2];\
+					colorOut += texture2D(inputTexture, uvOffsets[2]).rgb*weight;\
+					weight_sum += weight;\
+				  weight = norm_weights[3] * depth_weights[3];\
+					colorOut += texture2D(inputTexture, uvOffsets[3]).rgb*weight;\
+					weight_sum += weight;\
+					colorOut /= weight_sum;\
+					gl_FragColor = vec4(colorOut, 1.0);\
+				}"
+		} );
 	}
 
 };

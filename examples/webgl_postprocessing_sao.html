@@ -34,6 +34,10 @@
 	</head>
 	<body>
 		<script src="../build/three.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
+
+		<script src="js/Detector.js"></script>
 
 		<script src="js/shaders/CopyShader.js"></script>
 		<script src="js/shaders/SAOShader.js"></script>
@@ -58,7 +62,7 @@
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var container, stats;
-			var camera, scene, renderer;
+			var camera, scene, renderer, controls;
 
 			var composer, msaaRenderPass, saoPass, copyPass;
 
@@ -70,10 +74,12 @@
 				msaaEnabled: false,
 				msaaLevel: 4,
 				saoEnabled: true,
-				saoIntensity: 0.75,
+				saoIntensity: 0.5,
 				saoSphereRadius: 0.5,
 				saoBlur: true,
-				saoOutput: 0
+				saoOutput: 0,
+				saoEdgeSharpness: 3.0,
+				saoScaleFactor: 1.0
 			}
 
 			// Init gui
@@ -87,6 +93,12 @@
 			gui.add( params, "saoIntensity", 0, 1 );
 			gui.add( params, "saoSphereRadius", 0.01, 5 );
 			gui.add( params, "saoBlur" );
+			gui.add( params, "saoEdgeSharpness", 0.0, 3.0 ).onChange( function(value) {
+	        saoPass.setEdgeSharpness(value);
+	    });;
+			gui.add( params, "saoScaleFactor", 0.0, 3.0 ).onChange( function(value) {
+	        saoPass.setScaleFactor(value);
+	    });
 			gui.add( params, "saoOutput", {
 				'Default': 0,
 				'Depth': 1,
@@ -122,10 +134,43 @@
 					supportsDepthTextureExtension = true;
 				}
 
-				camera = new THREE.PerspectiveCamera( 65, width / height, 1, 10 );
-				camera.position.z = 7;
+				camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 100 );
+				camera.position.z = 0;
+				camera.position.x = 3;
 
 				scene = new THREE.Scene();
+
+				var manager = new THREE.LoadingManager();
+				manager.onProgress = function ( item, loaded, total ) {
+					console.log( item, loaded, total );
+				};
+				var onProgress = function ( xhr ) {
+				};
+				var onError = function ( xhr ) {
+				};
+				// model
+				var loader = new THREE.OBJLoader( manager );
+				loader.load( 'models/obj/dogobj.obj', function ( object ) {
+					var scale = 1.0;
+					object.traverse( function ( child ) {
+						if ( child instanceof THREE.Mesh ) {
+							child.geometry.center();
+							child.geometry.computeBoundingSphere();
+							scale = 0.5*child.geometry.boundingSphere.radius;
+							child.material.side = THREE.DoubleSide;
+						}
+					} );
+					object.scale.x /= scale;
+					object.scale.y /= scale;
+					object.scale.z /= scale;
+					scene.add( object );
+				}, onProgress, onError );
+
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				//controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
+				controls.enableDamping = true;
+				controls.dampingFactor = 0.25;
+				// controls.enableZoom = false;
 
 				group = new THREE.Object3D();
 				scene.add( group );
@@ -152,10 +197,10 @@
 				scene.add( light3 );
 
 				var geometry = new THREE.SphereBufferGeometry( 3, 48, 24 );
-				for ( var i = 0; i < 120; i ++ ) {
+				for ( var i = 0; i < 60; i ++ ) {
 
 					var material = new THREE.MeshStandardMaterial();
-					material.roughness = 0.5 * Math.random() + 0.25;
+					material.roughness = 1;//0.5 * Math.random() + 0.25;
 					material.metalness = 0;
 					material.color.setHSL( Math.random(), 1.0, 0.3 );
 
@@ -167,20 +212,20 @@
 					mesh.rotation.y = Math.random();
 					mesh.rotation.z = Math.random();
 
-					mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 0.2 + 0.05;
-					group.add( mesh );
+					mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 0.3 + 0.1;
+					// group.add( mesh );
 				}
 
 				var floorMaterial = new THREE.MeshStandardMaterial();
 				material.roughness = 0.5 * Math.random() + 0.25;
 				material.metalness = 0;
-				
+
 				var floorGeometry = new THREE.PlaneBufferGeometry( 12, 12 );
 				var floorMesh = new THREE.Mesh( floorGeometry, floorMaterial );
 				floorMesh.rotation.x -= Math.PI * 0.5;
 				floorMesh.position.y -= 2;
 				group.add( floorMesh );
-			
+
 				stats = new Stats();
 				container.appendChild( stats.dom );
 
@@ -226,16 +271,16 @@
 
 				var timer = performance.now();
 			//	group.rotation.x = timer * 0.0002;
-				group.rotation.y = timer * 0.0001;
+				// group.rotation.y = timer * 0.0001;
 
-				camera.position.z = params.distance * params.scale;
-				camera.near = Math.max( ( params.distance - 4 ) * params.scale, 1 );
-				camera.far = ( params.distance + 4 ) * params.scale;
-				console.log( 'near', camera.near, 'far', camera.far );
-				camera.updateMatrixWorld( true );
-				camera.updateProjectionMatrix();
-				group.scale.set( params.scale, params.scale, params.scale );
-				group.updateMatrixWorld( true );
+				//camera.position.z = params.distance * params.scale;
+				//camera.near = Math.max( ( params.distance - 4 ) * params.scale, 1 );
+				//camera.far = ( params.distance + 4 ) * params.scale;
+				//console.log( 'near', camera.near, 'far', camera.far );
+				//camera.updateMatrixWorld( true );
+				//camera.updateProjectionMatrix();
+				//group.scale.set( params.scale, params.scale, params.scale );
+				//group.updateMatrixWorld( true );
 
 				if( params.manualCompositing ) params.renderToScreen = false;
 
@@ -270,7 +315,7 @@
 				renderer.setClearAlpha( 0.0 );
 
 				composer.render();
-
+				controls.update();
 				stats.end();
 			}
 
