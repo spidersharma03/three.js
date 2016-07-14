@@ -46,7 +46,7 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 20,
+		'NUM_SAMPLES': 30,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -245,7 +245,7 @@ THREE.SAOShader = {
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
 				"radius = (float(i) + 0.5) * radiusStep;",
-				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 4.0;",
+				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
 
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
