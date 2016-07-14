@@ -454,27 +454,27 @@ THREE.SAOPass.prototype = {
 						discard;\
 					float depth_coarse1 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[0]));\
 					depth_coarse1 = -perspectiveDepthToViewZ(depth_coarse1, cameraNearFar.x, cameraNearFar.y);\
-					depth_weights[0] = 1.0 / (0.001 + abs(depth_hires-depth_coarse1));\
+					depth_weights[0] = pow(1.0 / (1.0 + abs(depth_hires-depth_coarse1)), 16.0);\
 					float depth_coarse2 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[1]));\
 					depth_coarse2 = -perspectiveDepthToViewZ(depth_coarse2, cameraNearFar.x, cameraNearFar.y);\
-					depth_weights[1] = 1.0 / (0.001 + abs(depth_hires-depth_coarse2));\
+					depth_weights[1] = pow(1.0 / (1.0 + abs(depth_hires-depth_coarse2)), 16.0);\
 					float depth_coarse3 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[2]));\
 					depth_coarse3 = -perspectiveDepthToViewZ(depth_coarse3, cameraNearFar.x, cameraNearFar.y);\
-					depth_weights[2] = 1.0 / (0.001 + abs(depth_hires-depth_coarse3));\
+					depth_weights[2] = pow(1.0 / (1.0 + abs(depth_hires-depth_coarse3)), 16.0);\
 					float depth_coarse4 = unpackRGBAToDepth(texture2D(DepthTextureHalfRes, uvOffsets[3]));\
 					depth_coarse4 = -perspectiveDepthToViewZ(depth_coarse4, cameraNearFar.x, cameraNearFar.y);\
-					depth_weights[3] = 1.0 / (0.001 + abs(depth_hires-depth_coarse4));\
+					depth_weights[3] = pow(1.0 / (1.0 + abs(depth_hires-depth_coarse4)), 16.0);\
 					\
 					float norm_weights[4];\
 					vec3 norm_fullRes = unpackRGBToNormal(texture2D(NormalTextureFullRes, vUv).rgb);\
 					vec3 norm_coarse1 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[0]).rgb);\
-					norm_weights[0] = pow(abs(dot(norm_coarse1, norm_fullRes)), 32.0);\
+					norm_weights[0] = pow(0.5 * (dot(norm_coarse1, norm_fullRes) + 0.5), 8.0);\
 					vec3 norm_coarse2 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[1]).rgb);\
-					norm_weights[1] = pow(abs(dot(norm_coarse2, norm_fullRes)), 32.0);\
+					norm_weights[1] = pow(0.5 * abs(dot(norm_coarse2, norm_fullRes) + 0.5), 8.0);\
 					vec3 norm_coarse3 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[2]).rgb);\
-					norm_weights[2] = pow(abs(dot(norm_coarse3, norm_fullRes)), 32.0);\
+					norm_weights[2] = pow(0.5 * abs(dot(norm_coarse3, norm_fullRes) + 0.5), 8.0);\
 					vec3 norm_coarse4 = unpackRGBToNormal(texture2D(NormalTextureHalfRes, uvOffsets[3]).rgb);\
-					norm_weights[3] = pow(abs(dot(norm_coarse4, norm_fullRes)), 32.0);\
+					norm_weights[3] = pow(0.5 * abs(dot(norm_coarse4, norm_fullRes) + 0.5), 8.0);\
 					\
 					vec3 colorOut = vec3(0.0);\
 					float weight_sum = 0.0;\
