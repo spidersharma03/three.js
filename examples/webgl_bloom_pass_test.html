@@ -54,7 +54,6 @@
 		<script src="js/shaders/ConvolutionShader.js"></script>
 		<script src="js/shaders/LuminosityHighPassShader.js"></script>
 		<script src="js/postprocessing/BloomPassNew.js"></script>
-		<script src="js/postprocessing/DofPass.js"></script>
 
 		<script>
 
@@ -68,9 +67,9 @@
 				bumpScale: 0.3,
 				background: false,
 				exposure: 1.0,
-				bloomStrength: 1.0,
-				bloomThreshold: 0.5,
-				bloomRadius: 0.1
+				bloomStrength: 1.5,
+				bloomThreshold: 0.85,
+				bloomRadius: 0.4
 			};
 			var camera, scene, renderer, controls, objects = [];
 			var effectFXAA, bloomPass, renderScene;
@@ -88,12 +87,12 @@
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0.0, 40, 40 * 3.5 );
+				camera.position.set( 0.0, 20, 20 * 3.5 );
 
 				scene = new THREE.Scene();
 
 				renderer = new THREE.WebGLRenderer( { antialias: false } );
-				renderer.setClearColor( new THREE.Color( 0x000000 ) );
+				renderer.setClearColor( new THREE.Color( 0x111111 ) );
 				renderer.toneMapping = THREE.LinearToneMapping;
 
 				standardMaterial = new THREE.MeshStandardMaterial( {
@@ -214,13 +213,10 @@
 		    effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 		    effectFXAA.renderToScreen = true;
 
-				dofPass = new THREE.DofPass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
-				dofPass.setFocalDepth(60);
-		    bloomPass = new THREE.BloomPassNew(new THREE.Vector2(window.innerWidth, window.innerHeight), 1, 1.0, 0.5);//1.0, 9, 0.5, 512);
+		    bloomPass = new THREE.BloomPassNew(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
 				composer = new THREE.EffectComposer(renderer);
 		    composer.setSize(window.innerWidth, window.innerHeight);
 		    composer.addPass(renderScene);
-				composer.addPass(dofPass);
 		    composer.addPass(bloomPass);
 		    composer.addPass(effectFXAA);
 				//renderer.toneMapping = THREE.ReinhardToneMapping;
