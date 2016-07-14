@@ -74,10 +74,12 @@
 				msaaEnabled: false,
 				msaaLevel: 4,
 				saoEnabled: true,
-				saoIntensity: 0.75,
+				saoIntensity: 0.5,
 				saoSphereRadius: 0.5,
 				saoBlur: true,
-				saoOutput: 0
+				saoOutput: 0,
+				saoEdgeSharpness: 3.0,
+				saoScaleFactor: 1.0
 			}
 
 			// Init gui
@@ -91,6 +93,12 @@
 			gui.add( params, "saoIntensity", 0, 1 );
 			gui.add( params, "saoSphereRadius", 0.01, 5 );
 			gui.add( params, "saoBlur" );
+			gui.add( params, "saoEdgeSharpness", 0.0, 3.0 ).onChange( function(value) {
+	        saoPass.setEdgeSharpness(value);
+	    });;
+			gui.add( params, "saoScaleFactor", 0.0, 3.0 ).onChange( function(value) {
+	        saoPass.setScaleFactor(value);
+	    });
 			gui.add( params, "saoOutput", {
 				'Default': 0,
 				'Depth': 1,
@@ -127,7 +135,8 @@
 				}
 
 				camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 100 );
-				camera.position.z = 7;
+				camera.position.z = 0;
+				camera.position.x = 3;
 
 				scene = new THREE.Scene();
 
@@ -140,22 +149,22 @@
 				var onError = function ( xhr ) {
 				};
 				// model
-				// var loader = new THREE.OBJLoader( manager );
-				// loader.load( 'models/obj/warrior-px-helmet-demo.obj', function ( object ) {
-				// 	var scale = 100.0;
-				// 	object.traverse( function ( child ) {
-				// 		if ( child instanceof THREE.Mesh ) {
-				// 			child.geometry.center();
-				// 			// child.geometry.computeBoundingSphere();
-				// 			// scale = 1000.005*child.geometry.boundingSphere.radius;
-				// 			child.material.side = THREE.DoubleSide;
-				// 		}
-				// 	} );
-				// 	object.scale.x /= scale;
-				// 	object.scale.y /= scale;
-				// 	object.scale.z /= scale;
-				// 	scene.add( object );
-				// }, onProgress, onError );
+				var loader = new THREE.OBJLoader( manager );
+				loader.load( 'models/obj/dogobj.obj', function ( object ) {
+					var scale = 1.0;
+					object.traverse( function ( child ) {
+						if ( child instanceof THREE.Mesh ) {
+							child.geometry.center();
+							child.geometry.computeBoundingSphere();
+							scale = 0.5*child.geometry.boundingSphere.radius;
+							child.material.side = THREE.DoubleSide;
+						}
+					} );
+					object.scale.x /= scale;
+					object.scale.y /= scale;
+					object.scale.z /= scale;
+					scene.add( object );
+				}, onProgress, onError );
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 				//controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
@@ -204,7 +213,7 @@
 					mesh.rotation.z = Math.random();
 
 					mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 0.3 + 0.1;
-					group.add( mesh );
+					// group.add( mesh );
 				}
 
 				var floorMaterial = new THREE.MeshStandardMaterial();

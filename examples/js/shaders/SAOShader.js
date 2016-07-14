@@ -46,7 +46,7 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 40,
+		'NUM_SAMPLES': 20,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -245,13 +245,13 @@ THREE.SAOShader = {
 			"float occlusionSum = 0.0;",
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * occlusionSphereScreenRadius * 1.0;",
+				"radius = (float(i) + 0.5) * radiusStep;",
+				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * screenRadius * 4.0;",
 
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
 				"if( sampleUvOffset.x == 0.0 && sampleUvOffset.y == 0.0 ) continue;",
 
-				"radius += radiusStep;",
 				"angle += ANGLE_STEP;",
 
 				"vec2 sampleUv = vUv + sampleUvOffset;",
@@ -398,6 +398,7 @@ THREE.SAOBilaterialFilterShader = {
 	uniforms: {
 
 		"tAODepth":	{ type: "t", value: null },
+		"tAONormal":	{ type: "t", value: null },
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
 		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
@@ -405,6 +406,8 @@ THREE.SAOBilaterialFilterShader = {
 
 		"cameraNear":   { type: "f", value: 1 },
 		"cameraFar":    { type: "f", value: 100 },
+		"edgeSharpness":    { type: "f", value: 3 },
+		"scaleFactor":    { type: "f", value: 1 },
 		"packOutput":    { type: "f", value: 1 }
 
 	},
@@ -430,10 +433,13 @@ THREE.SAOBilaterialFilterShader = {
 		"varying vec2 vUv;",
 
 		"uniform sampler2D tAODepth;",
+		"uniform sampler2D tAONormal;",
 		"uniform vec2 size;",
 
 		"uniform float cameraNear;",
 		"uniform float cameraFar;",
+		"uniform float edgeSharpness;",
+		"uniform float scaleFactor;",
 		"uniform int packOutput;",
 
 		"uniform float occlusionSphereWorldRadius;",
@@ -441,6 +447,8 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform vec2 kernelDirection;",
 
 		"#include <packing>",
+		"const float EDGE_SHARPNESS = 1.0;",
+		"const float SCALE_FACTOR = 0.0;",
 
 		"float getViewZ( const in float depth ) {",
 
@@ -452,7 +460,7 @@ THREE.SAOBilaterialFilterShader = {
 
 		"}",
 
-		"void addTapInfluence( const in vec2 tapUv, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
+		"void addTapInfluence( const in vec2 tapUv, const in vec3 centerNormal, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
 
 			"vec4 depthTexel = texture2D( tAODepth, tapUv );",
 			"float ao = depthTexel.r;",
@@ -464,11 +472,21 @@ THREE.SAOBilaterialFilterShader = {
 			"}",
 
 			"float tapViewZ = -getViewZ( depth );",
-			"tapWeight = smoothstep( occlusionSphereWorldRadius, 0.0, abs( tapViewZ - centerViewZ ) );",
-
+			"tapWeight = max(0.0, 1.0 - (edgeSharpness * 20.0) * abs(tapViewZ - centerViewZ) * scaleFactor);",
 			"aoSum += ao * sampleWeight * tapWeight;",
 			"weightSum += sampleWeight * tapWeight;",
 
+			"vec3 normal = unpackRGBToNormal(texture2D(tAONormal, tapUv).rgb);",
+			"float norm_weight = pow(abs(dot(normal, centerNormal)), 32.0);",
+			"float normalCloseness = dot(normal, centerNormal);",
+      "normalCloseness = normalCloseness*normalCloseness;",
+      "normalCloseness = normalCloseness*normalCloseness;",
+      "float k_normal = 4.0;",
+      "float normalError = (1.0 - normalCloseness) * k_normal;",
+      "norm_weight = max((1.0 - edgeSharpness * normalError), 0.00);",
+
+			"aoSum += ao * sampleWeight * norm_weight;",
+			"weightSum += sampleWeight * norm_weight;",
 		"}",
 		"float normpdf(in float x, in float sigma)",
 		"{",
@@ -493,23 +511,24 @@ THREE.SAOBilaterialFilterShader = {
 
 			"float centerViewZ = -getViewZ( depth );",
 
-			"float weightSum = normpdf(0.0, 0.01);",
+			"float weightSum = normpdf(0.0, 5.0);",
 			"float aoSum = ao * weightSum;",
 
-			"vec2 uvIncrement = ( kernelDirection / size ) * 1.0;",
+			"vec2 uvIncrement = ( kernelDirection / size ) * 2.0/sqrt(centerViewZ);",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
 			"float rWeight = 1.0, lWeight = 1.0;",
+			"vec3 normalCenter = unpackRGBToNormal(texture2D(tAONormal, vUv).rgb);",
 
 			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
 
-				"float sampleWeight = normpdf(float(i), 0.01);",
+				"float sampleWeight = normpdf(float(i), 5.0);",
 
 				"rTapUv += uvIncrement;",
-				"addTapInfluence( rTapUv, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
+				"addTapInfluence( rTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
 
 				"lTapUv -= uvIncrement;",
-				"addTapInfluence( lTapUv, centerViewZ, sampleWeight, aoSum, lWeight, weightSum );",
+				"addTapInfluence( lTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, lWeight, weightSum );",
 
 			"}",
 
