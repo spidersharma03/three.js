@@ -207,7 +207,7 @@
 
 				var gui = new dat.GUI();
 				gui.add( params, 'Blur Type', { PoissonDisk: 0, SeperableGaussian: 1 } ).onChange( function( value ) {
-							 dofPass.changeBlurType(Number(value));	
+							 dofPass.changeBlurType(Number(value));
 		    } );
 				gui.open();
 				window.addEventListener( 'resize', onWindowResize, false );
@@ -254,6 +254,7 @@
 				//mesh.rotation.y += 0.01;
 
 				//renderer.render( scene, camera );
+				renderer.setClearColor(0xffffff);
         composer.render();
         controls.update();
         stats.update();
