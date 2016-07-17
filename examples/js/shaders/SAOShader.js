@@ -401,7 +401,6 @@ THREE.SAOBilaterialFilterShader = {
 		"size": { type: "v2", value: new THREE.Vector2( 256, 256 ) },
 
 		"kernelDirection": { type: "v2", value: new THREE.Vector2( 1, 0 ) },
-		"occlusionSphereWorldRadius": { type: "f", value: 50 },
 
 		"cameraNear":   { type: "f", value: 1 },
 		"cameraFar":    { type: "f", value: 100 },
@@ -439,13 +438,9 @@ THREE.SAOBilaterialFilterShader = {
 		"uniform float edgeSharpness;",
 		"uniform int packOutput;",
 
-		"uniform float occlusionSphereWorldRadius;",
-		"uniform float kernelSizeModifier;",
 		"uniform vec2 kernelDirection;",
 
-		"#include <packing>",
-		"const float EDGE_SHARPNESS = 1.0;",
-		"const float SCALE_FACTOR = 0.0;",
+		"#include <packing>",		
 
 		"float getViewZ( const in float depth ) {",
 
@@ -457,7 +452,7 @@ THREE.SAOBilaterialFilterShader = {
 
 		"}",
 
-		"void addTapInfluence( const in vec2 tapUv, const in vec3 centerNormal, const in float centerViewZ, const in float sampleWeight, inout float aoSum, inout float tapWeight, inout float weightSum ) {",
+		"void addTapInfluence( const in vec2 tapUv, const in vec3 centerNormal, const in float centerViewZ, const in float kernelWeight, inout float aoSum, inout float weightSum ) {",
 
 			"vec4 depthTexel = texture2D( tAODepth, tapUv );",
 			"float ao = depthTexel.r;",
@@ -469,21 +464,18 @@ THREE.SAOBilaterialFilterShader = {
 			"}",
 
 			"float tapViewZ = -getViewZ( depth );",
-			"tapWeight = max(0.0, 1.0 - (edgeSharpness * 20.0) * abs(tapViewZ - centerViewZ));",
-			"aoSum += ao * sampleWeight * tapWeight;",
-			"weightSum += sampleWeight * tapWeight;",
+			"float depthWeight = max(0.0, 1.0 - (edgeSharpness * 20.0) * abs(tapViewZ - centerViewZ));",
 
 			"vec3 normal = unpackRGBToNormal(texture2D(tAONormal, tapUv).rgb);",
-			"float norm_weight = pow(abs(dot(normal, centerNormal)), 32.0);",
 			"float normalCloseness = dot(normal, centerNormal);",
-			"normalCloseness = normalCloseness*normalCloseness;",
-			"normalCloseness = normalCloseness*normalCloseness;",
 			"float k_normal = 4.0;",
-			"float normalError = (1.0 - normalCloseness) * k_normal;",
-			"norm_weight = max((1.0 - edgeSharpness * normalError), 0.00);",
+			"float normalError = (1.0 - pow4( normalCloseness )) * k_normal;",
+			"float normalWeight = max((1.0 - edgeSharpness * normalError), 0.00);",
 
-			"aoSum += ao * sampleWeight * norm_weight;",
-			"weightSum += sampleWeight * norm_weight;",
+			"float tapWeight = kernelWeight * ( depthWeight + normalWeight );",
+
+			"aoSum += ao * tapWeight;",
+			"weightSum += tapWeight;",
 		"}",
 
 		"float normpdf(in float x, in float sigma) {",
@@ -491,13 +483,6 @@ THREE.SAOBilaterialFilterShader = {
 		"}",
 
 		"void main() {",
-
-			"float gaussian[KERNEL_SAMPLE_RADIUS + 1];",
-    		"gaussian[0] = 0.153170;",
-			"gaussian[1] = 0.144893;",
-			"gaussian[2] = 0.122649;",
-			"gaussian[3] = 0.092902;",
-			"gaussian[4] = 0.062970;",
 
 			"vec4 depthTexel = texture2D( tAODepth, vUv );",
 			"float ao = depthTexel.r;",
@@ -509,24 +494,23 @@ THREE.SAOBilaterialFilterShader = {
 
 			"float centerViewZ = -getViewZ( depth );",
 
-			"float weightSum = normpdf(0.0, 5.0) + 0.3;",
+			"float weightSum = normpdf(0.0, 5.0) + 0.1;",
 			"float aoSum = ao * weightSum;",
 
 			"vec2 uvIncrement = ( kernelDirection / size );",
 
 			"vec2 rTapUv = vUv, lTapUv = vUv;",
-			"float rWeight = 1.0, lWeight = 1.0;",
 			"vec3 normalCenter = unpackRGBToNormal(texture2D(tAONormal, vUv).rgb);",
 
 			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
 
-				"float sampleWeight = normpdf(float(i), 5.0) + 0.3;",
+				"float kernelWeight = normpdf(float(i), 5.0) + 0.1;",
 
 				"rTapUv += uvIncrement;",
-				"addTapInfluence( rTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, rWeight, weightSum );",
+				"addTapInfluence( rTapUv, normalCenter, centerViewZ, kernelWeight, aoSum, weightSum );",
 
 				"lTapUv -= uvIncrement;",
-				"addTapInfluence( lTapUv, normalCenter, centerViewZ, sampleWeight, aoSum, lWeight, weightSum );",
+				"addTapInfluence( lTapUv, normalCenter, centerViewZ, kernelWeight, aoSum, weightSum );",
 
 			"}",
 

@@ -21,7 +21,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.depthMIPs = false;
 	this.downSamplingRatio = 2;
-	this.blurKernelSize = (this.downSamplingRatio === 1) ? 8 : 4;
+	this.blurKernelSize = (this.downSamplingRatio === 1) ? 8 : 6;
 	this.edgeSharpness = 1;
 
 	/*
@@ -345,7 +345,6 @@ THREE.SAOPass.prototype = {
 			this.bilateralFilterMaterial.defines[ 'KERNEL_SAMPLE_RADIUS' ] = this.blurKernelSize;
 			this.bilateralFilterMaterial.uniforms[ "tAODepth" ].value = this.saoRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tAONormal" ].value = this.normalRenderTarget.texture;
-			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.5;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
 			this.bilateralFilterMaterial.uniforms[ "packOutput" ].value = 1;
 			this.bilateralFilterMaterial.uniforms[ 'edgeSharpness' ].value = this.edgeSharpness;
