@@ -182,6 +182,8 @@ THREE.WebGLTextures = function ( _gl, extensions, state, properties, capabilitie
 	//
 
 
+	 var textureUpdateWarning = false;
+	 var textureUpdateIncompleteWarning = false;
 
 	function setTexture2D( texture, slot ) {
 
@@ -193,11 +195,17 @@ THREE.WebGLTextures = function ( _gl, extensions, state, properties, capabilitie
 
 			if ( image === undefined ) {
 
-				console.warn( 'THREE.WebGLRenderer: Texture marked for update but image is undefined', texture );
+				if( ! textureUpdateUndefinedWarning ) {
+					console.trace( 'THREE.WebGLRenderer: Texture marked for update but image is undefined', texture );
+					textureUpdateUndefinedWarning = true;
+				}
 
 			} else if ( image.complete === false ) {
 
-				console.warn( 'THREE.WebGLRenderer: Texture marked for update but image is incomplete', texture );
+				if( ! textureUpdateIncompleteWarning ) {
+					console.trace( 'THREE.WebGLRenderer: Texture marked for update but image is incomplete', texture );
+					textureUpdateIncompleteWarning = true;
+				}
 
 			} else {
 
