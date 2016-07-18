@@ -182,7 +182,7 @@ THREE.WebGLTextures = function ( _gl, extensions, state, properties, capabilitie
 	//
 
 
-	 var textureUpdateWarning = false;
+	 var textureUpdateUndefinedWarning = false;
 	 var textureUpdateIncompleteWarning = false;
 
 	function setTexture2D( texture, slot ) {

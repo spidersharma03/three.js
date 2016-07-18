@@ -46,7 +46,7 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 30,
+		'NUM_SAMPLES': 13,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,

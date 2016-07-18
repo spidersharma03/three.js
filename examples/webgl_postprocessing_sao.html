@@ -235,7 +235,7 @@
 				composer.addPass( msaaRenderPass );
 
 				saoPass = new THREE.SAOPass( scene, camera );
-				saoPass.downSamplingRatio = 2;
+				saoPass.downSamplingRatio = 1;
 				saoPass.blurKernelSize = 8;
 				composer.addPass( saoPass );
 
