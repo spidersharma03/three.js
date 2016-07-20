@@ -53,7 +53,8 @@
 			};
 			var mouse = new THREE.Vector2();
 			var time = 0;
-
+			var effectFXAA;
+			
 			init();
 			animate();
 
@@ -186,7 +187,7 @@
 
         var renderScene = new THREE.RenderPass(scene, camera);
         renderScene.clear = true;
-        var effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+        effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
         effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth), 1 / (window.innerHeight));
         effectFXAA.renderToScreen = true;
 
@@ -243,7 +244,8 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
-
+				composer.setSize( window.innerWidth, window.innerHeight );
+				effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth), 1 / (window.innerHeight));
 			}
 
 			function animate() {

@@ -8,7 +8,7 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 
 	var resolution = ( resolution !== undefined ) ? resolution : new THREE.Vector2(256, 256);
 	// render targets
-  this.downSampleRes = new THREE.Vector2(resolution.x/2, resolution.y/2);
+  this.downSampleRes = new THREE.Vector2(Math.round(resolution.x/2), Math.round(resolution.y/2));
 
 	var pars = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, type: THREE.HalfFloatType, format: THREE.RGBAFormat };
 
@@ -87,6 +87,18 @@ THREE.DofPass.prototype = Object.create( THREE.Pass.prototype );
 THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
 
 	constructor: THREE.DofPass,
+
+	setSize: function(width, height) {
+		var resx = Math.round(width/2);
+		var resy = Math.round(height/2);
+
+		this.renderTargetDownSample.setSize( resx, resy );
+		this.renderTargetBlurTemp.setSize( resx, resy );
+		this.renderTargetDofBlur.setSize( resx, resy );
+		this.renderTargetDofBlurTemp.setSize( resx, resy );
+		this.renderTargetDofCombine.setSize( width, height );
+		this.depthRenderTarget.setSize( width, height );
+	},
 
 	changeBlurType: function(blurType) {
 		this.dofBlurType = blurType;
