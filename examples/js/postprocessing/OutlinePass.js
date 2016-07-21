@@ -39,9 +39,9 @@ THREE.OutlinePass = function ( resolution, scene, camera, selectedObjects ) {
 	this.renderTargetEdgeBuffer2 = new THREE.WebGLRenderTarget( Math.round(resx/2), Math.round(resy/2), pars );
 	this.renderTargetEdgeBuffer2.texture.generateMipmaps = false;
 
-	this.separableBlurMaterial1 = this.getSeperableBlurMaterial(3);
+	this.separableBlurMaterial1 = this.getSeperableBlurMaterial(2);
 	this.separableBlurMaterial1.uniforms[ "texSize" ].value = new THREE.Vector2(resx, resy);
-	this.separableBlurMaterial2 = this.getSeperableBlurMaterial(5);
+	this.separableBlurMaterial2 = this.getSeperableBlurMaterial(3);
 	this.separableBlurMaterial2.uniforms[ "texSize" ].value = new THREE.Vector2(Math.round(resx/2), Math.round(resy/2));
 
 	// Overlay material
@@ -77,6 +77,22 @@ THREE.OutlinePass = function ( resolution, scene, camera, selectedObjects ) {
 
 	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
 	this.scene.add( this.quad );
+
+	var onLoad = function ( texture ) {
+		this.trianglePatternTexture = texture;
+		texture.wrapS = THREE.RepeatWrapping;
+		texture.wrapT = THREE.RepeatWrapping;
+	};
+
+	var loader = new THREE.TextureLoader();
+
+	// load a resource
+	loader.load(
+		// resource URL
+		'textures/tri_pattern.jpg',
+		// Function when resource is loaded
+		onLoad.bind(this)
+	);
 };
 
 THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
@@ -101,12 +117,32 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.renderTargetMaskDownSampleBuffer.setSize(resx, resy );
 		this.renderTargetBlurBuffer1.setSize(resx, resy );
 		this.renderTargetEdgeBuffer1.setSize(resx, resy );
+		this.separableBlurMaterial1.uniforms[ "texSize" ].value = new THREE.Vector2(resx, resy);
 
 	  resx = Math.round(resx/2);
 	  resy = Math.round(resy/2);
 
 		this.renderTargetBlurBuffer2.setSize(resx, resy );
 		this.renderTargetEdgeBuffer2.setSize(resx, resy );
+
+		this.separableBlurMaterial2.uniforms[ "texSize" ].value = new THREE.Vector2(resx, resy);
+	},
+
+	changeVisibilityOfSelectedObjects: function( bVisible ) {
+
+		var gatherSelectedMeshesCallBack = function( object ) {
+
+			if( object instanceof THREE.Mesh ) {
+				object.visible = bVisible;
+			}
+		}
+
+		for( var i=0; i<this.selectedObjects.length; i++ ) {
+
+			var selectedObject = this.selectedObjects[i];
+
+			selectedObject.traverse( gatherSelectedMeshesCallBack );
+		}
 	},
 
 	changeVisibilityOfNonSelectedObjects: function( bVisible ) {
@@ -164,21 +200,31 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.oldClearColor.copy( renderer.getClearColor() );
 		this.oldClearAlpha = renderer.getClearAlpha();
 		var oldAutoClear = renderer.autoClear;
+
 		renderer.autoClear = false;
 
 		renderer.setClearColor( new THREE.Color( 0, 0, 0 ), 0 );
 
 		if ( maskActive ) renderer.context.disable( renderer.context.STENCIL_TEST );
 
-		// Make non selected objects invisible
-		this.changeVisibilityOfNonSelectedObjects(false);
+		// Make selected objects invisible
+		this.changeVisibilityOfSelectedObjects(false);
 
-		// 1. Draw Selected objects in a Mask buffer
+		// 1. Draw Non Selected objects in a Mask buffer
+		this.maskBufferMaterial.color = new THREE.Color(0x000000);
 		this.renderScene.overrideMaterial = this.maskBufferMaterial;
 		renderer.render( this.renderScene, this.renderCamera, this.renderTargetMaskBuffer, true );
 		this.renderScene.overrideMaterial = null;
 
-		// Make non selected objects visible
+		// Make selected objects visible
+		this.changeVisibilityOfSelectedObjects(true);
+
+		// Make non selected objects invisible, and draw only the selected objects, by comparing the depth buffer of non selected objects
+		this.changeVisibilityOfNonSelectedObjects(false);
+		this.maskBufferMaterial.color = new THREE.Color(0xffffff);
+		this.renderScene.overrideMaterial = this.maskBufferMaterial;
+		renderer.render( this.renderScene, this.renderCamera, this.renderTargetMaskBuffer );
+		this.renderScene.overrideMaterial = null;
 		this.changeVisibilityOfNonSelectedObjects(true);
 
 		// 2. Downsample to Half resolution
@@ -216,6 +262,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.overlayMaterial.uniforms[ "maskTexture" ].value = this.renderTargetMaskBuffer.texture;
 		this.overlayMaterial.uniforms[ "edgeTexture1" ].value = this.renderTargetEdgeBuffer1.texture;
 		this.overlayMaterial.uniforms[ "edgeTexture2" ].value = this.renderTargetEdgeBuffer2.texture;
+		this.overlayMaterial.uniforms[ "trianglePatternTexture" ].value = this.trianglePatternTexture;
 		this.overlayMaterial.uniforms[ "edgeColor" ].value = this.edgeColor;
 		this.overlayMaterial.uniforms[ "edgeStrength" ].value = this.edgeStrength;
 
@@ -324,6 +371,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				"maskTexture": { value: null },
 				"edgeTexture1": { value: null },
 				"edgeTexture2": { value: null },
+				"trianglePatternTexture": { value: null },
 				"edgeColor": { value: null },
 				"edgeStrength" : { value: 1.0 }
 			},
@@ -340,6 +388,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				uniform sampler2D maskTexture;\
 				uniform sampler2D edgeTexture1;\
 				uniform sampler2D edgeTexture2;\
+				uniform sampler2D trianglePatternTexture;\
 				uniform vec3 edgeColor;\
 				uniform float edgeStrength;\
 				\
@@ -347,7 +396,8 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 					vec4 edgeValue1 = texture2D(edgeTexture1, vUv);\
 					vec4 edgeValue2 = texture2D(edgeTexture2, vUv);\
 					vec4 maskColor = texture2D(maskTexture, vUv);\
-					gl_FragColor = edgeStrength * vec4(edgeColor, 1.0) * ( edgeValue1 + edgeValue2) * (1.0 - maskColor.r);\
+					vec4 triPatternColor = texture2D(trianglePatternTexture, 4.0 * vUv);\
+					gl_FragColor = edgeStrength * vec4(edgeColor, 1.0) * ( edgeValue1 + edgeValue2) * (1.0 - maskColor.r) + maskColor.r * (1.0 - triPatternColor.r) * vec4(edgeColor, 1.0);\
 				}",
 
 				blending: THREE.AdditiveBlending,
