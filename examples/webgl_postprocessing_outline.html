@@ -74,7 +74,9 @@
 
 			var params = {
 				edgeStrength: 3.0,
-				edgeThickness: 1.0
+				edgeThickness: 1.0,
+				pulsePeriod: 0,
+				rotate: false
 			}
 
 			// Init gui
@@ -85,13 +87,21 @@
 			gui.add( params, "edgeThickness", 0.01, 5 ).onChange( function(value) {
 	        outlinePass.edgeThickness = Number(value);
 	    })
+			gui.add( params, "pulsePeriod", 0.0, 5 ).onChange( function(value) {
+	        outlinePass.pulsePeriod = Number(value);
+	    })
+			gui.add( params, "rotate" ).onChange( function(value) {
+
+	    })
 			var Configuration=function(){
-	            this.color = "#ffffff";
+	            this.visibleEdgeColor = "#ffffff";
+							this.hiddenEdgeColor = "#ffffff";
 	    };
 	    var conf = new Configuration();
 
-	    var controlador = gui.addColor( conf, 'color');
-	    controlador.onChange( function( colorValue  )
+	    var controladorVisible = gui.addColor( conf, 'visibleEdgeColor');
+			var controladorHidden = gui.addColor( conf, 'hiddenEdgeColor');
+	    controladorVisible.onChange( function( colorValue  )
 	    {
 	      //the return value by the chooser is like as: #ffff
 	      colorValue=colorValue.replace( '#','' );
@@ -104,7 +114,26 @@
 	            } : null;
 	        }
 	      var rgba = hexToRgb(colorValue);
-        var color = outlinePass.edgeColor;
+        var color = outlinePass.visibleEdgeColor;
+        color.r = rgba.r/255;
+        color.g = rgba.g/255;
+        color.b = rgba.b/255;
+	    });
+
+			controladorHidden.onChange( function( colorValue  )
+	    {
+	      //the return value by the chooser is like as: #ffff
+	      colorValue=colorValue.replace( '#','' );
+	      function hexToRgb(hex) {
+	            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	            return result ? {
+	                r: parseInt(result[1], 16),
+	                g: parseInt(result[2], 16),
+	                b: parseInt(result[3], 16)
+	            } : null;
+	        }
+	      var rgba = hexToRgb(colorValue);
+        var color = outlinePass.hiddenEdgeColor;
         color.r = rgba.r/255;
         color.g = rgba.g/255;
         color.b = rgba.b/255;
@@ -141,13 +170,13 @@
 				};
 				// model
 				var loader = new THREE.OBJLoader( manager );
-				loader.load( 'models/obj/dogobj.obj', function ( object ) {
+				loader.load( 'models/obj/tree.obj', function ( object ) {
 					var scale = 1.0;
 					object.traverse( function ( child ) {
 						if ( child instanceof THREE.Mesh ) {
 							child.geometry.center();
 							child.geometry.computeBoundingSphere();
-							scale = 0.5*child.geometry.boundingSphere.radius;
+							scale = 0.2*child.geometry.boundingSphere.radius;
 							var phongMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 5 } );
 							child.material = phongMaterial;
 							child.material.side = THREE.DoubleSide;
@@ -155,6 +184,7 @@
 							child.castShadow = true;
 						}
 					} );
+					object.position.y = 1;
 					object.scale.x /= scale;
 					object.scale.y /= scale;
 					object.scale.z /= scale;
@@ -347,9 +377,10 @@
 				stats.begin();
 
 				var timer = performance.now();
-				group.rotation.y = timer * 0.0001;
+				if(params.rotate)
+					group.rotation.y = timer * 0.0001;
 				renderer.autoClear = true;
-				renderer.setClearColor( 0xf0f0f0 );
+				renderer.setClearColor( 0xfff0f0 );
 				renderer.setClearAlpha( 0.0 );
 
 				composer.render();
