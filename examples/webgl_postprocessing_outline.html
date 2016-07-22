@@ -74,9 +74,11 @@
 
 			var params = {
 				edgeStrength: 3.0,
+				edgeGlow: 0.0,
 				edgeThickness: 1.0,
 				pulsePeriod: 0,
-				rotate: false
+				rotate: false,
+				usePatternTexture: false
 			}
 
 			// Init gui
@@ -84,14 +86,18 @@
 			gui.add( params, "edgeStrength", 0.01, 10 ).onChange( function(value) {
 	        outlinePass.edgeStrength = Number(value);
 	    });
-			gui.add( params, "edgeThickness", 0.01, 5 ).onChange( function(value) {
+			gui.add( params, "edgeGlow", 0.0, 1 ).onChange( function(value) {
+	        outlinePass.edgeGlow = Number(value);
+	    })
+			gui.add( params, "edgeThickness", 1, 4 ).onChange( function(value) {
 	        outlinePass.edgeThickness = Number(value);
 	    })
 			gui.add( params, "pulsePeriod", 0.0, 5 ).onChange( function(value) {
 	        outlinePass.pulsePeriod = Number(value);
 	    })
-			gui.add( params, "rotate" ).onChange( function(value) {
-
+			gui.add( params, "rotate" )
+			gui.add( params, "usePatternTexture" ).onChange( function(value) {
+				outlinePass.usePatternTexture = value;
 	    })
 			var Configuration=function(){
 	            this.visibleEdgeColor = "#ffffff";

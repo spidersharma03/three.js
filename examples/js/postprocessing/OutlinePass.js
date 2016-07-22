@@ -9,6 +9,8 @@ THREE.OutlinePass = function ( resolution, scene, camera, selectedObjects ) {
 	this.selectedObjects = selectedObjects !== undefined ? selectedObjects : [];
 	this.visibleEdgeColor = new THREE.Color(1, 1, 1);
 	this.hiddenEdgeColor = new THREE.Color(0.1, 0.04, 0.02);
+	this.edgeGlow = 0.0;
+	this.usePatternTexture = false;
 	this.edgeThickness = 1.0;
 	this.edgeStrength = 3.0;
 	this.downSampleRatio = 2;
@@ -53,10 +55,15 @@ THREE.OutlinePass = function ( resolution, scene, camera, selectedObjects ) {
 	this.renderTargetEdgeBuffer2 = new THREE.WebGLRenderTarget( Math.round(resx/2), Math.round(resy/2), pars );
 	this.renderTargetEdgeBuffer2.texture.generateMipmaps = false;
 
-	this.separableBlurMaterial1 = this.getSeperableBlurMaterial(2);
+	var MAX_EDGE_THICKNESS = 4;
+	var MAX_EDGE_GLOW = 4;
+
+	this.separableBlurMaterial1 = this.getSeperableBlurMaterial(MAX_EDGE_THICKNESS);
 	this.separableBlurMaterial1.uniforms[ "texSize" ].value = new THREE.Vector2(resx, resy);
-	this.separableBlurMaterial2 = this.getSeperableBlurMaterial(4);
+	this.separableBlurMaterial1.uniforms[ "kernelRadius" ].value = 1;
+	this.separableBlurMaterial2 = this.getSeperableBlurMaterial(MAX_EDGE_GLOW);
 	this.separableBlurMaterial2.uniforms[ "texSize" ].value = new THREE.Vector2(Math.round(resx/2), Math.round(resy/2));
+	this.separableBlurMaterial2.uniforms[ "kernelRadius" ].value = MAX_EDGE_GLOW;
 
 	// Overlay material
 	this.overlayMaterial = this.getOverlayMaterial();
@@ -93,7 +100,7 @@ THREE.OutlinePass = function ( resolution, scene, camera, selectedObjects ) {
 	this.scene.add( this.quad );
 
 	var onLoad = function ( texture ) {
-		this.trianglePatternTexture = texture;
+		this.patternTexture = texture;
 		texture.wrapS = THREE.RepeatWrapping;
 		texture.wrapT = THREE.RepeatWrapping;
 	};
@@ -268,7 +275,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.tempPulseColor1.copy( this.visibleEdgeColor );
 		this.tempPulseColor2.copy( this.hiddenEdgeColor );
 		if( this.pulsePeriod > 0 ) {
-			var scalar = ( 1 + 0.25 ) / 2 + Math.cos( performance.now() * 0.01/ this.pulsePeriod ) * ( 1.0 - 0.25 )
+			var scalar = ( 1 + 0.25 ) / 2 + Math.cos( performance.now() * 0.01/ this.pulsePeriod ) * ( 1.0 - 0.25 )/2
 			this.tempPulseColor1.multiplyScalar( scalar );
 			this.tempPulseColor2.multiplyScalar( scalar );
 		}
@@ -277,7 +284,6 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.quad.material = this.edgeDetectionMaterial;
 		this.edgeDetectionMaterial.uniforms[ "maskTexture" ].value = this.renderTargetMaskDownSampleBuffer.texture;
 		this.edgeDetectionMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(this.renderTargetMaskDownSampleBuffer.width, this.renderTargetMaskDownSampleBuffer.height);
-		this.edgeDetectionMaterial.uniforms[ "edgeThickness" ].value = this.edgeThickness;
 		this.edgeDetectionMaterial.uniforms[ "visibleEdgeColor" ].value = this.tempPulseColor1;
 		this.edgeDetectionMaterial.uniforms[ "hiddenEdgeColor" ].value = this.tempPulseColor2;
 		renderer.render( this.scene, this.camera, this.renderTargetEdgeBuffer1, true );
@@ -286,6 +292,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.quad.material = this.separableBlurMaterial1;
 		this.separableBlurMaterial1.uniforms[ "colorTexture" ].value = this.renderTargetEdgeBuffer1.texture;
 		this.separableBlurMaterial1.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionX;
+		this.separableBlurMaterial1.uniforms[ "kernelRadius" ].value = this.edgeThickness;
 		renderer.render( this.scene, this.camera, this.renderTargetBlurBuffer1, true );
 		this.separableBlurMaterial1.uniforms[ "colorTexture" ].value = this.renderTargetBlurBuffer1.texture;
 		this.separableBlurMaterial1.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionY;
@@ -305,8 +312,11 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.overlayMaterial.uniforms[ "maskTexture" ].value = this.renderTargetMaskBuffer.texture;
 		this.overlayMaterial.uniforms[ "edgeTexture1" ].value = this.renderTargetEdgeBuffer1.texture;
 		this.overlayMaterial.uniforms[ "edgeTexture2" ].value = this.renderTargetEdgeBuffer2.texture;
-		this.overlayMaterial.uniforms[ "trianglePatternTexture" ].value = this.trianglePatternTexture;
+		this.overlayMaterial.uniforms[ "patternTexture" ].value = this.patternTexture;
 		this.overlayMaterial.uniforms[ "edgeStrength" ].value = this.edgeStrength;
+		this.overlayMaterial.uniforms[ "edgeGlow" ].value = this.edgeGlow;
+		this.overlayMaterial.uniforms[ "usePatternTexture" ].value = this.usePatternTexture;
+
 
 		if ( maskActive ) renderer.context.enable( renderer.context.STENCIL_TEST );
 
@@ -365,7 +375,6 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				"texSize": { value: new THREE.Vector2( 0.5, 0.5 ) },
 				"visibleEdgeColor": { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) },
 				"hiddenEdgeColor":  { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) },
-				"edgeThickness": { value: 1.0 }
 			},
 
 			vertexShader:
@@ -379,42 +388,41 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				"varying vec2 vUv;\
 				uniform sampler2D maskTexture;\
 				uniform vec2 texSize;\
-				uniform float edgeThickness;\
 				uniform vec3 visibleEdgeColor;\
 				uniform vec3 hiddenEdgeColor;\
 				\
 				void main() {\n\
 					vec2 invSize = 1.0 / texSize;\
-					vec2 uvOffset = vec2(1.0, 0.0) * invSize * edgeThickness;\
+					vec4 uvOffset = vec4(1.0, 0.0, 0.0, 1.0) * vec4(invSize, invSize);\
 					vec4 c1 = texture2D( maskTexture, vUv + uvOffset.xy);\
 					vec4 c2 = texture2D( maskTexture, vUv - uvOffset.xy);\
-					vec4 c3 = texture2D( maskTexture, vUv + uvOffset.yx);\
-					vec4 c4 = texture2D( maskTexture, vUv - uvOffset.yx);\
-					float diff1 = (c2.r - c1.r)*0.5;\
-					float diff2 = (c4.r - c3.r)*0.5;\
-					float d = sqrt( diff1 * diff1 + diff2 * diff2);\
+					vec4 c3 = texture2D( maskTexture, vUv + uvOffset.yw);\
+					vec4 c4 = texture2D( maskTexture, vUv - uvOffset.yw);\
+					float diff1 = (c1.r - c2.r)*0.5;\
+					float diff2 = (c3.r - c4.r)*0.5;\
+					float d = length( vec2(diff1, diff2) );\
 					float a1 = min(c1.g, c2.g);\
 					float a2 = min(c3.g, c4.g);\
-					float factor = min(a1, a2);\
-					vec3 edgeColor = 1.0 - factor > 0.001 ? visibleEdgeColor : hiddenEdgeColor;\
-					gl_FragColor = vec4(edgeColor, 1.0) * d;\
+					float visibilityFactor = min(a1, a2);\
+					vec3 edgeColor = 1.0 - visibilityFactor > 0.001 ? visibleEdgeColor : hiddenEdgeColor;\
+					gl_FragColor = vec4(edgeColor, 1.0) * vec4(d);\
 				}"
 		} );
 	},
 
-	getSeperableBlurMaterial: function(kernelRadius) {
+	getSeperableBlurMaterial: function(maxRadius) {
 
 		return new THREE.ShaderMaterial( {
 
 			defines: {
-				"KERNEL_RADIUS" : kernelRadius,
-				"SIGMA" : kernelRadius
+				"MAX_RADIUS" : maxRadius,
 			},
 
 			uniforms: {
 				"colorTexture": { value: null },
 				"texSize": 	{ value: new THREE.Vector2( 0.5, 0.5 ) },
 				"direction": { value: new THREE.Vector2( 0.5, 0.5 ) },
+				"kernelRadius": { value: 1.0 }
 			},
 
 			vertexShader:
@@ -430,23 +438,24 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				uniform sampler2D colorTexture;\
 				uniform vec2 texSize;\
 				uniform vec2 direction;\
+				uniform float kernelRadius;\
 				\
 				float gaussianPdf(in float x, in float sigma) {\
 					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma;\
 				}\
 				void main() {\
 					vec2 invSize = 1.0 / texSize;\
-					float fSigma = float(SIGMA);\
-					float weightSum = gaussianPdf(0.0, fSigma);\
+					float weightSum = gaussianPdf(0.0, kernelRadius);\
 					vec3 diffuseSum = texture2D( colorTexture, vUv).rgb * weightSum;\
-					for( int i = 1; i < KERNEL_RADIUS; i ++ ) {\
-						float x = float(i);\
-						float w = gaussianPdf(x, fSigma);\
-						vec2 uvOffset = direction * invSize * x;\
+					vec2 delta = direction * invSize * kernelRadius/float(MAX_RADIUS);\
+					vec2 uvOffset = delta;\
+					for( int i = 1; i <= MAX_RADIUS; i ++ ) {\
+						float w = gaussianPdf(uvOffset.x, kernelRadius);\
 						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset).rgb;\
 						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset).rgb;\
 						diffuseSum += ((sample1 + sample2) * w);\
 						weightSum += (2.0 * w);\
+						uvOffset += delta;\
 					}\
 					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);\
 				}"
@@ -461,8 +470,10 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				"maskTexture": { value: null },
 				"edgeTexture1": { value: null },
 				"edgeTexture2": { value: null },
-				"trianglePatternTexture": { value: null },
-				"edgeStrength" : { value: 1.0 }
+				"patternTexture": { value: null },
+				"edgeStrength" : { value: 1.0 },
+				"edgeGlow" : { value: 1.0 },
+				"usePatternTexture" : { value: 1.0 }
 			},
 
 			vertexShader:
@@ -477,16 +488,22 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				uniform sampler2D maskTexture;\
 				uniform sampler2D edgeTexture1;\
 				uniform sampler2D edgeTexture2;\
-				uniform sampler2D trianglePatternTexture;\
+				uniform sampler2D patternTexture;\
 				uniform float edgeStrength;\
+				uniform float edgeGlow;\
+				uniform bool usePatternTexture;\
 				\
 				void main() {\
 					vec4 edgeValue1 = texture2D(edgeTexture1, vUv);\
 					vec4 edgeValue2 = texture2D(edgeTexture2, vUv);\
 					vec4 maskColor = texture2D(maskTexture, vUv);\
-					vec4 triPatternColor = texture2D(trianglePatternTexture, 6.0 * vUv);\
-					float factor = 1.0 - maskColor.g > 0.0 ? 1.0 : 0.5;\
-					gl_FragColor = edgeStrength * ( edgeValue1 + 0.5*edgeValue2) * maskColor.r + factor * (1.0 - maskColor.r) * (1.0 - triPatternColor.r);\
+					vec4 patternColor = texture2D(patternTexture, 6.0 * vUv);\
+					float visibilityFactor = 1.0 - maskColor.g > 0.0 ? 1.0 : 0.5;\
+					vec4 edgeValue = edgeValue1 + edgeValue2 * edgeGlow;\
+					vec4 finalColor = edgeStrength * maskColor.r * edgeValue;\
+					if(usePatternTexture)\
+						finalColor += + visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
+					gl_FragColor = finalColor;\
 				}",
 
 				blending: THREE.AdditiveBlending,
