@@ -73,6 +73,7 @@
 				distanceFade: 0.0,
 				roughness: 0.0,
 				metalness: 0.0,
+				fresnelStrength: 1.0,
 				color: 'White'
 		
 			}
@@ -83,6 +84,7 @@
 			gui.add( params, "metalness", 0, 1 );
 			gui.add( params, "roughness", 0, 1 );
 			gui.add( params, "distanceFade", 0, 1 );
+			gui.add( params, "fresnelStrength", -1, 1 );
 			gui.add( params, 'color', [ 'Blue', 'Green', 'Red', 'White', 'Gray', 'Black' ] );
 		
 
@@ -218,6 +220,7 @@
 					glossyMirror.distanceFade = params.distanceFade * 0.1;
 					glossyMirror.roughness = params.roughness;
 					glossyMirror.metalness = params.metalness;
+					glossyMirror.fresnelStrength = params.fresnelStrength;
 					
 
 					var newColor = glossyMirror.specularColor;

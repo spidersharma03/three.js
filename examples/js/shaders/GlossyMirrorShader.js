@@ -24,6 +24,7 @@ THREE.GlossyMirrorShader = {
 
 		"roughness": { type: "f", value: 0.0 },
 	 	"distanceFade": { type: "f", value: 0.01 },
+	 	"fresnelStrength": { type: "f", value: 1.0 },
  	
 		"reflectionTextureMatrix" : { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraWorldMatrix": { type: "m4", value: new THREE.Matrix4() },
@@ -75,6 +76,7 @@ THREE.GlossyMirrorShader = {
 
 		"uniform float metalness;",
 		"uniform float distanceFade;",
+		"uniform float fresnelStrength;",
 	
 		"uniform vec3 specularColor;",
 		"#if SPECULAR_MAP == 1",
@@ -214,7 +216,13 @@ THREE.GlossyMirrorShader = {
 			// apply dieletric-conductor model parameterized by metalness parameter.
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
 			"specular = mix( vec3( 0.05 ), specular, metalness );",
-			"vec3 fresnel = F_Schlick( specular, dotNV );",
+			// TODO: Invert fresnel.
+			"vec3 fresnel;",
+			"if( fresnelStrength < 0.0 ) {",
+				"fresnel = mix( specular, specular * pow( dotNV, 2.0 ), -fresnelStrength ) * pow( 1.0 - roughness, 2.0 );",
+			"} else {",
+				"fresnel = mix( specular, F_Schlick( specular, dotNV ), fresnelStrength ) * pow( 1.0 - roughness, 2.0 );",
+			"}",
 			"gl_FragColor = vec4( reflection.rgb, fresnel * fade * reflection.a );", // fresnel controls alpha
 
 

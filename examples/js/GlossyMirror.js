@@ -93,6 +93,7 @@ THREE.GlossyMirror = function ( options ) {
 	this.metalness = 0.0;
 	this.specularColor = new THREE.Color( 0xffffff );
 	this.roughness = 0.0;
+	this.fresnelStrength = 1.0;
 
 	this.mirrorPlane = new THREE.Plane();
 	this.mirrorWorldPosition = new THREE.Vector3();
@@ -229,6 +230,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 		this.material.uniforms[ 'mirrorNormal' ].value = this.mirrorNormal;
 		this.material.uniforms[ 'mirrorWorldPosition' ].value = this.mirrorWorldPosition;
+		this.material.transparent = true;
 	},
 
 	render: function ( renderer, scene, camera ) {
@@ -288,6 +290,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.material.visible = visible;
 		this.material.uniforms.distanceFade.value = this.distanceFade;
 		this.material.uniforms.metalness.value = this.metalness;
+		this.material.uniforms.fresnelStrength.value = this.fresnelStrength;
 		this.material.uniforms.specularColor.value.copy( this.specularColor );
 		this.material.uniforms.roughness.value = this.roughness;
 	
