@@ -1976,6 +1976,8 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	// Uniforms (refresh uniforms objects)
 
+	var texelTransform = { texelScale: 0, texelOffset: 0 };
+
 	function refreshUniformsCommon ( uniforms, material ) {
 
 		uniforms.opacity.value = material.opacity;
@@ -1989,23 +1991,51 @@ THREE.WebGLRenderer = function ( parameters ) {
 		}
 
 		var supportedMapNames = THREE.Map.SupportedMapNames;
-		for( var i = 0; i < supportedMapNames.length; i ++ ) {
+		var supportedMapSlotNames = THREE.Map.SupportedMapSlotNames;
+		var supportedMapUVNames = THREE.Map.SupportedMapUVNames;
+		var supportedMapTexelNames = THREE.Map.SupportedMapTexelNames;
+
+		if( ! material.usedSlots || material.usedSlotsVersion != material.version ) {
+			material.usedSlots = [];
+			for( var i = 0, il = supportedMapNames.length; i < il; i ++ ) {
+				var mapName = supportedMapNames[i];
+				var mapSlotName = supportedMapSlotNames[i];
+		
+				var map = material[ mapSlotName ];
+
+				material.usedSlots.push( {
+					index: i,
+					mapUniform: uniforms[mapName],
+					uvUniform: uniforms[ supportedMapUVNames[i] ],
+					texelUniform: uniforms[ supportedMapTexelNames[i] ]
+				} );
+			}
+			material.usedSlotsVersion = material.version;
+		}
+
+		for( var j = 0, jl = material.usedSlots.length; j < jl; j ++ ) {
+			var usedSlots = material.usedSlots[j];
+			var i = usedSlots.index;
+
 			var mapName = supportedMapNames[i];
-			var map = material[ mapName + 'Slot' ];
+			var mapSlotName = supportedMapSlotNames[i];
+		
+			var map = material[ mapSlotName ];
 			if( map ) {
-				uniforms[mapName].value = map.texture;
-				if( map.uvTransform ) {
-					uniforms[mapName +"UVTransformParams"].value.set(
-						map.uvRepeat.x,
-						map.uvRepeat.y,
-						map.uvOffset.x,
-						map.uvOffset.y );
-				}
-				if( map.texelTransform ) {
-					var texelTransform = map.getFlattenedTexelTransform();
-					uniforms[mapName +"TexelTransformParams"].value.set(
-						texelTransform.texelScale,
-						texelTransform.texelOffset );
+				usedSlots.mapUniform.value = map.texture;
+				if( map.texture ) {
+					if( map.uvTransform ) {
+						var value = usedSlots.uvUniform.value;
+						value.set(
+							map.uvRepeat.x,
+							map.uvRepeat.y,
+							map.uvOffset.x,
+							map.uvOffset.y );
+					}
+					if( map.texelTransform ) {
+						texelTransform = map.getFlattenedTexelTransform( texelTransform );
+						usedSlots.texelUniform.value.set( texelTransform.texelScale, texelTransform.texelOffset );
+					}
 				}
 			}
 			else if( material[ mapName ] ) {

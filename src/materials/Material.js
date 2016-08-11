@@ -54,6 +54,8 @@ THREE.Material = function () {
 
 	this._needsUpdate = true;
 
+	this.version = 0;
+
 };
 
 THREE.Material.prototype = {
@@ -70,6 +72,7 @@ THREE.Material.prototype = {
 
 		if ( value === true ) this.update();
 		this._needsUpdate = value;
+		this.version ++;
 
 	},
 

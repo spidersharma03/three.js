@@ -50,18 +50,17 @@ THREE.Map.prototype = {
   },
 
   // bakes all the input texel parameters into just two.
-  getFlattenedTexelTransform: function() {
-
+  getFlattenedTexelTransform: function( optionalTexelTransform ) {
+      var texelTransform = optionalTexelTransform || {};
       if( this.texelInvert ) {
-        return {
-          texelScale: -this.texelScale,
-          texelOffset: this.texelScale + this.texelOffset
-        };
+        texelTransform.texelScale = -this.texelScale;
+        texelTransform.texelOffset = this.texelScale + this.texelOffset;
       }
-      return {
-        texelScale: this.texelScale,
-        texelOffset: this.texelOffset
-      };
+      else {
+        texelTransform.texelScale = this.texelScale;
+        texelTransform.texelOffset = this.texelOffset;
+      }
+      return texelTransform;
   }
 
 };
@@ -69,3 +68,13 @@ THREE.Map.prototype = {
 THREE.Map.SupportedMapNames = [
 	'map', 'lightMap', 'aoMap', 'emissiveMap', 'specularMap', 'bumpMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'displacementMap'
 ];
+THREE.Map.SupportedMapSlotNames = [];
+THREE.Map.SupportedMapUVNames = [];
+THREE.Map.SupportedMapTexelNames = [];
+
+for( var i = 0; i < THREE.Map.SupportedMapNames.length; i ++ ) {
+  var name = THREE.Map.SupportedMapNames [i];
+  THREE.Map.SupportedMapSlotNames.push( name + 'Slot' );
+  THREE.Map.SupportedMapUVNames.push( name + 'UVTransformParams' );
+  THREE.Map.SupportedMapTexelNames.push( name + 'TexelTransformParams' );
+}

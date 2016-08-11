@@ -192,11 +192,12 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 
 		for( var i = 0; i < supportedMapNames.length; i ++ ) {
 			var mapName = supportedMapNames[i];
+			var mapSlotName = THREE.Map.SupportedMapSlotNames[i];
 			// backwards compatibility
 			parameters[mapName] = !! material[ mapName ];
 
 			// new functional for slot-based maps
-			var map = material[ mapName + 'Slot' ];
+			var map = material[ mapSlotName ];
 			parameters[mapName + "UVChannel" ] = ( map !== undefined ) ? map.uvChannel : 0;
 			parameters[mapName + "UVTransform" ] = ( map !== undefined ) ? map.uvTransform : false;
 			parameters[mapName + "TexelTransform" ] = ( map !== undefined ) ? map.texelTransform : false;
