@@ -32,13 +32,16 @@
 		</div>
 
 		<script src="../build/three.js"></script>
+		<script src="../build/lzma.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/utils/EncodingDecodingUtility.js"></script>
 	  <script src="js/utils/CompressedBinaryWriter.js"></script>
 	  <script src="js/utils/CompressedBinaryReader.js"></script>
 
 		<script>
 
 			var container;
+			var my_lzma;
 
 			var camera, scene, renderer;
 
@@ -46,11 +49,200 @@
 
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
+			var compressedBinaryWriter = new THREE.CompressedBinaryWriter();
+			var compressedBinaryReader = new THREE.CompressedBinaryReader();
 
+			var saveByteArray = (function () {
+		    var a = document.createElement("a");
+		    document.body.appendChild(a);
+		    a.style = "display: none";
+		    return function (data, name) {
+		        var blob = new Blob(data, {type: "octet/stream"}),
+		            url = window.URL.createObjectURL(blob);
+		        a.href = url;
+		        a.download = name;
+		        a.click();
+		        window.URL.revokeObjectURL(url);
+		    };
+			}());
 
 			init();
 			animate();
 
+			function createTorus(ringRadius , innerMinorRadius , innerMajorRadius , numInnerSeg , numOuterSeg )
+			{
+				var theta = (2*Math.PI/numInnerSeg);
+				var angle = (2*Math.PI/numOuterSeg);
+				var alpha = 0.0;
+				var beta = 0.0;
+
+				var vertices = [];
+				var normals = [];
+				var uvs = [];
+
+				for( var i=0; i< numInnerSeg * numOuterSeg; i++) {
+					vertices.push(new THREE.Vector3());
+					normals.push(new THREE.Vector3());
+					uvs.push(new THREE.Vector2());
+				}
+
+				var x,y,z;
+				var l=0;
+				for(var i=0 ; i < numInnerSeg ; i++ )
+				{
+					x = ringRadius  +  innerMajorRadius * Math.cos (beta) ;
+					y = innerMinorRadius * Math.sin(beta) ;
+					z = Math.sqrt( x * x + y * y );
+					l = 0;
+
+					for ( var j=0 ; j < numOuterSeg ; j++ )
+					{
+						vertices[l + i].x = x * Math.cos( alpha );
+						vertices[l + i].y = y;
+						vertices[l + i].z = z * Math.sin( alpha );
+						uvs[l + i].x = (Math.PI + Math.atan2(vertices[l + i].z, vertices[l + i].x))/(2*Math.PI);
+						uvs[l + i].y = (Math.PI + Math.atan2(y, x))/(2*Math.PI);
+						l = numInnerSeg *( j + 1 );
+						alpha += angle;
+					}
+					beta += theta;
+				}
+
+
+				var indices = new Uint16Array( 6 * numOuterSeg * numInnerSeg );
+
+				l = 0;
+				var k = 0;
+
+				for(var j=0 ; j < numOuterSeg ; j++ )
+				{
+					for( var i = 0 ; i < numInnerSeg ; i++)
+					{
+						if ( (i == numInnerSeg - 1) & (j != numOuterSeg - 1) )
+						{
+							indices[l++] = i + k;
+							indices[l++] = i + k + 1 - numInnerSeg;
+							indices[l++] = i + k + 1;
+							indices[l++] = i + k;
+							indices[l++] = i + k + 1;
+							indices[l++] = 2*i + k + 1;
+						}
+						else if ( (i != numInnerSeg -1 ) & ( j != numOuterSeg-1 ) )
+						{
+							indices[l++] = i + k;
+							indices[l++] = i + k + 1;
+							indices[l++] = i + k + 1 + numInnerSeg;
+							indices[l++] = i + k;
+							indices[l++] = i + k + 1 + numInnerSeg;
+							indices[l++] = i + k + numInnerSeg;
+						}
+						else if( ( i == numInnerSeg-1 )  & ( j == numOuterSeg-1 ) )
+						{
+							indices[l++] = i + k;
+							indices[l++] = i + k + 1 - numInnerSeg;
+							indices[l++] = i - numInnerSeg + 1;
+							indices[l++] = i + k;
+							indices[l++] = i - numInnerSeg + 1;
+							indices[l++] = i;
+						}
+						else if( (i != numInnerSeg-1) & (j == numOuterSeg-1) )
+						{
+							indices[l++] = i+k;
+							indices[l++] = i+k+1;
+							indices[l++] = i+1;
+							indices[l++] = i+k;
+							indices[l++] = i+1;
+							indices[l++] = i;
+						}
+					}
+					k = k + numInnerSeg;
+				}
+				var A = new THREE.Vector3();
+				var B = new THREE.Vector3();
+				var N = new THREE.Vector3();
+
+				for ( var i = 0 ; i < 6 * numInnerSeg * numOuterSeg ; i +=6 )
+				{
+					var one   = indices[i];
+					var two   = indices[i+1];
+					var three = indices[i+2];
+					var four  = indices[i+3];
+					var five  = indices[i+4];
+					var six  = indices[i+5];
+
+					A.x = vertices[three].x - vertices[one].x;
+					A.y = vertices[three].y - vertices[one].y;
+					A.z = vertices[three].z - vertices[one].z;
+
+					B.x = vertices[two].x - vertices[one].x;
+					B.y = vertices[two].y - vertices[one].y;
+					B.z = vertices[two].z - vertices[one].z;
+
+					N.crossVectors( B, A );
+
+					N.normalize();
+
+					normals[one].x += N.x;
+					normals[one].y += N.y;
+					normals[one].z += N.z;
+
+					normals[two].x += N.x;
+					normals[two].y += N.y;
+					normals[two].z += N.z;
+
+					normals[three].x += N.x;
+					normals[three].y += N.y;
+					normals[three].z += N.z;
+
+					normals[four].x += N.x;
+					normals[four].y += N.y;
+					normals[four].z += N.z;
+
+					normals[five].x += N.x;
+					normals[five].y += N.y;
+					normals[five].z += N.z;
+
+					normals[six].x += N.x;
+					normals[six].y += N.y;
+					normals[six].z += N.z;
+				}
+
+        var coords = new Float32Array(3*numInnerSeg * numOuterSeg);
+				k = 0;
+        for ( var i = 0 ; i < numInnerSeg * numOuterSeg ; i++)
+				{
+					coords[k] = vertices[i].x;
+					coords[k + 1] = vertices[i].y;
+					coords[k + 2] = vertices[i].z;
+					k += 3;
+				}
+
+				var norms = new Float32Array(3*numInnerSeg * numOuterSeg);
+				k = 0;
+        for ( var i = 0 ; i < numInnerSeg * numOuterSeg ; i++)
+				{
+					normals[i].normalize();
+					norms[k] = normals[i].x;
+					norms[k + 1] = normals[i].y;
+					norms[k + 2] = normals[i].z;
+					k += 3;
+				}
+
+				var uv = new Float32Array(2*numInnerSeg * numOuterSeg);
+				k = 0;
+        for ( var i = 0 ; i < numInnerSeg * numOuterSeg ; i++)
+				{
+					uv[k] = uvs[i].x;
+					uv[k + 1] = uvs[i].y;
+					k += 2;
+				}
+				var geometry = new THREE.BufferGeometry();
+				geometry.addAttribute( 'position', new THREE.BufferAttribute( coords, 3 ));
+				geometry.addAttribute( 'normal', new THREE.BufferAttribute( norms, 3 ));
+				geometry.addAttribute( 'uv', new THREE.BufferAttribute( uv, 2 ));
+				geometry.setIndex( new THREE.BufferAttribute( indices, 1 ) );
+				return geometry;
+			}
 
 			function init() {
 
@@ -104,28 +296,34 @@
 				// model
 
 				var loader = new THREE.OBJLoader( manager );
-				loader.load( 'obj/male02/male02.obj', function ( object ) {
+				loader.load( 'models/obj/tree.obj', function ( object ) {
 
 					object.traverse( function ( child ) {
 
 						if ( child instanceof THREE.Mesh ) {
-							var compressedBinaryWriter = new THREE.CompressedBinaryWriter();
-							var compressedBinaryReader = new THREE.CompressedBinaryReader();
-							var binaryBufferView = compressedBinaryWriter.toBinary(child.geometry);
-							child.geometry = compressedBinaryReader.toGeometryBuffer(binaryBufferView);
-
-							child.material.map = texture;
-
+							// var binaryBufferView = compressedBinaryWriter.toBinary(child.geometry);
+							// child.geometry = compressedBinaryReader.toGeometryBuffer(binaryBufferView);
+							// child.material.map = texture;
 						}
 
 					} );
 
-					object.position.y = - 95;
-					scene.add( object );
+					object.position.y = - 50;
+					object.scale.x = 150;
+					object.scale.y = 150;
+					object.scale.z = 150;
+					// scene.add( object );
 
 				}, onProgress, onError );
-
 				//
+				var ringRadius = 100 , innerMinorRadius = 20 , innerMajorRadius = 20 , numInnerSeg = 250, numOuterSeg = 250;
+				var geometry = createTorus(ringRadius , innerMinorRadius , innerMajorRadius , numInnerSeg , numOuterSeg );
+				var binaryBufferView = compressedBinaryWriter.toBinary(geometry);
+				geometry = compressedBinaryReader.toGeometryBuffer(binaryBufferView);
+				var material = new THREE.MeshPhongMaterial( { color: 0xffffff, shininess: 100 } );
+				material.map = texture;
+				var mesh = new THREE.Mesh(geometry, material);
+				scene.add(mesh);
 
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -133,11 +331,12 @@
 				container.appendChild( renderer.domElement );
 
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
 				//
 
 				window.addEventListener( 'resize', onWindowResize, false );
-
+			  my_lzma = new LZMA("../build/lzma_worker.js");
 			}
 
 			function onWindowResize() {
@@ -150,6 +349,93 @@
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
+			}
+
+			function mergeTypedArraysUnsafe(a, b) {
+			    var c = new a.constructor(a.length + b.length);
+			    c.set(a);
+			    c.set(b, a.length);
+
+			    return c;
+			}
+
+			function testLZMA() {
+				var bufferToCompress = compressedBinaryWriter.tempBuffer1;
+				var byteArray1 = new Int8Array(bufferToCompress.length * bufferToCompress.BYTES_PER_ELEMENT);
+				byteArray1.set(bufferToCompress);
+				bufferToCompress = compressedBinaryWriter.tempBuffer2;
+				var byteArray2 = new Int8Array(bufferToCompress.length * bufferToCompress.BYTES_PER_ELEMENT);
+				byteArray2.set(bufferToCompress);
+				bufferToCompress = compressedBinaryWriter.tempBuffer3;
+				var byteArray3 = new Int8Array(bufferToCompress.length * bufferToCompress.BYTES_PER_ELEMENT);
+				byteArray3.set(bufferToCompress);
+				bufferToCompress = compressedBinaryWriter.tempBuffer4;
+				var byteArray4 = new Int8Array(bufferToCompress.length * bufferToCompress.BYTES_PER_ELEMENT);
+				byteArray4.set(bufferToCompress);
+				var temp1 = mergeTypedArraysUnsafe(byteArray1, byteArray2);
+				var temp2 = mergeTypedArraysUnsafe(byteArray3, byteArray4);
+				var byteArray = mergeTypedArraysUnsafe(temp1, temp2);
+
+				my_lzma.compress(byteArray, 9, function (result) {
+
+										if (result === false) {
+												alert("An error occurred during compression.");
+												return;
+										}
+										else {
+											var originalSize = byteArray.length * byteArray.BYTES_PER_ELEMENT;
+											var compressionRatio = originalSize/result.length;
+											alert("Original Size = " + originalSize/1e6 + "MB " + "\n" + "Compressed Size = " + result.length/1e6 + "MB\n" + "CompressionRatio = " + compressionRatio);
+											my_lzma.decompress(result, function (result) {
+
+											if (result === false) {
+													alert("An error occurred during decompression.");
+													return;
+											}
+											alert("Successfully DeCompressed!");
+											}, function progress(percent) {
+
+											});
+										}
+
+								}, function progress(percent) {
+										// alert(percent);
+								});
+			}
+
+			function onDocumentMouseDown( event ) {
+				// testLZMA();
+				saveByteArray([compressedBinaryWriter.tempBuffer1, compressedBinaryWriter.tempBuffer2, compressedBinaryWriter.tempBuffer3, compressedBinaryWriter.tempBuffer4], 'example.txt');
+				return;
+				var sampleBytes = new Int16Array(10000000);
+				var sampleBytesDelta = new Int16Array(10000000);
+				var bits = 15;
+				var maxInt = Math.pow( 2, bits);
+				for(var i=0; i<sampleBytes.length; i++) {
+					// sampleBytes[i] = Math.round( Math.random() * maxInt );
+					sampleBytes[i] = Math.round( Math.random() * maxInt );
+					sampleBytesDelta[i] = sampleBytes[i];
+				}
+				saveByteArray([sampleBytes], 'example_no_sort.txt');
+
+				var prev = 0;
+				for(var i=0; i<sampleBytes.length; i++) {
+					var x = sampleBytesDelta[i];
+					sampleBytesDelta[i] = x - prev;
+					prev = x;
+				}
+				saveByteArray([sampleBytesDelta], 'example_no_sort_delta.txt');
+
+				sampleBytes.sort();
+				saveByteArray([sampleBytes], 'example_sort.txt');
+
+				var prev = 0;
+				for(var i=0; i<sampleBytes.length; i++) {
+					var x = sampleBytes[i];
+					sampleBytes[i] = x - prev;
+					prev = x;
+				}
+				saveByteArray([sampleBytes], 'example_sort_delta.txt');
 			}
 
 			function onDocumentMouseMove( event ) {
