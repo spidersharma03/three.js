@@ -403,10 +403,7 @@
 								});
 			}
 
-			function onDocumentMouseDown( event ) {
-				// testLZMA();
-				saveByteArray([compressedBinaryWriter.tempBuffer1, compressedBinaryWriter.tempBuffer2, compressedBinaryWriter.tempBuffer3, compressedBinaryWriter.tempBuffer4], 'example.txt');
-				return;
+			function testCompressionStats() {
 				var sampleBytes = new Int16Array(10000000);
 				var sampleBytesDelta = new Int16Array(10000000);
 				var bits = 15;
@@ -438,14 +435,16 @@
 				saveByteArray([sampleBytes], 'example_sort_delta.txt');
 			}
 
+			function onDocumentMouseDown( event ) {
+				// testLZMA();
+			}
+
 			function onDocumentMouseMove( event ) {
 
 				mouseX = ( event.clientX - windowHalfX ) / 2;
 				mouseY = ( event.clientY - windowHalfY ) / 2;
 
 			}
-
-			//
 
 			function animate() {
 

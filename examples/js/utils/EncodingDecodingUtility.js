@@ -27,7 +27,7 @@ THREE.EncodingDecodingUtility.prototype = {
   setupQuantizedGrid: function( vertices, quantizedBits)
   {
     var grid = new THREE.Grid();
-    quantizedBits = quantizedBits !== undefined ? quantizedBits : 16;
+    quantizedBits = quantizedBits !== undefined ? quantizedBits : 15;
 
     grid.min.x = grid.max.x = vertices[0];
     grid.min.y = grid.max.y = vertices[1];
@@ -534,14 +534,20 @@ THREE.EncodingDecodingUtility.prototype = {
     return indices;
   },
 
-  encodeData: function( positions, normals, uvs, indices, quantizedBits ) {
+  encodeData: function( positions, normals, uvs, indices, options ) {
+    options = options || {};
+    var quantizedBitsPositions = options.quantizedBitsPositions;
+    var quantizedBitsNormals   = options.quantizedBitsNormals || 12;
+    var quantizedBitsUVs       = options.quantizedBitsUVs || 12;
+    var useSmoothNormals       = options.useSmoothNormals;
 
-    var grid = this.setupQuantizedGrid( positions, quantizedBits );
+    var grid = this.setupQuantizedGrid( positions, quantizedBitsPositions );
 
     var intVertices = new Int16Array( positions.length );
     this.quantizePositions( positions, intVertices, grid );
 
     var numVertices = Math.floor( positions.length/3 );
+    var hasIndices = (indices !== undefined) && (indices !== null);
     indices = indices || this.createDummyIndices( numVertices );
 
     var newIndices = new Int32Array( indices.length );
@@ -560,16 +566,20 @@ THREE.EncodingDecodingUtility.prototype = {
 
     if( normals !== undefined ) {
       var intNormals = new Int32Array( 2 * numVertices );
-      this.quantizeNormals(normals, intNormals, sortVertices, 12);
-      this.applyDeltaTransform( intNormals, 2 );
-      // var restoredVertices = new Float32Array( positions.length );
-      // this.deQuantizePositions( intVertices, restoredVertices, grid );
-      // this.makeNormalDeltasRelativeToSmoothNormals( normals, intNormals, restoredVertices, newIndices, sortVertices, 8);
+      if( useSmoothNormals === true ) {
+        var restoredVertices = new Float32Array( positions.length );
+        this.deQuantizePositions( intVertices, restoredVertices, grid );
+        this.makeNormalDeltasRelativeToSmoothNormals( normals, intNormals, restoredVertices, newIndices, sortVertices, quantizedBitsNormals );
+      }
+      else {
+        this.quantizeNormals( normals, intNormals, sortVertices, quantizedBitsNormals );
+        this.applyDeltaTransform( intNormals, 2 );
+      }
     }
 
     if( uvs !== undefined ) {
       var intUVs = new Int16Array( 2 * numVertices );
-      this.quantizeUVs(uvs, intUVs, sortVertices, 12);
+      this.quantizeUVs( uvs, intUVs, sortVertices, quantizedBitsUVs );
       this.applyDeltaTransform( intUVs, 2 );
     }
 
@@ -577,6 +587,11 @@ THREE.EncodingDecodingUtility.prototype = {
 
     var encodedBuffer = { grid, intVertices, intNormals, intUVs };
     encodedBuffer.deltaIndices = deltaIndices;
+    encodedBuffer.useSmoothNormals = (useSmoothNormals === true);
+    encodedBuffer.hasIndices = hasIndices;
+    encodedBuffer.quantizedBitsPositions = quantizedBitsPositions;
+    encodedBuffer.quantizedBitsNormals = quantizedBitsNormals;
+    encodedBuffer.quantizedBitsUVs = quantizedBitsUVs;
 
     return encodedBuffer;
   },
@@ -589,8 +604,10 @@ THREE.EncodingDecodingUtility.prototype = {
 
     this.invertDeltaTransform( encodedBuffer.intVertices, 3 );
 
-    if(encodedBuffer.intNormals !== undefined)
-      this.invertDeltaTransform( encodedBuffer.intNormals, 2 );
+    if(encodedBuffer.useSmoothNormals === false ) {
+      if(encodedBuffer.intNormals !== undefined)
+        this.invertDeltaTransform( encodedBuffer.intNormals, 2 );
+    }
 
     if(encodedBuffer.intUVs !== undefined)
       this.invertDeltaTransform( encodedBuffer.intUVs, 2 );
@@ -600,23 +617,30 @@ THREE.EncodingDecodingUtility.prototype = {
 
     this.restoreIndices( indices );
 
-    // this.restoreDataOrder( encodedBuffer.intVertices, indices, 3 );
-    //
-    // if(encodedBuffer.intNormals !== undefined)
-    //   this.restoreDataOrder( encodedBuffer.intNormals, indices, 2 );
-    //
-    // if(encodedBuffer.intUVs !== undefined)
-    //   this.restoreDataOrder( encodedBuffer.intUVs, indices, 2 );
+    if( encodedBuffer.hasIndices === false ) {
+      this.restoreDataOrder( encodedBuffer.intVertices, indices, 3 );
+
+      if(encodedBuffer.intNormals !== undefined)
+        this.restoreDataOrder( encodedBuffer.intNormals, indices, 2 );
+
+      if(encodedBuffer.intUVs !== undefined)
+        this.restoreDataOrder( encodedBuffer.intUVs, indices, 2 );
+    }
 
     this.deQuantizePositions( encodedBuffer.intVertices, vertices, encodedBuffer.grid );
 
     if(encodedBuffer.intNormals !== undefined) {
-      this.deQuantizeNormals( encodedBuffer.intNormals, normals, 12 );
-      // this.restoreNormalsRelativeToSmoothNormals(encodedBuffer.intNormals, normals, vertices, indices, 8);
+      if( encodedBuffer.useSmoothNormals === true ) {
+        var tempIndices = encodedBuffer.hasIndices ? indices : this.createDummyIndices( indices.length );
+        this.restoreNormalsRelativeToSmoothNormals(encodedBuffer.intNormals, normals, vertices, tempIndices, encodedBuffer.quantizedBitsNormals );
+      }
+      else {
+        this.deQuantizeNormals( encodedBuffer.intNormals, normals, encodedBuffer.quantizedBitsNormals );
+      }
     }
 
     if(encodedBuffer.intUVs !== undefined)
-      this.deQuantizeUVs( encodedBuffer.intUVs, uvs, 12 );
+      this.deQuantizeUVs( encodedBuffer.intUVs, uvs, encodedBuffer.quantizedBitsUVs );
 
     var decodedBuffer = {vertices, normals, uvs, indices};
     return decodedBuffer;

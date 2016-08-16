@@ -58,8 +58,9 @@ THREE.CompressedBinaryWriter.prototype = {
       this.writeJSON( outputView, offset, jsonString );
       offset += THREE.CompressedBinaryWriter.headerInfo.jsonLength;
 
-      // Test
-      var encodingDecodingUtility = new THREE.EncodingDecodingUtility();
+      /* Temporary Test for encoding and decoding utility
+			
+			var encodingDecodingUtility = new THREE.EncodingDecodingUtility();
 			var posnArray = attributeArray['position'].array;
 			var normalArray = attributeArray['normal'] !== undefined ? attributeArray['normal'].array : undefined;
 			var uvArray = attributeArray['uv'] !== undefined ? attributeArray['uv'].array : undefined;
@@ -67,16 +68,16 @@ THREE.CompressedBinaryWriter.prototype = {
 			if( indices !== null && indices !== undefined )
 				indicesArray = indices.array;
 
-      var encodedBuffer = encodingDecodingUtility.encodeData( posnArray, normalArray, uvArray, indicesArray, 12, true );
+      var encodedBuffer = encodingDecodingUtility.encodeData( posnArray, normalArray, uvArray, indicesArray, { 	quantizedBitsPositions:12, quantizedBitsNormals:12, quantizedBitsUVs: 12, useSmoothNormals: false} );
       var decodedBuffer = encodingDecodingUtility.decodeData( encodedBuffer );
-      // this.tempBuffer1 = encodedBuffer.intVertices;
-			// this.tempBuffer2 = encodedBuffer.intNormals;
-			// this.tempBuffer3 = encodedBuffer.intUVs;
-			// this.tempBuffer4 = encodedBuffer.deltaIndices;
-			// this.tempBuffer1 = posnsold;
-			// this.tempBuffer2 = normalsold;
-			// this.tempBuffer3 = uvsold;
-			// this.tempBuffer4 = attributeArray['index'].array;
+      this.tempBuffer1 = encodedBuffer.intVertices;
+			this.tempBuffer2 = encodedBuffer.intNormals;
+			this.tempBuffer3 = encodedBuffer.intUVs;
+			this.tempBuffer4 = encodedBuffer.deltaIndices;
+			this.tempBuffer1 = posnArray;
+			this.tempBuffer2 = normalArray;
+			this.tempBuffer3 = uvArray;
+			this.tempBuffer4 = attributeArray['index'].array;
 
 			posnArray.set(decodedBuffer.vertices);
 			if(normalArray !== undefined)
@@ -86,10 +87,7 @@ THREE.CompressedBinaryWriter.prototype = {
 
 			if( indices !== null && decodedBuffer.indices !== undefined )
 				attributeArray['index'].array =	 decodedBuffer.indices;
-      // var encodedBuffer = encodingDecodingUtility.encodeDirections( attributeArray['normal'].array, 8 );
-      // var normalsnew = encodingDecodingUtility.decodeDirections( encodedBuffer );
-      // var normalsold = attributeArray['normal'].array;
-      // normalsold.set(normalsnew);
+			*/
 
       // Make sure to write the binary blob after the padding offset
       offset += padding;
