@@ -98,6 +98,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		this.renderTargetDofBlurTemp.setSize( resx, resy );
 		this.renderTargetDofCombine.setSize( width, height );
 		this.depthRenderTarget.setSize( width, height );
+		this.dofBlurMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(resx, resy);
 	},
 
 	changeBlurType: function(blurType) {
@@ -117,6 +118,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		this.oldClearColor.copy( renderer.getClearColor() );
 		this.oldClearAlpha = renderer.getClearAlpha();
 		var oldAutoClear = renderer.autoClear;
+		renderer.autoClear = true;
 
 		if ( maskActive ) renderer.context.disable( renderer.context.STENCIL_TEST );
 
@@ -175,6 +177,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		renderer.render( this.scene, this.camera, readBuffer, this.clear );
 
 		renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
+		renderer.autoClear = oldAutoClear;
 	},
 
 	getDownSamplingMaterial: function() {

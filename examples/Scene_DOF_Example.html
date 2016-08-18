@@ -54,7 +54,7 @@
 			var mouse = new THREE.Vector2();
 			var time = 0;
 			var effectFXAA;
-			
+
 			init();
 			animate();
 
@@ -189,15 +189,17 @@
         renderScene.clear = true;
         effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
         effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth), 1 / (window.innerHeight));
-        effectFXAA.renderToScreen = true;
+				copyShader = new THREE.ShaderPass(THREE.CopyShader);
+				copyShader.renderToScreen = true;
 
         dofPass = new THREE.DofPass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
 
         composer = new THREE.EffectComposer(renderer);
         composer.setSize(window.innerWidth, window.innerHeight);
         composer.addPass(renderScene);
+				composer.addPass(effectFXAA);
 				composer.addPass(dofPass);
-        composer.addPass(effectFXAA);
+				composer.addPass(copyShader);
 				//
         controls = new THREE.OrbitControls( camera, renderer.domElement );
 				//controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
@@ -256,7 +258,7 @@
 				//mesh.rotation.y += 0.01;
 
 				//renderer.render( scene, camera );
-				renderer.setClearColor(0xffffff);
+				renderer.setClearColor(0x000000);
         composer.render();
         controls.update();
         stats.update();
