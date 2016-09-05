@@ -143,7 +143,10 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		var gatherSelectedMeshesCallBack = function( object ) {
 
 			if( object instanceof THREE.Mesh ) {
-				object.visible = bVisible;
+				var visibility = object.visible;
+				if( !bVisible || object.bVisible )
+					object.visible = bVisible;
+				object.bVisible = visibility;
 			}
 		}
 
@@ -486,7 +489,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 					vec4 edgeValue = edgeValue1 + edgeValue2 * edgeGlow;\
 					vec4 finalColor = edgeStrength * maskColor.r * edgeValue;\
 					if(usePatternTexture)\
-						finalColor += + visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
+						finalColor += visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
 					gl_FragColor = finalColor;\
 				}",
 
