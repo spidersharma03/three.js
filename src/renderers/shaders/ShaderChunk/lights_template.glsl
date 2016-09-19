@@ -16,6 +16,7 @@
 GeometricContext geometry;
 
 geometry.position = - vViewPosition;
+geometry.worldPosition = - vViewPosition;
 geometry.normal = normal;
 geometry.viewDir = normalize( vViewPosition );
 

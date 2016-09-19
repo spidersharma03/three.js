@@ -16,6 +16,9 @@ THREE.UniformsLib = {
 		"alphaMap": { type: "t", value: null },
 
 		"envMap": { type: "t", value: null },
+		"envMapProbe1": { type: "t", value: null },
+		"envMapProbe2": { type: "t", value: null },
+		"envMapProbe3": { type: "t", value: null },
 		"flipEnvMap": { type: "1f", value: - 1 },
 		"reflectivity": { type: "1f", value: 1.0 },
 		"refractionRatio": { type: "1f", value: 0.98 }

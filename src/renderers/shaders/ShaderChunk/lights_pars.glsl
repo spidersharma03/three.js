@@ -1,5 +1,102 @@
 uniform vec3 ambientLightColor;
 
+struct AABB {
+	vec3 min;
+	vec3 max;
+};
+const float roomlength = 100.0;
+const float platformWidth = 25.0;
+const float platformHeight = 30.0;
+const AABB proxy1 = AABB(vec3(-75.0, 0.0, -roomlength * 0.5), vec3(75.0, platformHeight, -roomlength * 0.5 + platformWidth));
+const AABB proxy2 = AABB(vec3(-75.0, 0.0, roomlength * 0.5 - platformWidth), vec3(75.0, platformHeight, roomlength * 0.5));
+const AABB probeAABB1 = AABB(vec3(-75.0, 0.0, -50.0), vec3(75.0, 100.0, 50.0));
+
+const vec3 probe1Pos = vec3(0.0, 15.0, 0.0);
+const vec3 probe2Pos = vec3(0.0, 50.0, 0.0);
+
+struct Ray {
+    vec3 origin;
+    vec3 direction;
+    vec3 inv_direction;
+};
+
+Ray makeRay(in vec3 origin, in vec3 direction) {
+    return Ray(origin, direction, vec3(1.0) / direction);
+}
+
+bool intersection(const in AABB aabb, const in Ray r, inout vec3 hitPoint) {
+    float tx1 = (aabb.min.x - r.origin.x)*r.inv_direction.x;
+    float tx2 = (aabb.max.x - r.origin.x)*r.inv_direction.x;
+
+    float tmin = min(tx1, tx2);
+    float tmax = max(tx1, tx2);
+
+    float ty1 = (aabb.min.y - r.origin.y) * r.inv_direction.y;
+    float ty2 = (aabb.max.y - r.origin.y) * r.inv_direction.y;
+
+    tmin = max(tmin, min(ty1, ty2));
+    tmax = min(tmax, max(ty1, ty2));
+
+		float tz1 = (aabb.min.z - r.origin.z) * r.inv_direction.z;
+    float tz2 = (aabb.max.z - r.origin.z) * r.inv_direction.z;
+
+    tmin = max(tmin, min(tz1, tz2));
+    tmax = min(tmax, max(tz1, tz2));
+
+    if( tmax >= tmin && tmin > 0.0 ) {
+			hitPoint = r.origin + tmin * r.direction;
+			return true;
+		}
+		return false;
+}
+
+bool closestProbe( const in vec3 position, const in vec3 normal ) {
+	vec3 d1 = probe1Pos - position;
+	vec3 d2 = probe2Pos - position;
+	float dot1 = dot(normal, d1);
+	float dot2 = dot(normal, d2);
+	return false;
+	return dot(d1, d1) < dot(d2, d2) && dot1 > 0.0 && dot2 > 0.0;
+}
+
+vec3 cubeMapProject(vec3 nrdir, vec3 vPositionW, inout float distance, inout vec3 hitPoint ) {
+		const float epsilon = 0.01;
+		Ray ray = makeRay(vPositionW, nrdir);
+		vec3 p1 = vec3(100000.0, 100000.0, 100000.0);
+		vec3 p2 = vec3(100000.0, 100000.0, 100000.0);
+		bool bRes1 = intersection(proxy1, ray, p1);
+		bool bRes2 = intersection(proxy2, ray, p2);
+		hitPoint = vec3(100000.0, 100000.0, 100000.0);
+
+		if(bRes1 || bRes2) {
+			vec3 d1 = p1 - vPositionW;
+			vec3 d2 = p2 - vPositionW;
+			hitPoint = dot(d1, d1) < dot( d2, d2) ? p1 : p2;
+			//return vec3(0.0);
+		}
+
+    vec3 rbmax = (probeAABB1.max - vPositionW) / nrdir;
+    vec3 rbmin = (probeAABB1.min - vPositionW) / nrdir;
+
+    vec3 rbminmax = max(rbmin, rbmax);
+    //rbminmax.x = nrdir.x>0.0? rbmax.x : rbmin.x;
+    //rbminmax.y = nrdir.y>0.0? rbmax.y : rbmin.y;
+    //rbminmax.z = nrdir.z>0.0? rbmax.z : rbmin.z;
+
+    float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+
+		vec3 d1 = hitPoint - vPositionW;
+    vec3 posonbox = vPositionW + nrdir * fa;
+		//hitPoint = posonbox;
+		vec3 d2 = posonbox - vPositionW;
+		hitPoint = dot(d1, d1) < dot( d2, d2) ? hitPoint : posonbox;
+		//distance = length(posonbox - vPositionW);
+
+		//vec3 outDir = (posonbox - probe1Pos);
+
+    return vec3(0.0);
+}
+
 vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 	vec3 irradiance = ambientLightColor;
@@ -200,9 +297,11 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 			envMapColor.rgb = envMapTexelToLinear( envMapColor ).rgb;
 
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
-
+			float distance = 0.0;
+			vec3 hitPoint;
+			worldNormal = cubeMapProject(worldNormal, vertexWorldPosition, distance, hitPoint);
 			vec3 queryVec = flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz );
-			vec4 envMapColor = textureCubeUV( queryVec, 1.0 );
+			vec4 envMapColor = textureCubeUV( envMapProbe1, queryVec, 1.0 );
 
 		#else
 
@@ -271,9 +370,31 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 			envMapColor.rgb = envMapTexelToLinear( envMapColor ).rgb;
 
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
+			float distance = 0.0;
+			vec3 hitPoint;
+			vec3 worldNormal = inverseTransformDirection( geometry.normal, viewMatrix );
 
-			vec3 queryReflectVec = flipNormal * vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
-			vec4 envMapColor = textureCubeUV(queryReflectVec, BlinnExponentToGGXRoughness(blinnShininessExponent));
+			cubeMapProject(reflectVec, vertexWorldPosition, distance, hitPoint);
+			float baseRoughness = BlinnExponentToGGXRoughness(blinnShininessExponent);
+
+			vec4 envMapColor;
+
+			if( closestProbe( hitPoint, worldNormal ) ) {
+			  reflectVec = normalize( hitPoint - probe1Pos );
+				float distanceFn = length(hitPoint - vertexWorldPosition)/20.0;
+				float newRoughness = clamp(baseRoughness * distanceFn, 0.0, baseRoughness);
+				newRoughness = mix(newRoughness, baseRoughness, baseRoughness);
+				vec3 queryReflectVec = flipNormal * vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
+				envMapColor = textureCubeUV(envMap, queryReflectVec, baseRoughness);
+			}
+			else {
+			  reflectVec = normalize( hitPoint - probe2Pos );
+				float distanceFn = length(hitPoint - vertexWorldPosition)/100.0;
+				float newRoughness = clamp(baseRoughness * distanceFn, 0.0, baseRoughness);
+				newRoughness = mix(newRoughness, baseRoughness, baseRoughness);
+				vec3 queryReflectVec = flipNormal * vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
+				envMapColor = textureCubeUV(envMapProbe1, queryReflectVec, baseRoughness * distanceFn);
+			}
 
 		#elif defined( ENVMAP_TYPE_EQUIREC )
 

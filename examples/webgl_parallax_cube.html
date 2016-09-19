@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - mirror</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #888888;
+				font-family:Monospace;
+				font-size:13px;
+
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px;
+				width: 200px;
+				left: calc(50% - 100px);
+				text-align: center;
+			}
+
+			a {
+				color: #00f;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - mirror
+		</div>
+
+		<script src="../build/three.js"></script>
+		<script src="../examples/js/libs/stats.min.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script src="js/controls/FlyControls.js"></script>
+		<script src="js/pmrem/PMREMGenerator.js"></script>
+		<script src="js/pmrem/PMREMCubeUVPacker.js"></script>
+
+		<script>
+
+		var stats = new Stats();
+		stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+		document.body.appendChild( stats.dom );
+			// scene size
+			var WIDTH = window.innerWidth;
+			var HEIGHT = window.innerHeight;
+
+			// camera
+			var VIEW_ANGLE = 45;
+			var ASPECT = WIDTH / HEIGHT;
+			var NEAR = 1;
+			var FAR = 500;
+
+			var camera, scene, renderer;
+			var numProbes = 2;
+			var probePositions = [new THREE.Vector3(0, 15, 0), new THREE.Vector3(0, 50, 0)];
+			var probes = [];
+
+			var cubeCamera;
+			var updateCubemap = true;
+			var updateCount = 0;
+			var planeLeft, planeRight, planeTop, planeBottom, planeBack, planeFront;
+			var boxMesh1;
+			var graniteMesh1;
+
+			var obj3d;
+
+			var cameraControls;
+
+			var verticalMirror, groundMirror;
+			var sphereGroup, smallSphere;
+			var allLoaded = false;
+			var roughnessMap;
+
+			var manager = new THREE.LoadingManager();
+			manager.onProgress = function ( item, loaded, total ) {
+				console.log( item, loaded, total );
+			};
+
+			manager.onLoad = function ( ) {
+				console.log( "All Items Loaded" );
+				allLoaded = true;
+			};
+
+			function init() {
+
+				// renderer
+				renderer = new THREE.WebGLRenderer({antialias : true});
+				// renderer.shadowMap.type = THREE.PCSSSoftShadowMap;
+				renderer.shadowMap.enabled = true;
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( WIDTH, HEIGHT );
+				renderer.setClearColor(0xeeeeff);
+				// scene
+				scene = new THREE.Scene();
+
+				// camera
+				camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+				camera.position.set( 0, 75, 160 );
+
+				cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+				cameraControls.target.set( 0, 40, 0);
+				cameraControls.maxDistance = 400;
+				cameraControls.minDistance = 10;
+				cameraControls.update();
+
+				var container = document.getElementById( 'container' );
+				container.appendChild( renderer.domElement );
+
+			}
+
+			function fillScene() {
+
+				var planeGeo = new THREE.PlaneBufferGeometry( 1.0, 1.0 );
+
+				var loader = new THREE.TextureLoader(manager);
+			  roughnessMap = loader.load("textures/roughness_map.jpg");
+			  var wallTexture1 = loader.load("textures/kitchen_tile2.jpg");
+				wallTexture1.wrapS = THREE.RepeatWrapping;
+				wallTexture1.wrapT = THREE.RepeatWrapping;
+				var wallTexture2 = loader.load("textures/5096.jpg");
+				var floorTexture = loader.load("textures/kitchen-tile-texture-seamless.jpg");
+				var wallTexture3 = loader.load("textures/Pink wall paint stucco plaster texture tileable.jpg");
+				var ceilingTexture = loader.load("textures/tilable_wall.jpg");
+				var graniteTexture = loader.load("textures/granite.jpg");
+				var cupboardTexture = loader.load("textures/Hickory.jpg");
+
+				floorTexture.wrapS = THREE.RepeatWrapping;
+				floorTexture.wrapT = THREE.RepeatWrapping;
+				floorTexture.repeat.set( 3, 2 );
+				floorTexture.anisotropy = 4;
+
+				wallTexture2.wrapS = THREE.RepeatWrapping;
+				wallTexture2.wrapT = THREE.RepeatWrapping;
+				wallTexture2.repeat.set( 3, 2 );
+
+				wallTexture3.wrapS = THREE.RepeatWrapping;
+				wallTexture3.wrapT = THREE.RepeatWrapping;
+				wallTexture3.repeat.set( 3, 2 );
+
+				ceilingTexture.wrapS = THREE.RepeatWrapping;
+				ceilingTexture.wrapT = THREE.RepeatWrapping;
+				ceilingTexture.repeat.set( 4.5, 3 );
+
+				// walls
+				var roomwidth = 150;
+				var roomlength = 100;
+				var roomHeight = 100;
+
+				graniteTexture.wrapS = THREE.RepeatWrapping;
+				graniteTexture.wrapT = THREE.RepeatWrapping;
+				graniteTexture.repeat.set( 6, 1 );
+
+				cupboardTexture.wrapS = THREE.RepeatWrapping;
+				cupboardTexture.wrapT = THREE.RepeatWrapping;
+				cupboardTexture.repeat.set( 6, 1 );
+
+				renderer.gammaInput = true;
+				renderer.gammaOutput = true;
+				renderer.gammaFactor = 2.2;
+
+				wallTexture1.repeat.set( 3 * roomwidth/roomlength, 3 );
+
+			  planeTop = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:ceilingTexture, bumpMap:ceilingTexture, metalness:0.0, bumpScale:0.1, roughness:0.75 } ) );
+				planeTop.position.y = roomHeight;
+				// planeTop.position.x = roomHeight/1;
+				planeTop.rotateX( Math.PI / 2 );
+				planeTop.scale.x = roomwidth;
+				planeTop.scale.y = roomlength;
+				planeTop.castShadow = true;
+				planeTop.receiveShadow = true;
+				scene.add( planeTop );
+
+			  planeBottom = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map: floorTexture, bumpMap: floorTexture, bumpScale:0.1, roughness: 0.2 } ) );
+				planeBottom.position.y = 0;
+				planeBottom.rotateX( -Math.PI / 2 );
+				planeBottom.scale.x = roomwidth;
+				planeBottom.scale.y = roomlength;
+				scene.add( planeBottom );
+				planeBottom.castShadow = true;
+				planeBottom.receiveShadow = true;
+
+			  planeBack = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:wallTexture1, bumpMap:wallTexture1, bumpScale:0.1, roughness: 0.1} ) );
+				planeBack.position.z = -roomlength/2;
+				planeBack.position.y = roomHeight/2;
+				planeBack.scale.x = roomwidth;
+				planeBack.scale.y = roomHeight;
+				planeBack.castShadow = true;
+				planeBack.receiveShadow = true;
+				scene.add( planeBack );
+
+			  planeFront = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:wallTexture1, bumpMap:wallTexture1, bumpScale:0.1, roughness: 0.1 } ) );
+				planeFront.position.z = roomlength/2;
+				planeFront.position.y = roomHeight/2;
+				planeFront.rotateY( Math.PI );
+				planeFront.scale.x = roomwidth;
+				planeFront.scale.y = roomHeight;
+				planeFront.castShadow = true;
+				planeFront.receiveShadow = true;
+				scene.add( planeFront );
+
+			  planeRight = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:ceilingTexture, bumpMap: ceilingTexture, bumpScale:0.03, roughness:0.75 } ) );
+				planeRight.position.x = roomwidth/2;
+				planeRight.position.y = roomHeight/2;
+				planeRight.rotateY( - Math.PI / 2 );
+				planeRight.scale.x = roomlength;
+				planeRight.scale.y = roomHeight;
+				planeRight.castShadow = true;
+				planeRight.receiveShadow = true;
+				scene.add( planeRight );
+
+			  planeLeft = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:ceilingTexture, bumpMap: ceilingTexture, bumpScale:0.03,roughness:0.75  } ) );
+				planeLeft.position.x = -roomwidth/2;
+				planeLeft.position.y = roomHeight/2;
+				planeLeft.rotateY( Math.PI / 2 );
+				planeLeft.scale.x = roomlength;
+				planeLeft.scale.y = roomHeight;
+				planeLeft.castShadow = true;
+				planeLeft.receiveShadow = true;
+				scene.add( planeLeft );
+
+				var graniteThickness = 2;
+				var graniteWidth = roomlength/4;
+				var boxHeight = 30;
+				var boxGeometry = new THREE.BoxGeometry(roomwidth, boxHeight - graniteThickness, graniteWidth );
+				boxMesh1 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:cupboardTexture, bumpMap: cupboardTexture, bumpScale:0.0, roughness:0.05  } ) );
+				boxMesh1.position.z = -roomlength/2 + graniteWidth/2;
+				boxMesh1.position.y = (boxHeight - graniteThickness)/2;
+				boxMesh1.castShadow = true;
+				boxMesh1.receiveShadow = true;
+				scene.add( boxMesh1 );
+
+				var boxGeometry = new THREE.BoxGeometry(roomwidth, graniteThickness, graniteWidth );
+				graniteMesh1 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05  } ) );
+				graniteMesh1.position.z = -roomlength/2 + graniteWidth/2;
+				graniteMesh1.position.y = (boxHeight - graniteThickness) + graniteThickness/2;
+				graniteMesh1.castShadow = true;
+				graniteMesh1.receiveShadow = true;
+				scene.add( graniteMesh1 );
+
+				var boxMesh2 = boxMesh1.clone();
+				boxMesh2.position.z = -boxMesh2.position.z;
+				scene.add( boxMesh2 );
+
+				var graniteMesh2 = graniteMesh1.clone();
+				graniteMesh2.position.z = -graniteMesh1.position.z;
+				scene.add( graniteMesh2 );
+
+				// var boxHeight = roomHeight/4;
+				// var boxWidth = roomHeight/4;
+				// var boxGeometry = new THREE.BoxGeometry(roomwidth, boxHeight, graniteWidth );
+				// boxMesh3 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:cupboardTexture, bumpScale:0.0, roughness:0.0  } ) );
+				// boxMesh3.position.z = -roomlength/2 + graniteWidth/2;
+				// boxMesh3.position.y = boxHeight/2;
+				// boxMesh3.castShadow = true;
+				// boxMesh3.receiveShadow = true;
+				// // scene.add( boxMesh3 );
+
+				// lights
+				var mainLight = new THREE.SpotLight( 0xcccccc, 0.5, 200, 1.5 );
+				mainLight.castShadow = true;
+				mainLight.position.y = 1*roomHeight/1.5;
+				// mainLight.position.z = 1*roomlength/1.2;
+				// scene.add( mainLight );
+				// mainLight.shadow.mapSize = new THREE.Vector2(512,512);
+
+				var spotLight = new THREE.SpotLight( 0x666666, 2 );
+				spotLight.penumbra = 0.04;
+				spotLight.angle = Math.PI/4;
+				// spotLight.decay = 1;
+				spotLight.position.set( 0, roomHeight/1.2, roomlength/2.2 );
+				spotLight.target.position.set( 0, 0, roomlength/2.2 );
+				spotLight.castShadow = true;
+
+				spotLight.shadow.mapSize.width = 512;
+				spotLight.shadow.mapSize.height = 512;
+
+				spotLight.shadow.camera.near = 10;
+				spotLight.shadow.camera.far = 4000;
+				spotLight.shadow.camera.fov = 30;
+				// scene.add( spotLight );
+
+				var spotLight = new THREE.SpotLight( 0x666666, 2 );
+				spotLight.angle = Math.PI/4;
+				spotLight.penumbra = 0.04;
+				// spotLight.decay = 1;
+				spotLight.position.set( 0, roomHeight/1.2, -roomlength/2.2 );
+				spotLight.target.position.set( 0, 0, -roomlength/2.2 );
+				spotLight.castShadow = true;
+
+				spotLight.shadow.mapSize.width = 512;
+				spotLight.shadow.mapSize.height = 512;
+
+				spotLight.shadow.camera.near = 10;
+				spotLight.shadow.camera.far = 4000;
+				spotLight.shadow.camera.fov = 30;
+
+				scene.add( spotLight );
+
+				var greenLight = new THREE.PointLight( 0xcccccc, 1.0, 200, 1.5 );
+				greenLight.position.y = roomHeight/1.2;
+				greenLight.position.x = roomwidth/3;
+				// scene.add( greenLight );
+
+				// var redLight = new THREE.PointLight( 0xff0000, 0.25, 1000 );
+				// redLight.position.set( - 550, 50, 0 );
+				// scene.add( redLight );
+
+				var blueLight = new THREE.PointLight( 0xcccccc, 1.0, 200, 1.5 );
+				blueLight.position.y = roomHeight/1.2;
+				blueLight.position.x = -roomwidth/3;
+				// scene.add( blueLight );
+
+
+				cubeCamera = new THREE.CubeCamera( 1, 100000, 256 );
+				scene.add( cubeCamera );
+
+			}
+
+			function render() {
+
+				renderer.render(scene, camera);
+
+				if ( updateCount < 3 && allLoaded ) {
+					probes = [];
+					// boxMesh1.visible = false;
+					for( var i=0; i<numProbes; i++ ) {
+						cubeCamera.position.copy( probePositions[i] );
+						renderer.autoClear = true;
+						cubeCamera.updateCubeMap( renderer, scene );
+						updateCubemap = false;
+						var cubeMap = cubeCamera.renderTarget;
+						cubeMap.encoding = THREE.LinearEncoding;
+
+						var pmremGenerator = new THREE.PMREMGenerator( cubeMap );
+						pmremGenerator.update( renderer );
+
+						var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+						pmremCubeUVPacker.update( renderer );
+
+						probes.push(pmremCubeUVPacker.CubeUVRenderTarget.texture);
+					}
+					// cubeCamera.position.copy( probePosition1 );
+					// renderer.autoClear = true;
+					// cubeCamera.updateCubeMap( renderer, scene );
+					// updateCubemap = false;
+					// var cubeMap = cubeCamera.renderTarget;
+					// cubeMap.encoding = THREE.LinearEncoding;
+					//
+					// var pmremGenerator = new THREE.PMREMGenerator( cubeMap );
+					// pmremGenerator.update( renderer );
+					//
+					// var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+					// pmremCubeUVPacker.update( renderer );
+
+					if(updateCount == 2) {
+						var radius = 10;
+						var x = -0; var dx = 2*radius + 10;
+						for( var i=0; i<1; i++ ) {
+							// var geometry = new THREE.SphereGeometry( radius, 32, 32 );
+							// var material = new THREE.MeshStandardMaterial( {color: 0x110000, metalness:0.0, roughness:0.0, envMap:probes[0] } );
+							// var sphere = new THREE.Mesh( geometry, material );
+							// sphere.material.envMap = probes[0];
+							// sphere.material.envMapProbe1 = probes[0];
+							// sphere.material.metalness = 0;
+							// sphere.material.roughness = i/4;
+							// sphere.position.copy(new THREE.Vector3(30, 20, 0));
+							// scene.add( sphere );
+							// sphere.castShadow = true;
+							// sphere.position.x = x;
+							// sphere.receiveShadow = true;
+							// x += dx;
+						}
+					}
+
+					planeBottom.material.envMap = probes[0];
+					planeBottom.material.envMapProbe1 = probes[1];
+					planeBottom.material.needsUpdate = true;
+					planeBottom.material.metalness = 0.1;
+					planeBottom.material.roughness = 0.0;
+
+					planeTop.material.envMap = probes[0];
+					planeTop.material.envMapProbe1 = probes[1];
+					planeTop.material.needsUpdate = true;
+
+					planeFront.material.envMap = probes[0];
+					planeFront.material.envMapProbe1 = probes[1];
+					planeFront.material.needsUpdate = true;
+					planeFront.material.metalness = 0;
+
+					planeBack.material.envMap = probes[0];
+					planeBack.material.envMapProbe1 = probes[1];
+					planeBack.material.needsUpdate = true;
+					planeBack.material.metalness = 1;
+
+					planeLeft.material.envMap = probes[0];
+					planeLeft.material.envMapProbe1 = probes[1];
+					planeLeft.material.needsUpdate = true;
+					planeLeft.material.metalness = 1;
+
+					planeRight.material.envMap = probes[0];
+					planeRight.material.envMapProbe1 = probes[1];
+					planeRight.material.needsUpdate = true;
+					planeRight.material.metalness = 0;
+
+					boxMesh1.material.envMap = probes[0];
+					boxMesh1.material.envMapProbe1 = probes[1];
+					boxMesh1.material.needsUpdate = true;
+
+					graniteMesh1.material.envMap = probes[0];
+					graniteMesh1.material.envMapProbe1 = probes[1];
+					graniteMesh1.material.needsUpdate = true;
+					// boxMesh2.material.envMap = pmremCubeUVPacker.CubeUVRenderTarget.texture;
+					// boxMesh2.material.needsUpdate = true;
+					boxMesh1.visible = true;
+					updateCount++;
+				}
+
+			}
+
+			function update() {
+
+				requestAnimationFrame( update );
+
+				var timer = Date.now() * 0.01;
+
+				cameraControls.update();
+
+				render();
+
+				stats.update();
+			}
+
+			init();
+			fillScene();
+			update();
+
+		</script>
+	</body>
+</html>

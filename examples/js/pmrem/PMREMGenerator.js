@@ -229,7 +229,7 @@ THREE.PMREMGenerator.prototype = {
 					}\n\
 					mat3 vecSpace = matrixFromVector(normalize(sampleDirection));\n\
 					vec3 rgbColor = vec3(0.0);\n\
-					const int NumSamples = 1024;\n\
+					const int NumSamples = 32;\n\
 					vec3 vect;\n\
 					float weight = 0.0;\n\
 					for(int i=0; i<NumSamples; i++) {\n\

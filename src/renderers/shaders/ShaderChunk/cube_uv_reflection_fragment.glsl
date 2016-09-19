@@ -99,7 +99,7 @@ vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel) {
 
 #define cubeUV_maxLods3 (log2(cubeUV_textureSize*0.25) - 3.0)
 
-vec4 textureCubeUV(vec3 reflectedDirection, float roughness ) {
+vec4 textureCubeUV(sampler2D environmentMap, vec3 reflectedDirection, float roughness ) {
 	float roughnessVal = roughness* cubeUV_maxLods3;
 	float r1 = floor(roughnessVal);
 	float r2 = r1 + 1.0;
@@ -115,10 +115,10 @@ vec4 textureCubeUV(vec3 reflectedDirection, float roughness ) {
 
 	// Tri linear interpolation.
 	vec2 uv_10 = getCubeUV(reflectedDirection, r1, level0);
-	vec4 color10 = envMapTexelToLinear(texture2D(envMap, uv_10));
+	vec4 color10 = envMapTexelToLinear(texture2D(environmentMap, uv_10));
 
 	vec2 uv_20 = getCubeUV(reflectedDirection, r2, level0);
-	vec4 color20 = envMapTexelToLinear(texture2D(envMap, uv_20));
+	vec4 color20 = envMapTexelToLinear(texture2D(environmentMap, uv_20));
 
 	vec4 result = mix(color10, color20, t);
 

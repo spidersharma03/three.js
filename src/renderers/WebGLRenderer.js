@@ -2068,6 +2068,11 @@ THREE.WebGLRenderer = function ( parameters ) {
 		}
 
 		uniforms.envMap.value = material.envMap;
+		if(uniforms.envMapProbe1 !== undefined) {
+			uniforms.envMapProbe1.value = material.envMapProbe1;
+			uniforms.envMapProbe2.value = material.envMapProbe2;
+			uniforms.envMapProbe3.value = material.envMapProbe3;
+		}
 
 		// don't flip CubeTexture envMaps, flip everything else:
 		//  WebGLRenderTargetCube will be flipped for backwards compatibility

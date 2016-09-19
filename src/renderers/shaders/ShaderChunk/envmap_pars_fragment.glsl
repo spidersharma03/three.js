@@ -13,6 +13,9 @@
 		uniform samplerCube envMap;
 	#else
 		uniform sampler2D envMap;
+		uniform sampler2D envMapProbe1;
+		uniform sampler2D envMapProbe2;
+		uniform sampler2D envMapProbe3;
 	#endif
 	uniform float flipEnvMap;
 

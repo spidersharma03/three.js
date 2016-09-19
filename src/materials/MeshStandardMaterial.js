@@ -90,6 +90,9 @@ THREE.MeshStandardMaterial = function ( parameters ) {
 	this.alphaMap = null;
 
 	this.envMap = null;
+	this.envMapProbe1 = null;
+	this.envMapProbe2 = null;
+	this.envMapProbe3 = null;
 	this.envMapIntensity = 1.0;
 
 	this.refractionRatio = 0.98;
