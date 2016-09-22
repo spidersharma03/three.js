@@ -5,11 +5,13 @@ struct AABB {
 	vec3 max;
 };
 const float roomlength = 100.0;
+const float roomWidth  = 150.0;
 const float platformWidth = 25.0;
 const float platformHeight = 30.0;
-const AABB proxy1 = AABB(vec3(-75.0, 0.0, -roomlength * 0.5), vec3(75.0, platformHeight, -roomlength * 0.5 + platformWidth));
-const AABB proxy2 = AABB(vec3(-75.0, 0.0, roomlength * 0.5 - platformWidth), vec3(75.0, platformHeight, roomlength * 0.5));
-const AABB probeAABB1 = AABB(vec3(-75.0, 0.0, -50.0), vec3(75.0, 100.0, 50.0));
+const AABB proxy1 = AABB(vec3(-roomWidth*0.5, 0.0, -roomlength * 0.5), vec3(roomWidth*0.5, platformHeight, -roomlength * 0.5 + platformWidth));
+//const AABB proxy2 = AABB(vec3(-roomWidth*0.5, 0.0, roomlength * 0.5 - platformWidth), vec3(roomWidth*0.5, platformHeight, roomlength * 0.5));
+const AABB proxy2 = AABB(vec3(roomWidth*0.5-platformWidth, 0.0, -roomlength * 0.5), vec3(roomWidth*0.5, platformHeight, roomlength * 0.5));
+const AABB probeAABB1 = AABB(vec3(-roomWidth*0.5, 0.0, -50.0), vec3(roomWidth*0.5, 100.0, 50.0));
 
 const vec3 probe1Pos = vec3(0.0, 15.0, 0.0);
 const vec3 probe2Pos = vec3(0.0, 50.0, 0.0);

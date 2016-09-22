@@ -66,8 +66,8 @@
 			var updateCubemap = true;
 			var updateCount = 0;
 			var planeLeft, planeRight, planeTop, planeBottom, planeBack, planeFront;
-			var boxMesh1;
-			var graniteMesh1;
+			var boxMesh1, boxMesh2;
+			var graniteMesh1, graniteMesh2;
 
 			var obj3d;
 
@@ -186,7 +186,7 @@
 				planeBottom.castShadow = true;
 				planeBottom.receiveShadow = true;
 
-			  planeBack = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:wallTexture1, bumpMap:wallTexture1, bumpScale:0.1, roughness: 0.1} ) );
+			  planeBack = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:wallTexture1, bumpMap:wallTexture1, bumpScale:0.001, roughness: 0.01} ) );
 				planeBack.position.z = -roomlength/2;
 				planeBack.position.y = roomHeight/2;
 				planeBack.scale.x = roomwidth;
@@ -229,7 +229,7 @@
 				var graniteWidth = roomlength/4;
 				var boxHeight = 30;
 				var boxGeometry = new THREE.BoxGeometry(roomwidth, boxHeight - graniteThickness, graniteWidth );
-				boxMesh1 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:cupboardTexture, bumpMap: cupboardTexture, bumpScale:0.0, roughness:0.05  } ) );
+				boxMesh1 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0x330000, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2  } ) );
 				boxMesh1.position.z = -roomlength/2 + graniteWidth/2;
 				boxMesh1.position.y = (boxHeight - graniteThickness)/2;
 				boxMesh1.castShadow = true;
@@ -244,12 +244,20 @@
 				graniteMesh1.receiveShadow = true;
 				scene.add( graniteMesh1 );
 
-				var boxMesh2 = boxMesh1.clone();
-				boxMesh2.position.z = -boxMesh2.position.z;
+				var boxGeometry = new THREE.BoxGeometry(roomlength, boxHeight - graniteThickness, graniteWidth );
+				boxMesh2 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0x330000, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2  } ) );
+				boxMesh2.position.y = (boxHeight - graniteThickness)/2;
+				boxMesh2.rotation.y = Math.PI/2;
+				boxMesh2.position.x = roomwidth/2 - graniteWidth/2;
+				boxMesh2.position.z = 0;
 				scene.add( boxMesh2 );
 
-				var graniteMesh2 = graniteMesh1.clone();
-				graniteMesh2.position.z = -graniteMesh1.position.z;
+				var boxGeometry = new THREE.BoxGeometry(roomlength, graniteThickness, graniteWidth );
+				graniteMesh2 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05  } ) );
+				graniteMesh2.rotation.y = Math.PI/2;
+				graniteMesh2.position.x = roomwidth/2 - graniteWidth/2;
+				graniteMesh2.position.y = (boxHeight - graniteThickness) + graniteThickness/2;
+				graniteMesh2.position.z = 0;
 				scene.add( graniteMesh2 );
 
 				// var boxHeight = roomHeight/4;
@@ -287,11 +295,11 @@
 				// scene.add( spotLight );
 
 				var spotLight = new THREE.SpotLight( 0x666666, 2 );
-				spotLight.angle = Math.PI/4;
+				spotLight.angle = Math.PI/3;
 				spotLight.penumbra = 0.04;
 				// spotLight.decay = 1;
-				spotLight.position.set( 0, roomHeight/1.2, -roomlength/2.2 );
-				spotLight.target.position.set( 0, 0, -roomlength/2.2 );
+				spotLight.position.set( 0, roomHeight/1, 0 );
+				spotLight.target.position.set( 0, 0, 0 );
 				spotLight.castShadow = true;
 
 				spotLight.shadow.mapSize.width = 512;
@@ -382,7 +390,7 @@
 					planeBottom.material.envMap = probes[0];
 					planeBottom.material.envMapProbe1 = probes[1];
 					planeBottom.material.needsUpdate = true;
-					planeBottom.material.metalness = 0.1;
+					planeBottom.material.metalness = 0;
 					planeBottom.material.roughness = 0.0;
 
 					planeTop.material.envMap = probes[0];
@@ -397,12 +405,12 @@
 					planeBack.material.envMap = probes[0];
 					planeBack.material.envMapProbe1 = probes[1];
 					planeBack.material.needsUpdate = true;
-					planeBack.material.metalness = 1;
+					planeBack.material.metalness = 0;
 
 					planeLeft.material.envMap = probes[0];
 					planeLeft.material.envMapProbe1 = probes[1];
 					planeLeft.material.needsUpdate = true;
-					planeLeft.material.metalness = 1;
+					planeLeft.material.metalness = 0;
 
 					planeRight.material.envMap = probes[0];
 					planeRight.material.envMapProbe1 = probes[1];
@@ -416,6 +424,14 @@
 					graniteMesh1.material.envMap = probes[0];
 					graniteMesh1.material.envMapProbe1 = probes[1];
 					graniteMesh1.material.needsUpdate = true;
+
+					boxMesh2.material.envMap = probes[0];
+					boxMesh2.material.envMapProbe1 = probes[1];
+					boxMesh2.material.needsUpdate = true;
+
+					graniteMesh2.material.envMap = probes[0];
+					graniteMesh2.material.envMapProbe1 = probes[1];
+					graniteMesh2.material.needsUpdate = true;
 					// boxMesh2.material.envMap = pmremCubeUVPacker.CubeUVRenderTarget.texture;
 					// boxMesh2.material.needsUpdate = true;
 					boxMesh1.visible = true;
