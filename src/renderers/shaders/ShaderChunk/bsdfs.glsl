@@ -287,7 +287,6 @@ void clipQuadToHorizon( inout vec3 L[5], out int n ) {
 
 // Equation (11) of "Real-Time Polygonal-Light Shading with Linearly Transformed Cosines"
 float integrateLtcBrdfOverRectEdge( vec3 v1, vec3 v2 ) {
-
 	float cosTheta = dot( v1, v2 );
 	float theta = acos( cosTheta );
 	float res = cross( v1, v2 ).z * ( ( theta > 0.001 ) ? theta / sin( theta ) : 1.0 );
@@ -378,10 +377,11 @@ vec3 Rect_Area_Light_Specular_Reflectance(
 
 	vec4 brdfLtcApproxParams, t;
 
-	brdfLtcApproxParams = texture2D( ltcMat, uv );
+	//brdfLtcApproxParams = texture2D( ltcMat, uv );
 	t = texture2D( ltcMat, uv );
 
-	float brdfLtcScalar = texture2D( ltcMag, uv ).a;
+	//float brdfLtcScalar = texture2D( ltcMag, uv ).a;
+	vec2 brdfLtcScaleBias = texture2D( ltcMag, uv ).xw;
 
 	// inv(M) matrix referenced by equation (6) in paper
 	mat3 brdfLtcApproxMat = mat3(
@@ -389,9 +389,10 @@ vec3 Rect_Area_Light_Specular_Reflectance(
 		vec3(   0, t.z,   0 ),
 		vec3( t.w,   0, t.x )
 	);
-
+	const float f0 = 0.04;
+	float scaleValue = f0 * brdfLtcScaleBias.x + ( 1.0 - f0 ) * brdfLtcScaleBias.y;
 	vec3 specularReflectance = integrateLtcBrdfOverRect( geometry, brdfLtcApproxMat, rectPoints );
-	specularReflectance *= brdfLtcScalar;
+	specularReflectance *= scaleValue;
 
 	return specularReflectance;
 
