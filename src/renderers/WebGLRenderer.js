@@ -2404,9 +2404,9 @@ THREE.WebGLRenderer = function ( parameters ) {
 				if ( light.castShadow ) {
 
 					uniforms.shadowBias = light.shadow.bias;
-					uniforms.shadowRadius = light.shadow.radius;
+					uniforms.spreadAngle = light.shadow.spreadAngle;
 					uniforms.shadowMapSize = light.shadow.mapSize;
-					uniforms.shadowCameraFovNearFar = light.shadow.cameraFovNearFar;
+					uniforms.shadowCameraParams = light.shadow.cameraParams;
 
 				}
 
@@ -2440,7 +2440,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 					uniforms.shadowBias = light.shadow.bias;
 					uniforms.shadowRadius = light.shadow.radius;
 					uniforms.shadowMapSize = light.shadow.mapSize;
-					uniforms.shadowCameraFovNearFar = light.shadow.cameraFovNearFar;
+					uniforms.shadowCameraParams = light.shadow.cameraParams;
 
 				}
 

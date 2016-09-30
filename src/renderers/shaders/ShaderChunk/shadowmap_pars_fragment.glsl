@@ -20,10 +20,16 @@
 		varying vec4 vPointShadowCoord[ NUM_POINT_LIGHTS ];
 
 	#endif
+	/* PCSS implementation inspired from http://developer.download.nvidia.com/whitepapers/2008/PCSS_Integration.pdf
+	   Spot light and directional lights are treated differently. For directional light, there is no clear Physical
+     meaning of shadow radius. Instead, a more intuitive parameter "spreadAngle" is used for directional lights,
+		 to calculate the searchRadius to find blocker depth, and to find the filter radius for PCF.
+	*/
 
 	#if defined( SHADOWMAP_TYPE_PCSS )
 		#define PCSS_QUALITY_LEVEL 5
 		#define PCSS_NUM_POISSON_SAMPLES 16
+		#define PCSS_ROTATE_POISSON_SAMPLES 1
 
 		vec2 poissonDisk[PCSS_NUM_POISSON_SAMPLES];
 
@@ -53,26 +59,32 @@
 			return mat2( c, s, -s, c );
 		}
 
-		float findBlockerLightZ( sampler2D shadowMap, const in vec2 uv, const in float lightFrustumHalfHeightAt1m, const in float receiverLightZ, const in float lightRadius, const in float cameraNear, const in float cameraFar ) {
-			// compute the search radius at the near clipping plane
-			float searchRadius = ( lightRadius / receiverLightZ ) * max( receiverLightZ - cameraNear, 0.0 ) / ( lightFrustumHalfHeightAt1m * cameraNear * 2.0 );
+		float penumbraSize( const in float zReceiverLightSpace, const in float zBlockerLightSpace ) { // Parallel plane estimation
+			return (zReceiverLightSpace - zBlockerLightSpace) / zBlockerLightSpace;
+		}
+
+		float findBlockerLightZ( sampler2D shadowMap, const in vec2 uv, const in float zReceiverClipSpace, const in float zReceiverLightSpace, const in float shadowRadius, const in float spreadAngle, const in vec3 shadowCameraParams, const in vec2 randomSeed, const int lightType ) {
+			// This uses similar triangles to compute what
+			// area of the shadow map we should search
+			float lightFrustrumWidth = 2.0 * shadowCameraParams.y * tan(shadowCameraParams.x * 0.5);
+			float searchRadius = 0.0;
+			searchRadius = ( lightType == 0) ? zReceiverLightSpace * spreadAngle/shadowCameraParams.x : ( shadowRadius / lightFrustrumWidth ) * ( zReceiverLightSpace - shadowCameraParams.y ) / zReceiverLightSpace;
 			float blockerLightZSum = 0.0;
 			int numBlockers = 0;
 
-			for( int j = 0; j < PCSS_QUALITY_LEVEL; j ++ ) {
-
-				mat2 poissonRotation = createRotationMatrix( uv + vec2( 0.33, 0.66 ) * float( j ) );
-
-				for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i++ ) {
-
-					vec2 uvOffset = ( poissonDisk[i] * poissonRotation ) * searchRadius;
-
-					float shadowMapLightZ = -perspectiveDepthToViewZ( unpackRGBAToDepth( texture2D( shadowMap, uv + uvOffset ) ), cameraNear, cameraFar );
-					if ( shadowMapLightZ < receiverLightZ ) {
-						blockerLightZSum += shadowMapLightZ;
-						numBlockers ++;
-					}
-
+			float angle = rand( randomSeed ) * PI2;
+			float s = sin(angle);
+			float c = cos(angle);
+			for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i++ ) {
+			#if PCSS_ROTATE_POISSON_SAMPLES == 1
+				vec2 poissonSample = vec2(poissonDisk[i].y * c + poissonDisk[i].x * s, poissonDisk[i].y * -s + poissonDisk[i].x * c);
+			#else
+				vec2 poissonSample = poissonDisk[i];
+			#endif
+				float shadowMapDepth = unpackRGBAToDepth( texture2D( shadowMap, uv + poissonSample * searchRadius ) );
+				if ( shadowMapDepth < zReceiverClipSpace ) {
+					blockerLightZSum += shadowMapDepth;
+					numBlockers ++;
 				}
 
 			}
@@ -82,50 +94,64 @@
 			return blockerLightZSum / float( numBlockers );
 		}
 
-		float percentCloserFilter( sampler2D shadowMap, const in vec2 uv, const in float receiverClipZ, const in float filterRadius ) {
-
+		float percentCloserFilter( sampler2D shadowMap, vec2 uv, float receiverClipZ, float filterRadius, const in vec2 randomSeed ) {
 			int numBlockers = 0;
+			float angle = rand( randomSeed ) * PI2;
+			float s = sin(angle);
+			float c = cos(angle);
 
-			for( int j = 0; j < PCSS_QUALITY_LEVEL; j ++ ) {
+			for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i ++ ) {
+			#if PCSS_ROTATE_POISSON_SAMPLES == 1
+				vec2 poissonSample = vec2(poissonDisk[i].y * c + poissonDisk[i].x * s, poissonDisk[i].y * -s + poissonDisk[i].x * c);
+			#else
+				vec2 poissonSample = poissonDisk[i];
+			#endif
+				vec2 uvOffset = poissonSample * filterRadius;
 
-				mat2 poissonRotation = createRotationMatrix( uv.yx + vec2( 0.12, 0.30 ) * float( j ) );
+				float blockerClipZ = unpackRGBAToDepth( texture2D( shadowMap, uv + uvOffset ) );
+				if( receiverClipZ <= blockerClipZ ) numBlockers ++;
 
-				for( int i = 0; i < PCSS_NUM_POISSON_SAMPLES; i ++ ) {
-
-					vec2 uvOffset = ( poissonDisk[i] * poissonRotation ) * filterRadius;
-
-					float blockerClipZ = unpackRGBAToDepth( texture2D( shadowMap, uv + uvOffset ) );
-					if( receiverClipZ <= blockerClipZ ) numBlockers ++;
-
-					blockerClipZ = unpackRGBAToDepth( texture2D( shadowMap, uv - uvOffset ) );
-					if( receiverClipZ <= blockerClipZ ) numBlockers ++;
-
-				}
+				blockerClipZ = unpackRGBAToDepth( texture2D( shadowMap, uv - uvOffset ) );
+				if( receiverClipZ <= blockerClipZ ) numBlockers ++;
 
 			}
 
-			return float( numBlockers ) / ( 2.0 * float( PCSS_NUM_POISSON_SAMPLES * PCSS_QUALITY_LEVEL ) );
+			return float( numBlockers ) / ( 2.0 * float( PCSS_NUM_POISSON_SAMPLES ) );
 		}
 
-		float percentCloserSoftShadow( sampler2D shadowMap, const in float lightRadius, const in vec3 shadowCameraFovNearFar, const in vec4 coords ) {
+		float percentCloserSoftShadow( sampler2D shadowMap, const in float shadowRadius, const in float spreadAngle, const in vec3 shadowCameraParams, const in vec4 coords, const int lightType ) {
 
 			vec2 uv = coords.xy;
-			float receiverClipZ = coords.z, cameraNear = shadowCameraFovNearFar.y, cameraFar = shadowCameraFovNearFar.z;
-			float lightFrustumHalfHeightAt1m = tan( cameraNear * 0.5 );
-
-			float receiverLightZ = -perspectiveDepthToViewZ( receiverClipZ, cameraNear, cameraFar );
+			float receiverLightZ = coords.z;
+			float cameraNear = shadowCameraParams.y, cameraFar = shadowCameraParams.z;
+			float zReceiverLightSpace;
+			if(lightType == 0)
+				zReceiverLightSpace = -orthographicDepthToViewZ( receiverLightZ, cameraNear, cameraFar );
+			else
+				zReceiverLightSpace = -perspectiveDepthToViewZ( receiverLightZ, cameraNear, cameraFar );
 
 			// STEP 1: blocker search
-			float blockerLightZ = findBlockerLightZ( shadowMap, uv, lightFrustumHalfHeightAt1m, receiverLightZ, lightRadius, cameraNear, cameraFar );
+			float blockerLightZ = findBlockerLightZ( shadowMap, uv, receiverLightZ, zReceiverLightSpace, shadowRadius, spreadAngle, shadowCameraParams, uv, lightType );
 		
 			//There are no occluders so early out (this saves filtering)
 			if( blockerLightZ == -1.0 ) return 1.0;
 
-			// STEP 2: penumbra size
-			float filterRadius = ( lightRadius / blockerLightZ ) * ( receiverLightZ - blockerLightZ ) / ( receiverLightZ * lightFrustumHalfHeightAt1m * 2.0 );
+			float avgBlockerDepthLightSpace;
+			float filterRadius = 0.0;
 
+			// STEP 2: penumbra size
+			if(lightType == 0) {
+				avgBlockerDepthLightSpace = -orthographicDepthToViewZ( blockerLightZ, cameraNear, cameraFar );
+				filterRadius = (zReceiverLightSpace - avgBlockerDepthLightSpace) * spreadAngle/shadowCameraParams.x;
+			}
+			else {
+				avgBlockerDepthLightSpace = -perspectiveDepthToViewZ( blockerLightZ, cameraNear, cameraFar );
+				float penumbraRatio = penumbraSize( zReceiverLightSpace, avgBlockerDepthLightSpace );
+				float lightFrustrumWidth = 2.0 * cameraNear * tan(shadowCameraParams.x * 0.5);
+				filterRadius = penumbraRatio * ( shadowRadius/lightFrustrumWidth ) * cameraNear / zReceiverLightSpace;
+			}
 			// STEP 3: filtering
-			return percentCloserFilter( shadowMap, uv, receiverClipZ, filterRadius );
+			return percentCloserFilter( shadowMap, uv, receiverLightZ, filterRadius, uv );
 		}
 
 	#endif
@@ -168,7 +194,7 @@
 
 	}
 
-	float getShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec3 shadowCameraFovNearFar, vec4 shadowCoord ) {
+	float getShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, float spreadAngle, vec3 shadowCameraParams, vec4 shadowCoord, const int lightType ) {
 
 		shadowCoord.xyz /= shadowCoord.w;
 		shadowCoord.z += shadowBias;
@@ -229,7 +255,7 @@
 
 		#elif defined( SHADOWMAP_TYPE_PCSS )
 
-		  return percentCloserSoftShadow( shadowMap, /* interpreted as lightRadius */ shadowRadius, shadowCameraFovNearFar, shadowCoord );
+		  return percentCloserSoftShadow( shadowMap, shadowRadius, spreadAngle, shadowCameraParams, shadowCoord, lightType );
 
 		#else // no percentage-closer filtering:
 

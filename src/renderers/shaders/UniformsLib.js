@@ -115,31 +115,30 @@ THREE.UniformsLib = {
 		"directionalLights": { value: [], properties: {
 			"direction": {},
 			"color": {},
-
-			"shadow": {},
-			"shadowBias": {},
-			"shadowRadius": {},
-			"shadowMapSize": {},
-			"shadowCameraFovNearFar": {}
+			"shadow": { type: "1i" },
+			"shadowBias": { type: "1f" },
+			"spreadAngle": { type: "1f" },
+			"shadowMapSize": { type: "v2" },
+			"shadowCameraParams": { type: "v3" }
 		} },
 
-		"directionalShadowMap": { value: [] },
-		"directionalShadowMatrix": { value: [] },
+		"directionalShadowMap": { type: "tv", value: [] },
+		"directionalShadowMatrix": { type: "m4v", value: [] },
 
-		"spotLights": { value: [], properties: {
-			"color": {},
-			"position": {},
-			"direction": {},
-			"distance": {},
-			"coneCos": {},
-			"penumbraCos": {},
-			"decay": {},
+		"spotLights": { type: "sa", value: [], properties: {
+			"color": { type: "c" },
+			"position": { type: "v3" },
+			"direction": { type: "v3" },
+			"distance": { type: "1f" },
+			"coneCos": { type: "1f" },
+			"penumbraCos": { type: "1f" },
+			"decay": { type: "1f" },
 
-			"shadow": {},
-			"shadowBias": {},
-			"shadowRadius": {},
-			"shadowMapSize": {},
-			"shadowCameraFovNearFar": {}
+			"shadow": { type: "1i" },
+			"shadowBias": { type: "1f" },
+			"shadowRadius": { type: "1f" },
+			"shadowMapSize": { type: "v2" },
+			"shadowCameraParams": { type: "v3" }
 		} },
 
 		"spotShadowMap": { value: [] },

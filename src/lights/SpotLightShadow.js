@@ -3,8 +3,9 @@
  */
 
 THREE.SpotLightShadow = function () {
-
-	THREE.LightShadow.call( this, new THREE.PerspectiveCamera( 50 * THREE.Math.RAD2DEG * 2, 1, 0.5, 500 ) );
+	var fov = 50;
+	this.cameraParams = new THREE.Vector3( fov, 10.5, 1000 );
+	THREE.LightShadow.call( this, new THREE.PerspectiveCamera( this.cameraParams.x, 1, this.cameraParams.y, this.cameraParams.z ) );
 
 };
 
@@ -20,18 +21,14 @@ THREE.SpotLightShadow.prototype = Object.assign( Object.create( THREE.LightShado
 
 		var camera = this.camera;
 
-		if ( fov !== camera.fov || aspect !== camera.aspect || far !== camera.far ) {
+		this.cameraParams.x = fov * THREE.Math.DEG2RAD;
+		this.cameraParams.y = light.shadow.camera.near;
+		this.cameraParams.z = far;
 
-			camera.fov = fov;
-			camera.aspect = aspect;
-			camera.far = far;
-			camera.updateProjectionMatrix();
-
-		}
-
-		this.cameraFovNearFar.x = light.angle;
-		this.cameraFovNearFar.y = camera.near;
-		this.cameraFovNearFar.z = camera.far;
+		camera.fov = fov;
+		camera.aspect = aspect;
+		camera.far = far;
+		camera.updateProjectionMatrix();
 
 	}
 

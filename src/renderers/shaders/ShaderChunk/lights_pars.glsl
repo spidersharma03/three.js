@@ -22,9 +22,9 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 		int shadow;
 		float shadowBias;
-		float shadowRadius;
+		float spreadAngle;
 		vec2 shadowMapSize;
-		vec3 shadowCameraFovNearFar;
+		vec3 shadowCameraParams;
 	};
 
 	uniform DirectionalLight directionalLights[ NUM_DIR_LIGHTS ];
@@ -98,7 +98,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		float shadowBias;
 		float shadowRadius;
 		vec2 shadowMapSize;
-		vec3 shadowCameraFovNearFar;
+		vec3 shadowCameraParams;
 	};
 
 	uniform SpotLight spotLights[ NUM_SPOT_LIGHTS ];
