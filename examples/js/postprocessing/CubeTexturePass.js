@@ -22,7 +22,6 @@ THREE.CubeTexturePass = function ( camera, envMap, opacity ) {
 	this.opacity = ( opacity !== undefined ) ? opacity : 1.0;
 	this.roughness = 0.0;
 
-
 	this.cubeScene = new THREE.Scene();
 	this.cubeCamera = new THREE.PerspectiveCamera();
 	this.cubeScene.add( this.cubeMesh );

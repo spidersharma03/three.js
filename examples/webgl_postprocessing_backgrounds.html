@@ -38,7 +38,6 @@
 		<script src="js/libs/stats.min.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
 
-
 		<script src="js/Half.js"></script>
 		<script src="js/Encodings.js"></script>
 		<script src="js/pmrem/PMREMGenerator.js"></script>
@@ -86,7 +85,6 @@
 				//autoRotate: true,
 
 				//camera: 'perspective'
-		
 			};
 
 			init();
@@ -281,7 +279,7 @@
 				stats.begin();
 
 				cameraP.updateMatrixWorld( true );
-			
+
 				var newColor = clearPass.clearColor;
 				switch( params.clearColor ) {
 					case 'blue': newColor = 0x0000ff; break;

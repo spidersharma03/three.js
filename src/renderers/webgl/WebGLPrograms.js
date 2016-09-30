@@ -147,7 +147,7 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 
 			vertexColors: material.vertexColors,
 
-			fog: fog,
+			fog: !! fog,
 			useFog: material.fog,
 			fogExp: fog instanceof THREE.FogExp2,
 
