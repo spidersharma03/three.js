@@ -290,7 +290,6 @@
 
 				outlinePass = new THREE.OutlinePass( new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
 				composer.addPass( outlinePass );
-
 				var onLoad = function ( texture ) {
 					outlinePass.patternTexture = texture;
 					texture.wrapS = THREE.RepeatWrapping;
