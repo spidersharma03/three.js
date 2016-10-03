@@ -4,17 +4,18 @@ struct AABB {
 	vec3 min;
 	vec3 max;
 };
-const float roomlength = 100.0;
-const float roomWidth  = 150.0;
-const float platformWidth = 25.0;
-const float platformHeight = 30.0;
+const float roomlength = 118.5;
+const float roomWidth  = 132.0;
+const float platformWidth = 24.1;
+const float platformHeight = 32.5;
 const AABB proxy1 = AABB(vec3(-roomWidth*0.5, 0.0, -roomlength * 0.5), vec3(roomWidth*0.5, platformHeight, -roomlength * 0.5 + platformWidth));
 //const AABB proxy2 = AABB(vec3(-roomWidth*0.5, 0.0, roomlength * 0.5 - platformWidth), vec3(roomWidth*0.5, platformHeight, roomlength * 0.5));
-const AABB proxy2 = AABB(vec3(roomWidth*0.5-platformWidth, 0.0, -roomlength * 0.5), vec3(roomWidth*0.5, platformHeight, roomlength * 0.5));
-const AABB probeAABB1 = AABB(vec3(-roomWidth*0.5, 0.0, -50.0), vec3(roomWidth*0.5, 100.0, 50.0));
+const AABB proxy2 = AABB(vec3(-roomWidth*0.5, 0.0, -roomlength * 0.5), vec3(-roomWidth*0.5 + platformWidth, platformHeight, roomlength * 0.5));
+const AABB proxy3 = AABB(vec3(-roomWidth*0.5, 55.25, -45.5), vec3(roomWidth*0.5, 78.75, -roomlength * 0.5));
+const AABB probeAABB1 = AABB(vec3(-roomWidth*0.5, 0.0, -roomlength*0.5), vec3(roomWidth*0.5, 100.0, roomlength*0.5));
 
-const vec3 probe1Pos = vec3(0.0, 15.0, 0.0);
-const vec3 probe2Pos = vec3(0.0, 50.0, 0.0);
+const vec3 probe1Pos = vec3(0.0, 40.0, 0.0);
+const vec3 probe2Pos = vec3(0.0, 45.0, 0.0);
 
 struct Ray {
     vec3 origin;
@@ -53,11 +54,11 @@ bool intersection(const in AABB aabb, const in Ray r, inout vec3 hitPoint) {
 }
 
 bool closestProbe( const in vec3 position, const in vec3 normal ) {
+	return false;
 	vec3 d1 = probe1Pos - position;
 	vec3 d2 = probe2Pos - position;
 	float dot1 = dot(normal, d1);
 	float dot2 = dot(normal, d2);
-	return false;
 	return dot(d1, d1) < dot(d2, d2) && dot1 > 0.0 && dot2 > 0.0;
 }
 
@@ -66,14 +67,18 @@ vec3 cubeMapProject(vec3 nrdir, vec3 vPositionW, inout float distance, inout vec
 		Ray ray = makeRay(vPositionW, nrdir);
 		vec3 p1 = vec3(100000.0, 100000.0, 100000.0);
 		vec3 p2 = vec3(100000.0, 100000.0, 100000.0);
+		vec3 p3 = vec3(100000.0, 100000.0, 100000.0);
 		bool bRes1 = intersection(proxy1, ray, p1);
 		bool bRes2 = intersection(proxy2, ray, p2);
+		bool bRes3 = intersection(proxy3, ray, p3);
 		hitPoint = vec3(100000.0, 100000.0, 100000.0);
 
-		if(bRes1 || bRes2) {
+		if(bRes1 || bRes2 || bRes3) {
 			vec3 d1 = p1 - vPositionW;
 			vec3 d2 = p2 - vPositionW;
+			vec3 d3 = p3 - vPositionW;
 			hitPoint = dot(d1, d1) < dot( d2, d2) ? p1 : p2;
+			hitPoint = dot(hitPoint, hitPoint) < dot( d3, d3) ? hitPoint : p3;
 			//return vec3(0.0);
 		}
 
@@ -303,7 +308,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 			vec3 hitPoint;
 			worldNormal = cubeMapProject(worldNormal, vertexWorldPosition, distance, hitPoint);
 			vec3 queryVec = flipNormal * vec3( flipEnvMap * worldNormal.x, worldNormal.yz );
-			vec4 envMapColor = textureCubeUV( envMapProbe1, queryVec, 1.0 );
+			vec4 envMapColor = textureCubeUV( envMap, queryVec, 1.0 );
 
 		#else
 
@@ -390,12 +395,12 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 				envMapColor = textureCubeUV(envMap, queryReflectVec, baseRoughness);
 			}
 			else {
-			  reflectVec = normalize( hitPoint - probe2Pos );
+			  reflectVec = normalize( hitPoint - probe1Pos );
 				float distanceFn = length(hitPoint - vertexWorldPosition)/100.0;
 				float newRoughness = clamp(baseRoughness * distanceFn, 0.0, baseRoughness);
 				newRoughness = mix(newRoughness, baseRoughness, baseRoughness);
 				vec3 queryReflectVec = flipNormal * vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
-				envMapColor = textureCubeUV(envMapProbe1, queryReflectVec, baseRoughness * distanceFn);
+				envMapColor = textureCubeUV(envMap, queryReflectVec, baseRoughness);
 			}
 
 		#elif defined( ENVMAP_TYPE_EQUIREC )

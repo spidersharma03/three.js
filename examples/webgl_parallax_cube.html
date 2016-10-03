@@ -58,8 +58,8 @@
 			var FAR = 500;
 
 			var camera, scene, renderer;
-			var numProbes = 2;
-			var probePositions = [new THREE.Vector3(0, 15, 0), new THREE.Vector3(0, 50, 0)];
+			var numProbes = 1;
+			var probePositions = [new THREE.Vector3(0, 40, 0), new THREE.Vector3(0, 45, 0)];
 			var probes = [];
 
 			var cubeCamera;
@@ -68,8 +68,27 @@
 			var planeLeft, planeRight, planeTop, planeBottom, planeBack, planeFront;
 			var boxMesh1, boxMesh2;
 			var graniteMesh1, graniteMesh2;
+			var graniteMeshes = [];
+			var shMeshes = [];
+			var handleMeshes = [];
+			var skirtMeshes = [];
+			var hobBlackMesh, hobChromeMesh;
+			var sinkMesh;
 
-			var obj3d;
+			var carMeshes = [];
+			var chimneyBlackMesh, chimneyChromeMesh;
+
+			var graniteMaterial;
+			var shMaterial;
+			var handleMaterial;
+			var skirtMaterial;
+			var hobBlackMaterial, hobChromeMaterial;
+			var sinkMaterial;
+
+			var carMaterial;
+			var chimneyBlackMaterial, chimneyChromeMaterial;
+
+			var rootNode = new THREE.Object3D();
 
 			var cameraControls;
 
@@ -88,18 +107,22 @@
 				allLoaded = true;
 			};
 
+			var modelLoader = new THREE.OBJLoader();
+
 			function init() {
 
 				// renderer
 				renderer = new THREE.WebGLRenderer({antialias : true});
 				// renderer.shadowMap.type = THREE.PCSSSoftShadowMap;
 				renderer.shadowMap.enabled = true;
+				// renderer.toneMapping = THREE.LinearToneMapping;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( WIDTH, HEIGHT );
 				renderer.setClearColor(0xeeeeff);
 				// scene
 				scene = new THREE.Scene();
-
+				scene.add(rootNode);
+				loadModels();
 				// camera
 				camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
 				camera.position.set( 0, 75, 160 );
@@ -113,6 +136,167 @@
 				var container = document.getElementById( 'container' );
 				container.appendChild( renderer.domElement );
 
+			}
+
+			function IdentifyAndAddMeshes(mesh) {
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+				IdentifyAndAddGraniteTopMeshes(mesh);
+				IdentifyAndAddSHMeshes(mesh);
+				IdentifyAndAddHandleMeshes(mesh);
+				IdentifyAndAddSkirtMeshes(mesh);
+				IdentifyAndAddHobMeshes(mesh);
+				IdentifyAndAddSinkMesh(mesh);
+
+				IdentifyAndAddCarMeshes(mesh);
+				IdentifyAndAddChimneyMeshes(mesh);
+			}
+
+			function IdentifyAndAddGraniteTopMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("ctop") ) {
+					graniteMeshes.push(mesh);
+				}
+			}
+
+			function IdentifyAndAddSHMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("_sh_") || name.includes("_dr_") ) {
+					shMeshes.push(mesh);
+				}
+			}
+
+			function IdentifyAndAddCarMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("_car") || name.includes("_cur") ) {
+					carMeshes.push(mesh);
+				}
+			}
+
+			function IdentifyAndAddChimneyMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("_chimneyblack") ) {
+					chimneyBlackMesh = mesh;
+				}
+				if( name.includes("_chimney_chrome") ) {
+					chimneyChromeMesh = mesh;
+				}
+			}
+
+			function IdentifyAndAddHandleMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("_handle_") ) {
+					handleMeshes.push(mesh);
+				}
+			}
+
+			function IdentifyAndAddSkirtMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("_skirt_") || name.includes("_skirting_") ) {
+					skirtMeshes.push(mesh);
+				}
+			}
+
+			function IdentifyAndAddHobMeshes(mesh) {
+				var name = mesh.name;
+				if( name.includes("_hob_black") ) {
+					hobBlackMesh = mesh;
+				}
+				if( name.includes("_hob_chrome") ) {
+					hobChromeMesh = mesh;
+				}
+			}
+
+			function IdentifyAndAddSinkMesh(mesh) {
+				var name = mesh.name;
+				if( name.includes("_sink_") ) {
+					sinkMesh = mesh;
+				}
+			}
+
+			function loadModels() {
+				rootNode.position.x = 44;
+				rootNode.position.z = 0.2;
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_clean_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_clean_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_consumable_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_consumable_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_cook_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_cook_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_non consumable_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_non consumable_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_prep_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_prep_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
 			}
 
 			function fillScene() {
@@ -129,6 +313,7 @@
 				var wallTexture3 = loader.load("textures/Pink wall paint stucco plaster texture tileable.jpg");
 				var ceilingTexture = loader.load("textures/tilable_wall.jpg");
 				var graniteTexture = loader.load("textures/granite.jpg");
+				// var graniteTexture = loader.load("textures/marble-tiles-500x500.jpg");
 				var cupboardTexture = loader.load("textures/Hickory.jpg");
 
 				floorTexture.wrapS = THREE.RepeatWrapping;
@@ -149,8 +334,8 @@
 				ceilingTexture.repeat.set( 4.5, 3 );
 
 				// walls
-				var roomwidth = 150;
-				var roomlength = 100;
+				var roomwidth = 132;
+				var roomlength = 118.5;
 				var roomHeight = 100;
 
 				graniteTexture.wrapS = THREE.RepeatWrapping;
@@ -193,6 +378,7 @@
 				planeBack.scale.y = roomHeight;
 				planeBack.castShadow = true;
 				planeBack.receiveShadow = true;
+				// planeBack.material.side = THREE.DoubleSide;
 				scene.add( planeBack );
 
 			  planeFront = new THREE.Mesh( planeGeo, new THREE.MeshStandardMaterial( { color: 0xffffff, map:wallTexture1, bumpMap:wallTexture1, bumpScale:0.1, roughness: 0.1 } ) );
@@ -223,18 +409,19 @@
 				planeLeft.scale.y = roomHeight;
 				planeLeft.castShadow = true;
 				planeLeft.receiveShadow = true;
+				// planeLeft.material.side = THREE.DoubleSide;
 				scene.add( planeLeft );
 
 				var graniteThickness = 2;
-				var graniteWidth = roomlength/4;
-				var boxHeight = 30;
-				var boxGeometry = new THREE.BoxGeometry(roomwidth, boxHeight - graniteThickness, graniteWidth );
+				var graniteWidth = 24.1;
+				var boxHeight = 32.5;
+				var boxGeometry = new THREE.BoxGeometry(roomwidth, 23.5, 14 );
 				boxMesh1 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0x330000, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2  } ) );
-				boxMesh1.position.z = -roomlength/2 + graniteWidth/2;
-				boxMesh1.position.y = (boxHeight - graniteThickness)/2;
+				boxMesh1.position.z = -52.5;
+				boxMesh1.position.y = 67;
 				boxMesh1.castShadow = true;
 				boxMesh1.receiveShadow = true;
-				scene.add( boxMesh1 );
+				// scene.add( boxMesh1 );
 
 				var boxGeometry = new THREE.BoxGeometry(roomwidth, graniteThickness, graniteWidth );
 				graniteMesh1 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05  } ) );
@@ -242,23 +429,35 @@
 				graniteMesh1.position.y = (boxHeight - graniteThickness) + graniteThickness/2;
 				graniteMesh1.castShadow = true;
 				graniteMesh1.receiveShadow = true;
-				scene.add( graniteMesh1 );
+				// scene.add( graniteMesh1 );
 
 				var boxGeometry = new THREE.BoxGeometry(roomlength, boxHeight - graniteThickness, graniteWidth );
 				boxMesh2 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0x330000, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2  } ) );
 				boxMesh2.position.y = (boxHeight - graniteThickness)/2;
 				boxMesh2.rotation.y = Math.PI/2;
-				boxMesh2.position.x = roomwidth/2 - graniteWidth/2;
+				boxMesh2.position.x = -roomwidth/2 + graniteWidth/2;
 				boxMesh2.position.z = 0;
-				scene.add( boxMesh2 );
+				// scene.add( boxMesh2 );
 
 				var boxGeometry = new THREE.BoxGeometry(roomlength, graniteThickness, graniteWidth );
 				graniteMesh2 = new THREE.Mesh( boxGeometry, new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05  } ) );
 				graniteMesh2.rotation.y = Math.PI/2;
-				graniteMesh2.position.x = roomwidth/2 - graniteWidth/2;
+				graniteMesh2.position.x = -roomwidth/2 + graniteWidth/2;
 				graniteMesh2.position.y = (boxHeight - graniteThickness) + graniteThickness/2;
 				graniteMesh2.position.z = 0;
-				scene.add( graniteMesh2 );
+				// scene.add( graniteMesh2 );
+
+			  graniteMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05, metalness:0.0  } );
+				shMaterial = new THREE.MeshStandardMaterial( { color: 0x003333, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
+				handleMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.1, metalness: 1.0  } );
+				skirtMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: graniteTexture, bumpScale:0.30, roughness:0.95, metalness: 0.0  } );
+				hobBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
+				hobChromeMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness: 1.0  } );
+				sinkMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness: 1.0  } );
+
+				carMaterial = new THREE.MeshStandardMaterial( { color: 0xaaaaaa, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
+				chimneyBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
+				chimneyChromeMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness: 1.0  } );
 
 				// var boxHeight = roomHeight/4;
 				// var boxWidth = roomHeight/4;
@@ -301,6 +500,7 @@
 				spotLight.position.set( 0, roomHeight/1, 0 );
 				spotLight.target.position.set( 0, 0, 0 );
 				spotLight.castShadow = true;
+				spotLight.shadow.bias = -0.001;
 
 				spotLight.shadow.mapSize.width = 512;
 				spotLight.shadow.mapSize.height = 512;
@@ -432,6 +632,65 @@
 					graniteMesh2.material.envMap = probes[0];
 					graniteMesh2.material.envMapProbe1 = probes[1];
 					graniteMesh2.material.needsUpdate = true;
+
+					for( var i=0; i<graniteMeshes.length; i++) {
+						graniteMaterial.envMap = probes[0];
+						graniteMaterial.envMapProbe1 = probes[1];
+						graniteMaterial.needsUpdate = true;
+						graniteMeshes[i].material = graniteMaterial;
+						var texture = graniteMaterial.map;
+						texture.wrapS = THREE.RepeatWrapping;
+						texture.wrapT = THREE.RepeatWrapping;
+						texture.repeat.set( 4, 4 );
+					}
+					for( var i=0; i<shMeshes.length; i++) {
+						shMaterial.envMap = probes[0];
+						shMaterial.envMapProbe1 = probes[1];
+						shMaterial.needsUpdate = true;
+						shMeshes[i].material = shMaterial;
+					}
+					for( var i=0; i<handleMeshes.length; i++) {
+						handleMaterial.envMap = probes[0];
+						handleMaterial.envMapProbe1 = probes[1];
+						handleMaterial.needsUpdate = true;
+						handleMeshes[i].material = handleMaterial;
+					}
+					for( var i=0; i<skirtMeshes.length; i++) {
+						skirtMaterial.envMap = probes[0];
+						skirtMaterial.envMapProbe1 = probes[1];
+						skirtMaterial.needsUpdate = true;
+						skirtMeshes[i].material = skirtMaterial;
+					}
+					for( var i=0; i<carMeshes.length; i++) {
+						carMaterial.envMap = probes[0];
+						carMaterial.envMapProbe1 = probes[1];
+						carMaterial.needsUpdate = true;
+						carMeshes[i].material = carMaterial;
+					}
+					hobBlackMaterial.envMap = probes[0];
+					hobBlackMaterial.envMapProbe1 = probes[1];
+					hobBlackMaterial.needsUpdate = true;
+					hobBlackMesh.material = hobBlackMaterial;
+
+					hobChromeMaterial.envMap = probes[0];
+					hobChromeMaterial.envMapProbe1 = probes[1];
+					hobChromeMaterial.needsUpdate = true;
+					hobChromeMesh.material = hobChromeMaterial;
+
+					sinkMaterial.envMap = probes[0];
+					sinkMaterial.envMapProbe1 = probes[1];
+					sinkMaterial.needsUpdate = true;
+					sinkMesh.material = sinkMaterial;
+
+					chimneyBlackMaterial.envMap = probes[0];
+					chimneyBlackMaterial.envMapProbe1 = probes[1];
+					chimneyBlackMaterial.needsUpdate = true;
+					chimneyBlackMesh.material = chimneyBlackMaterial;
+
+					chimneyChromeMaterial.envMap = probes[0];
+					chimneyChromeMaterial.envMapProbe1 = probes[1];
+					chimneyChromeMaterial.needsUpdate = true;
+					chimneyChromeMesh.material = chimneyChromeMaterial;
 					// boxMesh2.material.envMap = pmremCubeUVPacker.CubeUVRenderTarget.texture;
 					// boxMesh2.material.needsUpdate = true;
 					boxMesh1.visible = true;
