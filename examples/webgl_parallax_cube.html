@@ -113,9 +113,9 @@
 
 				// renderer
 				renderer = new THREE.WebGLRenderer({antialias : true});
-				// renderer.shadowMap.type = THREE.PCSSSoftShadowMap;
+				renderer.shadowMap.type = THREE.PCSSSoftShadowMap;
 				renderer.shadowMap.enabled = true;
-				// renderer.toneMapping = THREE.LinearToneMapping;
+				renderer.toneMapping = THREE.LinearToneMapping;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( WIDTH, HEIGHT );
 				renderer.setClearColor(0xeeeeff);
@@ -448,7 +448,7 @@
 				// scene.add( graniteMesh2 );
 
 			  graniteMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05, metalness:0.0  } );
-				shMaterial = new THREE.MeshStandardMaterial( { color: 0x003333, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
+				shMaterial = new THREE.MeshStandardMaterial( { color: 0x663311, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
 				handleMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.1, metalness: 1.0  } );
 				skirtMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: graniteTexture, bumpScale:0.30, roughness:0.95, metalness: 0.0  } );
 				hobBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
@@ -497,17 +497,18 @@
 				spotLight.angle = Math.PI/3;
 				spotLight.penumbra = 0.04;
 				// spotLight.decay = 1;
-				spotLight.position.set( 0, roomHeight/1, 0 );
-				spotLight.target.position.set( 0, 0, 0 );
+				spotLight.position.set( 40, 1, 0 );
+				spotLight.target.position.set( 40, roomHeight, 0 );
 				spotLight.castShadow = true;
-				spotLight.shadow.bias = -0.001;
+				spotLight.shadow.bias = 0.0005;
 
-				spotLight.shadow.mapSize.width = 512;
-				spotLight.shadow.mapSize.height = 512;
+				spotLight.shadow.mapSize.width = 1024;
+				spotLight.shadow.mapSize.height = 1024;
 
 				spotLight.shadow.camera.near = 10;
 				spotLight.shadow.camera.far = 4000;
 				spotLight.shadow.camera.fov = 30;
+				spotLight.shadow.radius = 6;
 
 				scene.add( spotLight );
 
