@@ -29636,7 +29636,7 @@ THREE.WebGLProgram = ( function () {
 
 		var mapUVChannelsCode = "";
 		var mapTexelTransformCode = "";
-		var mapUvChannels = [];
+		var mapUvChannels = {};
 		for( var i = 0; i < supportedMapNames.length; i ++ ) {
 			var mapName = supportedMapNames[i];
 			var map = material[ mapName + 'Slot' ];
