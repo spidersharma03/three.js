@@ -91,7 +91,12 @@ IncidentLight directLight;
 
 	#ifdef USE_LIGHTMAP
 
-		vec3 lightMapIrradiance = texture2D( lightMap, vUv2 ).xyz * lightMapIntensity;
+		#if defined( TEXTURE_SLOTS )
+			vec2 lightUv = lightMapUV();
+			vec3 lightMapIrradiance = lightMapTexelTransform( texture2D( lightMap, vUv2 ) ).xyz;
+		#else
+			vec3 lightMapIrradiance = texture2D( lightMap, vUv2 ).xyz * lightMapIntensity;
+		#endif
 
 		#ifndef PHYSICALLY_CORRECT_LIGHTS
 
@@ -134,7 +139,7 @@ IncidentLight directLight;
 	#else
 		vec3 clearCoatRadiance = vec3( 0.0 );
 	#endif
-		
+
 	RE_IndirectSpecular( radiance, clearCoatRadiance, geometry, material, reflectedLight );
 
 #endif
