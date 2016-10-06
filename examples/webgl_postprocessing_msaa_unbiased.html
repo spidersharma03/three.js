@@ -66,7 +66,7 @@
 				clearColor: 'black',
 				clearAlpha: 1.0,
 				autoRotate: true
-		
+
 			};
 
 			init();
@@ -91,10 +91,10 @@
 					'Level 5: 32 Samples': 5
 				} );
 				gui.add( params, 'camera', [ 'perspective', 'orthographic' ] );
-				gui.add( params, "clearColor", [ 'black', 'white', 'blue', 'green', 'red' ] );		
-				gui.add( params, "clearAlpha", 0, 1 );		
+				gui.add( params, "clearColor", [ 'black', 'white', 'blue', 'green', 'red' ] );
+				gui.add( params, "clearAlpha", 0, 1 );
 				gui.add( params, "autoRotate" );
-			
+
 				gui.open();
 
 			}
@@ -186,7 +186,7 @@
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
 				copyPass.renderToScreen = true;
 				composer.addPass( copyPass );
-				
+
 				window.addEventListener( 'resize', onWindowResize, false );
 
 			}
@@ -239,7 +239,9 @@
 					case 'green': newColor = 0x00ff00; break;
 					case 'white': newColor = 0xffffff; break;
 					case 'black': newColor = 0x000000; break;
+
 				}
+				msaaRenderPassP.clear = msaaRenderPassO.clearColor  = true;
 				msaaRenderPassP.clearColor = msaaRenderPassO.clearColor = newColor;
 				msaaRenderPassP.clearAlpha = msaaRenderPassO.clearAlpha = params.clearAlpha;
 
