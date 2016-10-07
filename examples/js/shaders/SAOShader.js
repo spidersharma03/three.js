@@ -46,7 +46,8 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 20,
+		'NUM_SAMPLES': 15,
+		'MAX_SAMPLES': 15,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -61,6 +62,8 @@ THREE.SAOShader = {
 
 	uniforms: {
 
+		"tAOPrevious":  { type: "t", value: null },
+		"tAlbedo":		  { type: "t", value: null },
 		"tDepth":       { type: "t", value: null },
 		"tDepth1":       { type: "t", value: null },
 		"tDepth2":       { type: "t", value: null },
@@ -79,7 +82,9 @@ THREE.SAOShader = {
 
 		"occlusionSphereWorldRadius": { type: "f", value: 100.0 },
 		"worldToScreenRatio": { type: "v2", value: new THREE.Vector2( 1, 1 ) },
-		"randomSeed":   { type: "f", value: 0.0 }
+		"randomSeed":   { type: "f", value: 0.0 },
+		"frameCount":   { type: "f", value: 0.0 },
+		"currentFrameCount":   { type: "f", value: 0.0 }
 	},
 
 	vertexShader: [
@@ -102,6 +107,9 @@ THREE.SAOShader = {
 		"#include <common>",
 
 		"varying vec2 vUv;",
+
+		"uniform sampler2D tAOPrevious;",
+		"uniform sampler2D tAlbedo;",
 
 		"#if DIFFUSE_TEXTURE == 1",
 			"uniform sampler2D tDiffuse;",
@@ -131,6 +139,8 @@ THREE.SAOShader = {
 		"uniform vec2 size;",
 		"uniform vec2 worldToScreenRatio;",
 		"uniform float randomSeed;",
+		"uniform float frameCount;",
+		"uniform float currentFrameCount;",
 
 
 		"#include <sao>",
@@ -201,8 +211,8 @@ THREE.SAOShader = {
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
 
-			"return max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 );// * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
-
+			"float occlusion = max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.0001 ), 0.0 );// * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			"return pow(occlusion,1.0);",
 		"}",
 
 		/*
@@ -223,10 +233,10 @@ THREE.SAOShader = {
 		"}",
 
 		// moving costly divides into consts
-		"const float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );",
-		"const float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );",
+		"const float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( MAX_SAMPLES );",
+		"const float INV_NUM_SAMPLES = 1.0 / float( MAX_SAMPLES );",
 
-		"float getAmbientOcclusion( const in vec3 centerViewPosition ) {",
+		"vec4 getAmbientOcclusion( const in vec3 centerViewPosition ) {",
 
 			// precompute some variables require in getOcclusion.
 			"vec3 centerViewNormal = getViewNormal( centerViewPosition, vUv );",
@@ -238,14 +248,16 @@ THREE.SAOShader = {
 
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float random = rand( vUv + randomSeed );",
-			"float angle = random * PI2;",
-			"float radiusStep = INV_NUM_SAMPLES;",
+			"float angle = random * PI2 + ANGLE_STEP * (frameCount - 1.0);",
+			"float radiusStep = INV_NUM_SAMPLES/float(1.0);",
 			"float radius = radiusStep * ( 0.5 + random );",
 
 			"float occlusionSum = 0.0;",
+			"vec3 colorSum = vec3(0.0);",
+			"float weightSum = 0.0;",
 
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"radius = (float(i) + 0.5) * radiusStep;",
+				"radius = ((float(i) + 0.0 - 0.0) + 0.5) * radiusStep;",
 				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * screenRadius * 4.0;",
 
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
@@ -266,11 +278,19 @@ THREE.SAOShader = {
 
 				"float sampleViewZ = getViewZ( sampleDepth );",
 				"vec3 sampleViewPosition = getViewPosition( sampleUv, sampleDepth, sampleViewZ );",
-				"occlusionSum += getOcclusion( centerViewPosition, centerViewNormal, sampleViewPosition );",
+				"vec3 sampleColor = texture2D(tAlbedo, sampleUv).rgb;",
+				"float occlusion = getOcclusion( centerViewPosition, centerViewNormal, sampleViewPosition );",
+				"occlusionSum += occlusion;",
+				"vec3 viewDelta = (sampleViewPosition - centerViewPosition);",
+				"float viewDistance2 = dot( viewDelta, viewDelta );",
+				"float weight = (max(dot(viewDelta, centerViewNormal), 0.0))/(viewDistance2 + 0.001);",
+				"colorSum += sampleColor;",
+				"weightSum += (1.0);",
 
 			"}",
-
-			"return occlusionSum * intensity * 2.0 * occlusionSphereWorldRadius / ( float( NUM_SAMPLES ) );",
+			"if(weightSum > 0.0)colorSum /= weightSum;",
+			"float occlusion = occlusionSum * intensity * 2.0 * occlusionSphereWorldRadius / ( float( NUM_SAMPLES ) );",
+			"return vec4(colorSum, occlusion);",
 			//"return occlusionSum * intensity * 5.0 / ( float( NUM_SAMPLES ) * pow( occlusionSphereWorldRadius, 6.0 ) );",
 
 		"}",
@@ -291,12 +311,23 @@ THREE.SAOShader = {
 			"float centerViewZ = getViewZ( centerDepth );",
 			"vec3 viewPosition = getViewPosition( vUv, centerDepth, centerViewZ );",
 
-			"float ambientOcclusion = getAmbientOcclusion( viewPosition );",
+			"vec4 ambientOcclusion = getAmbientOcclusion( viewPosition );",
 
 			//"gl_FragColor = getDefaultColor( vUv );",
 
-			"gl_FragColor = packDepthToRGBA( centerDepth );",
-			"gl_FragColor.x = max( 1.0 - ambientOcclusion, 0.0 );",
+			"float aoValue = ( 1.0 - ambientOcclusion.a );",
+			"vec3 colorValue = ambientOcclusion.rgb * aoValue;",
+			"float prevAoSum = texture2D(tAOPrevious, vUv).a;",
+			"vec3 prevColorSum = texture2D(tAOPrevious, vUv).rgb;",
+			"if(currentFrameCount > float(MAX_SAMPLES)){",
+				"aoValue = prevAoSum;",
+				"colorValue = prevColorSum;",
+			"}",
+			"float newAoValue = (currentFrameCount - 1.0) * prevAoSum + aoValue;",
+			"vec3 newColorValue = (currentFrameCount - 1.0) * prevColorSum + colorValue;",
+			"newAoValue /= currentFrameCount;",
+			"newColorValue /= currentFrameCount;",
+			"gl_FragColor = vec4(newAoValue);",
 
 		"}"
 
@@ -520,7 +551,7 @@ THREE.SAOBilaterialFilterShader = {
 			"float rWeight = 1.0, lWeight = 1.0;",
 			"vec3 normalCenter = unpackRGBToNormal(texture2D(tAONormal, vUv).rgb);",
 
-			"for( int i = 1; i <= KERNEL_SAMPLE_RADIUS; i ++ ) {",
+			"for( int i = 1; i <= 0; i ++ ) {",
 
 				"float sampleWeight = normpdf(float(i), 5.0);",
 
@@ -540,6 +571,7 @@ THREE.SAOBilaterialFilterShader = {
 			"else {",
 				"gl_FragColor = vec4( vec3( ao ), 1.0 );",
 			"}",
+			"gl_FragColor = vec4( vec3( ao ), 1.0 );",
 
 		"}"
 

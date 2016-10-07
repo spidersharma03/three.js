@@ -20,7 +20,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.blurEnabled = true;
 	this.outputOverride = null; // 'beauty', 'depth', 'sao'
 	this.depthMIPs = false;
-	this.downSamplingRatio = 2;
+	this.downSamplingRatio = 1;
 	this.blurKernelSize = (this.downSamplingRatio === 1) ? 8 : 4;
 
 	/*
@@ -76,7 +76,9 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.copyMaterial.transparent = true;
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
-
+	this.frameCount = 1;
+	this.frameCountIncrement = 1;
+	this.currentFrameCount = 1;
 };
 
 THREE.SAOPass.prototype = {
@@ -135,6 +137,8 @@ THREE.SAOPass.prototype = {
 
 	setSize: function ( width, height ) {
 
+		if( this.saoAlbedoRenderTarget )this.saoAlbedoRenderTarget.setSize( width, height );
+		if( this.saoRenderTargetPingPong ) this.saoRenderTargetPingPong.setSize( width, height );
 		if( this.saoRenderTargetFullRes ) this.saoRenderTargetFullRes.setSize( width, height );
 		if( this.depthRenderTargetFullRes ) this.depthRenderTargetFullRes.setSize( width, height );
 		if( this.normalRenderTargetFullRes ) this.normalRenderTargetFullRes.setSize( width, height );
@@ -185,12 +189,16 @@ THREE.SAOPass.prototype = {
 
 		if ( ! this.saoRenderTarget ) {
 
-			this.saoRenderTarget = new THREE.WebGLRenderTarget( width, height,
+			this.saoAlbedoRenderTarget = new THREE.WebGLRenderTarget( width, height,
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+			this.saoRenderTarget = new THREE.WebGLRenderTarget( width, height,
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, type: THREE.FloatType, format: THREE.RGBAFormat } );
 			this.saoRenderTargetFullRes = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
 					{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+			this.saoRenderTargetPingPong = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+					{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, type: THREE.FloatType, format: THREE.RGBAFormat } );
 			this.blurIntermediateRenderTarget = new THREE.WebGLRenderTarget( width, height,
-				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, type: THREE.FloatType, format: THREE.RGBAFormat } );
 			this.depth1RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 2 ), Math.ceil( height / 2 ),
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 			this.depth2RenderTarget = new THREE.WebGLRenderTarget( Math.ceil( width / 4 ), Math.ceil( height / 4 ),
@@ -219,12 +227,17 @@ THREE.SAOPass.prototype = {
 
 		if( ! this.renderToScreen ) {
 
-			this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
-			this.copyMaterial.blending = THREE.NoBlending;
+			// this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
+			// this.copyMaterial.blending = THREE.NoBlending;
 
-			renderer.renderPass( this.copyMaterial, writeBuffer, true );
+			// renderer.renderPass( this.copyMaterial, writeBuffer, true );
 
 		}
+
+		this.copyMaterial.uniforms[ 'tDiffuse' ].value = readBuffer.texture;
+		this.copyMaterial.blending = THREE.NoBlending;
+
+		renderer.render( this.scene, this.camera, this.saoAlbedoRenderTarget, true );
 
 		var depthPackingMode = 0;
 
@@ -335,6 +348,13 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.defines[ 'DEPTH_MIPS' ] = this.depthMIPs ? 1 : 0;
 		this.saoMaterial.uniforms[ "tNormal" ].value = this.normalRenderTarget.texture;
 		this.saoMaterial.uniforms[ "tDepth" ].value = depthTexture;
+
+		var currentSAOReadTarget = (this.currentFrameCount % 2 == 0) ? this.saoRenderTargetPingPong : this.saoRenderTarget;
+		this.saoMaterial.uniforms[ "tAOPrevious" ].value = currentSAOReadTarget;
+		this.saoMaterial.uniforms[ "tAlbedo" ].value = this.saoAlbedoRenderTarget;
+		this.saoMaterial.uniforms[ "frameCount" ].value = this.frameCount;
+		this.saoMaterial.uniforms[ "currentFrameCount" ].value = this.currentFrameCount;
+
 		if( this.depthMIPs ) {
 
 			this.saoMaterial.uniforms[ "tDepth1" ].value = this.depth1RenderTarget.texture;
@@ -345,12 +365,17 @@ THREE.SAOPass.prototype = {
 		var oldClearColor = renderer.getClearColor(), oldClearAlpha = renderer.getClearAlpha();
 		renderer.setClearColor( 0xffffff, 1.0 );
 
-		renderer.renderPass( this.saoMaterial, this.saoRenderTarget, true ); // , 0xffffff, 0.0, "sao"
+		var currentSAOWriteTarget = (this.currentFrameCount % 2 == 0) ? this.saoRenderTarget : this.saoRenderTargetPingPong;
 
-		if( this.blurEnabled ) {
+		this.frameCount += this.frameCountIncrement;
+		this.currentFrameCount += 1.0;
+
+		renderer.renderPass( this.saoMaterial, currentSAOWriteTarget, true ); // , 0xffffff, 0.0, "sao"
+
+		if( false ) {
 
 			this.bilateralFilterMaterial.defines[ 'KERNEL_SAMPLE_RADIUS' ] = this.blurKernelSize;
-			this.bilateralFilterMaterial.uniforms[ "tAODepth" ].value = this.saoRenderTarget.texture;
+			this.bilateralFilterMaterial.uniforms[ "tAODepth" ].value = currentSAOWriteTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "tAONormal" ].value = this.normalRenderTarget.texture;
 			this.bilateralFilterMaterial.uniforms[ "occlusionSphereWorldRadius" ].value = this.occlusionSphereWorldRadius * 0.5;
 			this.bilateralFilterMaterial.uniforms[ "kernelDirection" ].value = new THREE.Vector2( 1, 0 );
@@ -383,7 +408,7 @@ THREE.SAOPass.prototype = {
 		if( this.outputOverride === "sao" ) {
 
 			this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.downSamplingRatio > 1.0 ? this.saoRenderTargetFullRes.texture
-			: this.saoRenderTarget.texture;
+			: currentSAOWriteTarget.texture;
 			this.copyMaterial.blending = THREE.NoBlending;
 
 			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, true );
@@ -394,7 +419,7 @@ THREE.SAOPass.prototype = {
 		renderer.autoClear = false;
 
 		this.copyMaterial.uniforms[ 'tDiffuse' ].value = this.downSamplingRatio > 1.0 ? this.saoRenderTargetFullRes.texture
-		: this.saoRenderTarget.texture;
+		: currentSAOWriteTarget.texture;
 		this.copyMaterial.blending = THREE.MultiplyBlending;
 		this.copyMaterial.premultipliedAlpha = true;
 

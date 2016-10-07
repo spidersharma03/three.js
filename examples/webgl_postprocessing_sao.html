@@ -111,9 +111,195 @@
 
 			var supportsDepthTextureExtension = false;
 			var isWebGL2 = false;
+			var rootNode = new THREE.Object3D();
+			var allLoaded = false;
+
 
 			init();
 			animate();
+
+			function SetBasicMaterial(object) {
+				if ( object instanceof THREE.Mesh ) {
+					object.material = new THREE.MeshBasicMaterial({color: 0xffffff});
+					object.material.needsUpdate = true;
+				}
+			}
+
+			function loadModels() {
+				scene.add(rootNode);
+				rootNode.scale.x = 0.1;
+				rootNode.scale.y = 0.1;
+				rootNode.scale.z = 0.1;
+
+				var manager = new THREE.LoadingManager();
+				manager.onLoad = function ( ) {
+					allLoaded = true;
+				};
+
+				var modelLoader = new THREE.OBJLoader(manager);
+
+				// rootNode.position.y = -10;
+				//rootNode.position.z = 0.2;
+				var sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+				var sphereMesh = new THREE.Mesh(sphereGeometry, new THREE.MeshBasicMaterial({color:0x00ffff}));
+				sphereMesh.position.y = -5;
+				scene.add(sphereMesh);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_clean_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_clean_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_consumable_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_consumable_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_cook_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_cook_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_non consumable_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_non consumable_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_prep_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_prep_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( SetBasicMaterial );
+					}
+				);
+
+				var roomwidth = 132;
+				var roomlength = 118.5;
+				var roomHeight = 100;
+				var planeGeo = new THREE.PlaneBufferGeometry( 1.0, 1.0 );
+
+				var rootNode1 = new THREE.Object3D();
+				rootNode1.scale.x = 0.1;
+				rootNode1.scale.y = 0.1;
+				rootNode1.scale.z = 0.1;
+				rootNode1.position.x = -4.5;
+				rootNode1.position.y = -5;
+				rootNode.position.y = -5;
+
+				var basicMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+				planeTop = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial({color:0xffffff}) );
+				planeTop.position.y = roomHeight;
+				// planeTop.position.x = roomHeight/1;
+				planeTop.rotateX( Math.PI / 2 );
+				planeTop.scale.x = roomwidth;
+				planeTop.scale.y = roomlength;
+				planeTop.castShadow = true;
+				planeTop.receiveShadow = true;
+				rootNode1.add( planeTop );
+
+			  planeBottom = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial({color:0xffffff}) );
+				planeBottom.position.y = 0;
+				planeBottom.rotateX( -Math.PI / 2 );
+				planeBottom.scale.x = roomwidth;
+				planeBottom.scale.y = roomlength;
+				rootNode1.add( planeBottom );
+				planeBottom.castShadow = true;
+				planeBottom.receiveShadow = true;
+
+				planeBack = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial({color:0xff0000}) );
+				planeBack.position.z = -roomlength/2;
+				planeBack.position.y = roomHeight/2;
+				planeBack.scale.x = roomwidth;
+				planeBack.scale.y = roomHeight;
+				planeBack.castShadow = true;
+				planeBack.receiveShadow = true;
+				// planeBack.material.side = THREE.DoubleSide;
+				rootNode1.add( planeBack );
+
+				planeFront = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial({color:0x0000ff}) );
+				planeFront.position.z = roomlength/2;
+				planeFront.position.y = roomHeight/2;
+				planeFront.rotateY( Math.PI );
+				planeFront.scale.x = roomwidth;
+				planeFront.scale.y = roomHeight;
+				planeFront.castShadow = true;
+				planeFront.receiveShadow = true;
+				rootNode1.add( planeFront );
+
+				planeRight = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial({color:0x00ff00}) );
+				planeRight.position.x = roomwidth/2;
+				planeRight.position.y = roomHeight/2;
+				planeRight.rotateY( - Math.PI / 2 );
+				planeRight.scale.x = roomlength;
+				planeRight.scale.y = roomHeight;
+				planeRight.castShadow = true;
+				planeRight.receiveShadow = true;
+				rootNode1.add( planeRight );
+
+				planeLeft = new THREE.Mesh( planeGeo, new THREE.MeshBasicMaterial({color:0x00ff00}) );
+				planeLeft.position.x = -roomwidth/2;
+				planeLeft.position.y = roomHeight/2;
+				planeLeft.rotateY( Math.PI / 2 );
+				planeLeft.scale.x = roomlength;
+				planeLeft.scale.y = roomHeight;
+				planeLeft.castShadow = true;
+				planeLeft.receiveShadow = true;
+				planeLeft.material.side = THREE.DoubleSide;
+				rootNode1.add( planeLeft );
+				scene.add(rootNode1);
+			}
 
 			function init() {
 
@@ -135,10 +321,11 @@
 				}
 
 				camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 100 );
-				camera.position.z = 0;
-				camera.position.x = 3;
+				camera.position.z = 4;
+				camera.position.x = -8;
 
 				scene = new THREE.Scene();
+				loadModels();
 
 				var manager = new THREE.LoadingManager();
 				manager.onProgress = function ( item, loaded, total ) {
@@ -163,38 +350,38 @@
 					object.scale.x /= scale;
 					object.scale.y /= scale;
 					object.scale.z /= scale;
-					scene.add( object );
+					// scene.add( object );
 				}, onProgress, onError );
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 				//controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
-				controls.enableDamping = true;
-				controls.dampingFactor = 0.25;
-				// controls.enableZoom = false;
+				//controls.enableDamping = true;
+				//controls.dampingFactor = 0.25;
+			  controls.enableZoom = true;
 
 				group = new THREE.Object3D();
-				scene.add( group );
+				// scene.add( group );
 
 				var light = new THREE.PointLight( 0xddffdd, 1.8 );
 				light.position.z = 70;
 				light.position.y = -70;
 				light.position.x = -70;
-				scene.add( light );
+				// scene.add( light );
 
 				var light2 = new THREE.PointLight( 0xffdddd, 1.8 );
 				light2.position.z = 70;
 				light2.position.x = -70;
 				light2.position.y = 70;
-				scene.add( light2 );
+				// scene.add( light2 );
 
 				var light3 = new THREE.PointLight( 0xddddff, 1.8 );
 				light3.position.z = 70;
 				light3.position.x = 70;
 				light3.position.y = -70;
-				scene.add( light3 );
+				// scene.add( light3 );
 
 				var light3 = new THREE.AmbientLight( 0xffffff, 0.05 );
-				scene.add( light3 );
+				// scene.add( light3 );
 
 				var geometry = new THREE.SphereBufferGeometry( 3, 48, 24 );
 				for ( var i = 0; i < 60; i ++ ) {
@@ -213,7 +400,7 @@
 					mesh.rotation.z = Math.random();
 
 					mesh.scale.x = mesh.scale.y = mesh.scale.z = Math.random() * 0.3 + 0.1;
-					// group.add( mesh );
+					group.add( mesh );
 				}
 
 				var floorMaterial = new THREE.MeshStandardMaterial();
@@ -247,6 +434,33 @@
 				composer.addPass( copyPass );
 
 				window.addEventListener( 'resize', onWindowResize, false );
+				window.addEventListener("mousedown", onMouseDown);
+				window.addEventListener("mouseup", onMouseUp);
+				window.addEventListener("mousemove", onMouseMove);
+				container.addEventListener("mousewheel", onMouseWheel);
+				renderer.domElement.addEventListener("mousewheel", onMouseWheel);
+			}
+
+			var isMouseDown = false;
+
+			function onMouseDown() {
+				isMouseDown = true;
+			}
+
+			function onMouseUp() {
+				isMouseDown = false;
+			}
+
+			function onMouseWheel() {
+				saoPass.frameCount = 1;
+				saoPass.currentFrameCount = 1;
+			}
+
+			function onMouseMove() {
+				if( isMouseDown ) {
+					saoPass.frameCount = 1;
+					saoPass.currentFrameCount = 1;
+				}
 			}
 
 			function onWindowResize() {
@@ -266,6 +480,9 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
+
+				if(!allLoaded)
+					return;
 
 				stats.begin();
 
