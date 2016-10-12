@@ -2312,6 +2312,16 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	function refreshUniformsPhysical ( uniforms, material ) {
 
+		uniforms.falloffDiffuse.value = material.falloffColor;
+		if ( material.falloffMap ) {
+			uniforms.falloffMap.value = material.falloffMap;
+		}
+
+		uniforms.falloffOpacity.value = material.falloffOpacity;
+		if ( material.falloffAlphaMap ) {
+			uniforms.falloffAlphaMap.value = material.falloffAlphaMap;
+		}
+
 		uniforms.clearCoat.value = material.clearCoat;
 		uniforms.clearCoatRoughness.value = material.clearCoatRoughness;
 

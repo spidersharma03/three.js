@@ -25,7 +25,7 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 		"maxMorphTargets", "maxMorphNormals", "premultipliedAlpha",
 		"numDirLights", "numPointLights", "numSpotLights", "numHemiLights",
 		"shadowMapEnabled", "shadowMapType", "toneMapping", 'physicallyCorrectLights',
-		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "depthPacking"
+		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "depthPacking", 'falloff', 'falloffMap', 'falloffAlphaMap'
 	];
 
 	var supportedMaps = THREE.Map.SupportedMapNames;
@@ -142,6 +142,11 @@ THREE.WebGLPrograms = function ( renderer, capabilities ) {
 			envMapEncoding: getTextureEncodingFromMap( material.envMap, renderer.gammaInput ),
 			envMapCubeUV: ( !! material.envMap ) && ( ( material.envMap.mapping === THREE.CubeUVReflectionMapping ) || ( material.envMap.mapping === THREE.CubeUVRefractionMapping ) ),
 			emissiveMapEncoding: getTextureEncodingFromMap( material.emissiveMap, renderer.gammaInput ),
+
+			falloff: material.falloff,
+			falloffMap: material.falloffMap,
+			falloffMapEncoding: getTextureEncodingFromMap( material.falloffMap, renderer.gammaInput ),
+			falloffAlphaMap: material.falloffAlphaMap,
 
 			combine: material.combine,
 
