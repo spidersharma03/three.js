@@ -46,8 +46,8 @@ THREE.SAOShader = {
 	blending: THREE.NoBlending,
 
 	defines: {
-		'NUM_SAMPLES': 15,
-		'MAX_SAMPLES': 15,
+		'NUM_SAMPLES': 7,
+		'MAX_SAMPLES': 7,
 		'NUM_RINGS': 7,
 		"NORMAL_TEXTURE": 0,
 		"DIFFUSE_TEXTURE": 1,
@@ -62,6 +62,7 @@ THREE.SAOShader = {
 
 	uniforms: {
 
+		"tPoissonSamples":  { type: "t", value: null },
 		"tAOPrevious":  { type: "t", value: null },
 		"tAlbedo":		  { type: "t", value: null },
 		"tDepth":       { type: "t", value: null },
@@ -84,7 +85,8 @@ THREE.SAOShader = {
 		"worldToScreenRatio": { type: "v2", value: new THREE.Vector2( 1, 1 ) },
 		"randomSeed":   { type: "f", value: 0.0 },
 		"frameCount":   { type: "f", value: 0.0 },
-		"currentFrameCount":   { type: "f", value: 0.0 }
+		"currentFrameCount":   { type: "f", value: 0.0 },
+		"poissonTextureWidth":   { type: "f", value: 0.0 },
 	},
 
 	vertexShader: [
@@ -110,6 +112,7 @@ THREE.SAOShader = {
 
 		"uniform sampler2D tAOPrevious;",
 		"uniform sampler2D tAlbedo;",
+		"uniform sampler2D tPoissonSamples;",
 
 		"#if DIFFUSE_TEXTURE == 1",
 			"uniform sampler2D tDiffuse;",
@@ -141,6 +144,7 @@ THREE.SAOShader = {
 		"uniform float randomSeed;",
 		"uniform float frameCount;",
 		"uniform float currentFrameCount;",
+		"uniform float poissonTextureWidth;",
 
 
 		"#include <sao>",
@@ -255,23 +259,19 @@ THREE.SAOShader = {
 			"float occlusionSum = 0.0;",
 			"vec3 colorSum = vec3(0.0);",
 			"float weightSum = 0.0;",
-
+			"float cs = cos(angle); float sn = sin(angle);",
+			"mat2 rotMatrix = mat2(cs, sn, -sn, cs);",
+			"float invPoissonTextureWidth = 1.0/poissonTextureWidth;",
 			"for( int i = 0; i < NUM_SAMPLES; i ++ ) {",
-				"radius = ((float(i) + 0.0 - 0.0) + 0.5) * radiusStep;",
-				"vec2 sampleUvOffset = vec2( cos( angle ), sin( angle ) ) * radius * screenRadius * 4.0;",
-
+				"float xOffset = (float(i) + frameCount - 1.0 + 0.5)*invPoissonTextureWidth;",
+				"vec2 poissonSample = texture2D( tPoissonSamples, vec2(xOffset, 0.5)).xw * screenRadius * 4.0;",
+				"poissonSample = rotMatrix * poissonSample;",
+				"vec2 sampleUvOffset = poissonSample;",
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
-				"sampleUvOffset = floor( sampleUvOffset * size + vec2( 0.5 ) ) * invSize;",
-				"if( sampleUvOffset.x == 0.0 && sampleUvOffset.y == 0.0 ) continue;",
-
-				"angle += ANGLE_STEP;",
-
 				"vec2 sampleUv = vUv + sampleUvOffset;",
 
-				"if( sampleUv.x <= 0.0 || sampleUv.y <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y >= 1.0 ) continue;", // skip points outside of texture.
-
 				//"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
-				"float sampleDepth = getDepthMIP( sampleUv, int( 4.0 * radius ) );",
+				"float sampleDepth = getDepthMIP( sampleUv, int( 4.0 * 0.0 ) );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
 					"continue;",
 				"}",
@@ -319,7 +319,7 @@ THREE.SAOShader = {
 			"vec3 colorValue = ambientOcclusion.rgb * aoValue;",
 			"float prevAoSum = texture2D(tAOPrevious, vUv).a;",
 			"vec3 prevColorSum = texture2D(tAOPrevious, vUv).rgb;",
-			"if(currentFrameCount > float(MAX_SAMPLES)){",
+			"if(currentFrameCount > poissonTextureWidth/float(NUM_SAMPLES)){",
 				"aoValue = prevAoSum;",
 				"colorValue = prevColorSum;",
 			"}",
@@ -327,8 +327,8 @@ THREE.SAOShader = {
 			"vec3 newColorValue = (currentFrameCount - 1.0) * prevColorSum + colorValue;",
 			"newAoValue /= currentFrameCount;",
 			"newColorValue /= currentFrameCount;",
-			"gl_FragColor = vec4(newAoValue);",
-
+			"gl_FragColor = vec4( newAoValue);",
+			"float xOffset = gl_FragCoord.x/size.x;",
 		"}"
 
 	].join( "\n" )

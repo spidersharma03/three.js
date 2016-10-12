@@ -45,6 +45,8 @@
     <script src="js/postprocessing/EffectComposer.js"></script>
     <script src="js/postprocessing/MaskPass.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/Half.js"></script>
+		<script src="js/utils/PoissonDiskGenerator.js"></script>
     <script src="js/postprocessing/SAOPass.js"></script>
     <script src="js/postprocessing/ShaderPass.js"></script>
 		<script src="js/postprocessing/ManualMSAARenderPass.js"></script>
@@ -140,9 +142,11 @@
 
 				// rootNode.position.y = -10;
 				//rootNode.position.z = 0.2;
-				var sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+				var sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32);
 				var sphereMesh = new THREE.Mesh(sphereGeometry, new THREE.MeshBasicMaterial({color:0x00ffff}));
-				sphereMesh.position.y = -5;
+				sphereMesh.position.x = -10;
+				sphereMesh.position.y = -1;
+				sphereMesh.position.z = -2;
 				scene.add(sphereMesh);
 
 				modelLoader.load(

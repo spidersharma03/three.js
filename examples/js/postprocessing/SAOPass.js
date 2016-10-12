@@ -23,6 +23,9 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.downSamplingRatio = 1;
 	this.blurKernelSize = (this.downSamplingRatio === 1) ? 8 : 4;
 
+	var poissonDiskGenerator = new PoissonDiskGenerator(5500, -1);
+	var samples = poissonDiskGenerator.generatePoints();
+	this.poissonTexture = poissonDiskGenerator.createDataTexture(samples);
 	/*
 	if ( false && renderer.extensions.get('WEBGL_depth_texture') ) {
 
@@ -60,6 +63,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = this.implicitNormals ? 0 : 1;
 	this.saoMaterial.defines[ 'MODE' ] = 2;
 
+
 	this.bilateralFilterMaterial = new THREE.ShaderMaterial( THREE.SAOBilaterialFilterShader );
 	this.bilateralFilterMaterial.uniforms = THREE.UniformsUtils.clone( this.bilateralFilterMaterial.uniforms );
 	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
@@ -77,7 +81,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.copyMaterial.depthTest = false;
 	this.copyMaterial.depthWrite = false;
 	this.frameCount = 1;
-	this.frameCountIncrement = 1;
+	this.frameCountIncrement = 7;
 	this.currentFrameCount = 1;
 };
 
@@ -351,9 +355,11 @@ THREE.SAOPass.prototype = {
 
 		var currentSAOReadTarget = (this.currentFrameCount % 2 == 0) ? this.saoRenderTargetPingPong : this.saoRenderTarget;
 		this.saoMaterial.uniforms[ "tAOPrevious" ].value = currentSAOReadTarget;
+		this.saoMaterial.uniforms[ "tPoissonSamples" ].value = this.poissonTexture;
 		this.saoMaterial.uniforms[ "tAlbedo" ].value = this.saoAlbedoRenderTarget;
 		this.saoMaterial.uniforms[ "frameCount" ].value = this.frameCount;
 		this.saoMaterial.uniforms[ "currentFrameCount" ].value = this.currentFrameCount;
+		this.saoMaterial.uniforms[ "poissonTextureWidth" ].value = this.poissonTexture.image.width;
 
 		if( this.depthMIPs ) {
 
