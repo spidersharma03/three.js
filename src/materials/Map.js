@@ -66,7 +66,7 @@ THREE.Map.prototype = {
 };
 
 THREE.Map.SupportedMapNames = [
-	'map', 'lightMap', 'aoMap', 'emissiveMap', 'specularMap', 'bumpMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'displacementMap'
+	'map', 'lightMap', 'aoMap', 'emissiveMap', 'specularMap', 'bumpMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'displacementMap', 'falloffMap', 'falloffAlphaMap'
 ];
 THREE.Map.SupportedMapSlotNames = [];
 THREE.Map.SupportedMapUVNames = [];

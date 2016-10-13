@@ -469,6 +469,10 @@ THREE.WebGLProgram = ( function () {
 				parameters.alphaMap ? '#define USE_ALPHAMAP' : '',
 				parameters.vertexColors ? '#define USE_COLOR' : '',
 
+				parameters.falloff ? '#define FALLOFF' : '',
+				parameters.falloffMap && parameters.falloff ? '#define USE_FALLOFFMAP' : '',
+				parameters.falloffAlphaMap && parameters.falloff ? '#define USE_FALLOFFALPHAMAP' : '',
+
 				parameters.flatShading ? '#define FLAT_SHADED' : '',
 
 				parameters.doubleSided ? '#define DOUBLE_SIDED' : '',
@@ -499,6 +503,7 @@ THREE.WebGLProgram = ( function () {
 				parameters.mapEncoding ? getTexelDecodingFunction( 'mapTexelToLinear', parameters.mapEncoding ) : '',
 				parameters.envMapEncoding ? getTexelDecodingFunction( 'envMapTexelToLinear', parameters.envMapEncoding ) : '',
 				parameters.emissiveMapEncoding ? getTexelDecodingFunction( 'emissiveMapTexelToLinear', parameters.emissiveMapEncoding ) : '',
+				parameters.falloffMapEncoding ? getTexelDecodingFunction( 'falloffMapTexelToLinear', parameters.falloffMapEncoding ) : '',
 				parameters.outputEncoding ? getTexelEncodingFunction( "linearToOutputTexel", parameters.outputEncoding ) : '',
 
 				parameters.depthPacking ? "#define DEPTH_PACKING " + material.depthPacking : '',

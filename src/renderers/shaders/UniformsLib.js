@@ -83,6 +83,23 @@ THREE.UniformsLib = {
 
 	},
 
+
+	falloffmap: {
+
+		"falloffMap": { value: null },
+		"falloffMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"falloffMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+
+	},
+
+	falloffalphamap: {
+
+		"falloffAlphaMap": { value: null },
+		"falloffAlphaMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"falloffAlphaMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+
+	},
+
 	roughnessmap: {
 
 		"roughnessMap": { value: null },

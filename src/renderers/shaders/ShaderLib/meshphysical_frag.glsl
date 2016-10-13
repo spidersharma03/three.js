@@ -10,7 +10,14 @@ uniform float opacity;
 #ifndef STANDARD
 	uniform float clearCoat;
 	uniform float clearCoatRoughness;
+
+	#ifdef FALLOFF
+		uniform vec3 falloffDiffuse;
+		uniform float falloffOpacity;
+	#endif
+
 #endif
+
 
 uniform float envMapIntensity; // temporary
 
@@ -54,10 +61,18 @@ void main() {
 	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
 	vec3 totalEmissiveRadiance = emissive;
 
+	#ifdef FALLOFF
+		vec4 falloffDiffuseColor = vec4( falloffDiffuse, falloffOpacity );
+	#endif
+
 	#include <logdepthbuf_fragment>
 	#include <map_fragment>
 	#include <color_fragment>
 	#include <alphamap_fragment>
+
+	#include <falloffmap_fragment>
+	#include <falloffalphamap_fragment>
+
 	#include <alphatest_fragment>
 	#include <specularmap_fragment>
 	#include <roughnessmap_fragment>
@@ -65,6 +80,8 @@ void main() {
 	#include <normal_flip>
 	#include <normal_fragment>
 	#include <emissivemap_fragment>
+
+	#include <falloff_fragment>
 
 	// accumulation
 	#include <lights_physical_fragment>

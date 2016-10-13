@@ -223,8 +223,13 @@ THREE.ShaderLib[ 'physical' ] = {
 	uniforms: THREE.UniformsUtils.merge( [
 
 		THREE.ShaderLib[ 'standard' ].uniforms,
+		THREE.UniformsLib[ 'falloffmap' ],
+		THREE.UniformsLib[ 'falloffalphamap' ],
 
 		{
+			"falloffDiffuse": { value: new THREE.Color( 0xffffff ) },
+			"falloffOpacity": { value: 0 },
+
 			"clearCoat": { value: 0 },
 			"clearCoatRoughness": { value: 0 }
 		}
