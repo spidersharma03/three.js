@@ -20,7 +20,7 @@ THREE.MeshPhysicalMaterial = function ( parameters ) {
 	this.falloffColor = new THREE.Color( 0xffffff );
 	this.falloffMapSlot = new THREE.Map( "falloffMap", 0, false, false );
 	this.falloffOpacity = 1.0;
-	this.falloffAlphaSlot = new THREE.Map( "falloffAlphaMap", 0, false, false );
+	this.falloffAlphaMapSlot = new THREE.Map( "falloffAlphaMap", 0, false, false );
 
 	this.clearCoat = 0.0;
 	this.clearCoatRoughness = 0.0;
@@ -45,10 +45,10 @@ var closure = function () {
 		},
 		"falloffAlphaMap": {
 		  get: function() {
-				return this.falloffAlphaSlot.texture;
+				return this.falloffAlphaMapSlot.texture;
 		  },
 			set: function( value ) {
-				this.falloffAlphaSlot.texture = value;
+				this.falloffAlphaMapSlot.texture = value;
 			}
 		}
 	};

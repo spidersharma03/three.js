@@ -361,6 +361,8 @@ THREE.WebGLProgram = ( function () {
 				parameters.metalnessMap ? '#define USE_METALNESSMAP' : '',
 				parameters.alphaMap ? '#define USE_ALPHAMAP' : '',
 				parameters.vertexColors ? '#define USE_COLOR' : '',
+				parameters.falloffMap && parameters.falloff ? '#define USE_FALLOFFMAP' : '',
+				parameters.falloffAlphaMap && parameters.falloff ? '#define USE_FALLOFFALPHAMAP' : '',
 
 				parameters.flatShading ? '#define FLAT_SHADED' : '',
 
