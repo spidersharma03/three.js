@@ -20,19 +20,29 @@ THREE.ManualMSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) 
 	this.sampleLevel = 4; // specified as n, where the number of samples is 2^n, so sampleLevel = 4, is 2^4 samples, 16.
 	this.unbiased = true;
 
+	this.needsSwap = false;
+
 	// as we need to clear the buffer in this pass, clearColor must be set to something, defaults to black.
 	this.clearColor = ( clearColor !== undefined ) ? clearColor : 0x000000;
 	this.clearAlpha = ( clearAlpha !== undefined ) ? clearAlpha : 0;
 
 	if ( THREE.CopyShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CopyShader" );
 
-	this.copyMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
-	this.copyMaterial.uniforms = THREE.UniformsUtils.clone( this.copyMaterial.uniforms );
-	this.copyMaterial.blending = THREE.AdditiveBlending;
-	this.copyMaterial.premultipliedAlpha = true;
-	this.copyMaterial.transparent = true;
-	this.copyMaterial.depthTest = false;
-	this.copyMaterial.depthWrite = false;
+	this.overMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
+	this.overMaterial.uniforms = THREE.UniformsUtils.clone( this.overMaterial.uniforms );
+	this.overMaterial.blending = THREE.NormalBlending;
+	this.overMaterial.premultipliedAlpha = true;
+	this.overMaterial.transparent = true;
+	this.overMaterial.depthTest = false;
+	this.overMaterial.depthWrite = false;
+
+	this.addMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
+	this.addMaterial.uniforms = THREE.UniformsUtils.clone( this.addMaterial.uniforms );
+	this.addMaterial.blending = THREE.AdditiveBlending;
+	this.addMaterial.premultipliedAlpha = true;
+	this.addMaterial.transparent = true;
+	this.addMaterial.depthTest = false;
+	this.addMaterial.depthWrite = false;
 
 };
 
@@ -43,6 +53,10 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 		if ( this.sampleRenderTarget ) {
 			this.sampleRenderTarget.dispose();
 			this.sampleRenderTarget = null;
+		}
+		if ( this.accumulateRenderTarget ) {
+			this.accumulateRenderTarget.dispose();
+			this.accumulateRenderTarget = null;
 		}
 
 	},
@@ -59,6 +73,9 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 
 			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+			this.accumulateRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
+				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+
 
 		}
 
@@ -73,10 +90,11 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 		var baseSampleWeight = 1.0 / jitterOffsets.length;
 		var roundingRange = 1 / 32;
 
-		this.copyMaterial.blending = THREE.AdditiveBlending;
-		this.copyMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
+		this.addMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
 
 		var width = readBuffer.width, height = readBuffer.height;
+
+		renderer.setClearColor( 0x000000, 0 );
 
 		// render the scene multiple times, each slightly jitter offset from the last and accumulate the results.
 		for ( var i = 0; i < jitterOffsets.length; i ++ ) {
@@ -97,23 +115,23 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 				sampleWeight += roundingRange * uniformCenteredDistribution;
 			}
 
-			this.copyMaterial.uniforms[ "opacity" ].value = sampleWeight;
-			renderer.setClearColor( this.clearColor, this.clearAlpha );
+			this.addMaterial.uniforms[ "opacity" ].value = sampleWeight;
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			if (i === 0) {
-				renderer.setClearColor( 0x000000, 0.0 );
-			}
-			renderer.renderPass( this.copyMaterial, this.renderToScreen ? null : writeBuffer, (i === 0) );
+			renderer.renderPass( this.addMaterial, this.accumulateRenderTarget, ( i === 0 ) );
 		}
 
 		if ( this.camera.clearViewOffset ) this.camera.clearViewOffset();
+
+		this.overMaterial.uniforms[ "tDiffuse" ].value = this.accumulateRenderTarget.texture;
+
+		renderer.setClearColor( this.clearColor, this.clearAlpha );
+		renderer.renderPass( this.overMaterial, this.renderToScreen ? null : readBuffer, this.clear );
 
 		renderer.autoClear = autoClear;
 		renderer.setClearColor( oldClearColor, oldClearAlpha );
 	}
 
 } );
-
 
 // These jitter vectors are specified in integers because it is easier.
 // I am assuming a [-8,8) integer grid, but it needs to be mapped onto [-0.5,0.5)

@@ -93,6 +93,7 @@
 					transparent: true,
 					blending: THREE.PremultipliedAlphaBlending
 				} );
+				console.log(standardMaterial);
 
 				var textureLoader = new THREE.TextureLoader();
 				textureLoader.load( "../examples/textures/planets/earth_atmos_2048.jpg", function( map ) {
@@ -121,6 +122,7 @@
 					map.wrapT = THREE.RepeatWrapping;
 					map.anisotropy = 4;
 					standardMaterial.emissiveMap = map;
+					standardMaterial.lightMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
 
@@ -234,6 +236,7 @@
 				mapParams( "normal" );
 				mapParams( "rough" );
 				mapParams( "emissive" );
+				mapParams( "light" );
 				gui.open();
 
 			}
@@ -281,6 +284,7 @@
 					setSlot( standardMaterial.normalMapSlot, "normal" );
 					setSlot( standardMaterial.roughnessMapSlot, "rough" );
 					setSlot( standardMaterial.emissiveMapSlot, "emissive" );
+					setSlot( standardMaterial.emissiveMapSlot, "light" );
 				}
 
 				var timer = Date.now() * 0.00025;

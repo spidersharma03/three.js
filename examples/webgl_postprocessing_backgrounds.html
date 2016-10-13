@@ -49,6 +49,7 @@
 
 		<script src="js/postprocessing/ClearPass.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/postprocessing/ManualMSAARenderPass.js"></script>
 		<script src="js/postprocessing/TexturePass.js"></script>
 		<script src="js/postprocessing/CubeTexturePass.js"></script>
 		<script src="js/postprocessing/ShaderPass.js"></script>
@@ -58,7 +59,7 @@
 		<script>
 
 			var scene, renderer, composer;
-			var clearPass, texturePass, renderPass;
+			var clearPass, texturePass, renderPass, msaaRenderPass;
 			var cameraP, cubeTexturePassP;
 			var rgbmCubeRenderTarget, ldrCubeTexture;
 
@@ -80,6 +81,7 @@
 				cubeTextureEnvMapIntensity: 1.0,
 				cubeTextureRoughness: 0.2,
 
+				msaa: true,
 				renderPass: true,
 
 				//autoRotate: true,
@@ -99,24 +101,25 @@
 				gui = new dat.GUI();
 
 				gui.add( params, "clear" );
-				gui.add( params, "clearColor", [ 'black', 'white', 'blue', 'green', 'red' ] );		
-				gui.add( params, "clearAlpha", 0, 1 );		
+				gui.add( params, "clearColor", [ 'black', 'white', 'blue', 'green', 'red' ] );
+				gui.add( params, "clearAlpha", 0, 1 );
 
 				gui.add( params, "texture" );
-				gui.add( params, "textureOpacity", 0, 1 );		
+				gui.add( params, "textureOpacity", 0, 1 );
 
 				gui.add( params, "cubeTexture" );
-				gui.add( params, "cubeTextureOpacity", 0, 1 );		
-				gui.add( params, "cubeTextureEnvMap", [ 'pisaLDR', 'pisaRGBM16' ] );		
-				gui.add( params, "cubeTextureEnvMapIntensity", 0, 10 );		
-				gui.add( params, "cubeTextureRoughness", 0, 1 );		
-	
+				gui.add( params, "cubeTextureOpacity", 0, 1 );
+				gui.add( params, "cubeTextureEnvMap", [ 'pisaLDR', 'pisaRGBM16' ] );
+				gui.add( params, "cubeTextureEnvMapIntensity", 0, 10 );
+				gui.add( params, "cubeTextureRoughness", 0, 1 );
+
+				gui.add( params, "msaa" );
 				gui.add( params, "renderPass" );
-			
+
 				//gui.add( params, "autoRotate" );
 
 				//gui.add( params, 'camera', [ 'perspective', 'orthographic' ] );
-			
+
 				gui.open();
 
 			}
@@ -235,11 +238,15 @@
 				renderPass = new THREE.RenderPass( scene, cameraP );
 				renderPass.clear = false;
 				composer.addPass( renderPass );
-		
+
+				msaaRenderPass = new THREE.ManualMSAARenderPass( scene, cameraP );
+				msaaRenderPass.clear = false;
+				composer.addPass( msaaRenderPass );
+
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
 				copyPass.renderToScreen = true;
 				composer.addPass( copyPass );
-		
+
 				var controls = new THREE.OrbitControls( cameraP, renderer.domElement );
 				controls.target.set( 0, 0, 0 );
 				controls.update();
@@ -288,7 +295,7 @@
 					case 'white': newColor = 0xffffff; break;
 					case 'black': newColor = 0x000000; break;
 				}
-	
+
 				clearPass.enabled = params.clear;
 				clearPass.clearColor = newColor;
 				clearPass.clearAlpha = params.clearAlpha;
@@ -301,14 +308,16 @@
 					case 'pisaLDR': newEnvMap = ldrCubeTexture; break;
 					case 'pisaRGBM16': newEnvMap = ( rgbmCubeRenderTarget ) ? rgbmCubeRenderTarget.texture : null; break;
 				}
-				console.log('newEnvMap', newEnvMap );
 				cubeTexturePassP.enabled = params.cubeTexture;
 				cubeTexturePassP.opacity = params.cubeTextureOpacity;
 				cubeTexturePassP.envMap = newEnvMap;
 				cubeTexturePassP.envMapIntensity = params.cubeTextureEnvMapIntensity;
 				cubeTexturePassP.roughness = params.cubeTextureRoughness;
 
-				renderPass.enabled = params.renderPass;
+			//	renderPass.enabled = false;
+			//	msaaRenderPass.enabled = false;
+				renderPass.enabled = ( ! params.msaa ) && params.renderPass;
+				msaaRenderPass.enabled = params.msaa && params.renderPass;
 
 				composer.render();
 
