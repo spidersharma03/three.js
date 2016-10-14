@@ -64,6 +64,7 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 	setSize: function ( width, height ) {
 
 		if ( this.sampleRenderTarget ) this.sampleRenderTarget.setSize( width, height );
+		if ( this.accumulateRenderTarget ) this.accumulateRenderTarget.setSize( width, height );
 
 	},
 
