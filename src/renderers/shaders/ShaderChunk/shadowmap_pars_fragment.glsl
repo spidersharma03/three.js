@@ -51,6 +51,10 @@
 
 	float getShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec4 shadowCoord ) {
 
+		const float nearPlane = 1.0;
+		const float farPlane = 1000.0;
+		float lightDepth = shadowCoord.z + 2.0*farPlane*nearPlane/(farPlane - nearPlane);
+		lightDepth *= -((farPlane - nearPlane)/(farPlane + nearPlane));
 		shadowCoord.xyz /= shadowCoord.w;
 		shadowCoord.z += shadowBias;
 
@@ -107,6 +111,13 @@
 				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord.xy + vec2( 0.0, dy1 ), shadowCoord.z ) +
 				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord.xy + vec2( dx1, dy1 ), shadowCoord.z )
 			) * ( 1.0 / 9.0 );
+
+		#elif defined( SHADOWMAP_TYPE_ESM )
+			float lightDist = (lightDepth + nearPlane)/(nearPlane - farPlane);
+			float zDist = unpackRGBAToDepth( texture2D( shadowMap, shadowCoord.xy ) );
+			const float c = 3000.0;
+			return clamp(exp(-c*(lightDist - zDist - 0.001)), 0.0, 1.0);
+			return step( lightDist, unpackRGBAToDepth( texture2D( shadowMap, shadowCoord.xy ) ) + 0.001 );
 
 		#else // no percentage-closer filtering:
 

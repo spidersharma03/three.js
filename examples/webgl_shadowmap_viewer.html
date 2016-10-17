@@ -76,13 +76,13 @@
 				spotLight.penumbra = 0.3;
 				spotLight.position.set( 10, 10, 5 );
 				spotLight.castShadow = true;
-				spotLight.shadow.camera.near = 8;
-				spotLight.shadow.camera.far = 30;
+				spotLight.shadow.camera.near = 1;
+				spotLight.shadow.camera.far = 1000;
 				spotLight.shadow.mapSize.width = 1024;
 				spotLight.shadow.mapSize.height = 1024;
 				scene.add( spotLight );
 
-				scene.add( new THREE.CameraHelper( spotLight.shadow.camera ) );
+				// scene.add( new THREE.CameraHelper( spotLight.shadow.camera ) );
 
 				dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
 				dirLight.name = 'Dir. Light';
@@ -96,9 +96,9 @@
 				dirLight.shadow.camera.bottom = - 15;
 				dirLight.shadow.mapSize.width = 1024;
 				dirLight.shadow.mapSize.height = 1024;
-				scene.add( dirLight );
+				// scene.add( dirLight );
 
-				scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
+				// scene.add( new THREE.CameraHelper( dirLight.shadow.camera ) );
 
 				// Geometry
 				var geometry = new THREE.TorusKnotGeometry( 25, 8, 75, 20 );
@@ -118,7 +118,7 @@
 
 				var geometry = new THREE.BoxGeometry( 3, 3, 3 );
 				cube = new THREE.Mesh( geometry, material );
-				cube.position.set( 8, 3, 8 );
+				cube.position.set( 0, 3, -5 );
 				cube.castShadow = true;
 				cube.receiveShadow = true;
 				scene.add( cube );
@@ -146,7 +146,7 @@
 				dirLightShadowMapViewer.position.y = 10;
 				dirLightShadowMapViewer.size.width = 256;
 				dirLightShadowMapViewer.size.height = 256;
-				dirLightShadowMapViewer.update(); //Required when setting position or size directly
+				// dirLightShadowMapViewer.update(); //Required when setting position or size directly
 
 				spotLightShadowMapViewer = new THREE.ShadowMapViewer( spotLight );
 				spotLightShadowMapViewer.size.set( 256, 256 );
@@ -162,7 +162,7 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.shadowMap.enabled = true;
-				renderer.shadowMap.type = THREE.BasicShadowMap;
+				renderer.shadowMap.type = THREE.ESMShadowMap;
 
 				// Mouse control
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -205,7 +205,7 @@
 
 			function renderShadowMapViewers() {
 
-				dirLightShadowMapViewer.render( renderer );
+				// dirLightShadowMapViewer.render( renderer );
 				spotLightShadowMapViewer.render( renderer );
 
 			}

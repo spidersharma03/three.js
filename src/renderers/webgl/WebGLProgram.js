@@ -5,7 +5,7 @@
 import { WebGLUniforms } from './WebGLUniforms';
 import { WebGLShader } from './WebGLShader';
 import { ShaderChunk } from '../shaders/ShaderChunk';
-import { NoToneMapping, AddOperation, MixOperation, MultiplyOperation, EquirectangularRefractionMapping, CubeRefractionMapping, SphericalReflectionMapping, EquirectangularReflectionMapping, CubeUVRefractionMapping, CubeUVReflectionMapping, CubeReflectionMapping, PCFSoftShadowMap, PCFShadowMap, CineonToneMapping, Uncharted2ToneMapping, ReinhardToneMapping, LinearToneMapping, GammaEncoding, RGBDEncoding, RGBM16Encoding, RGBM7Encoding, RGBEEncoding, sRGBEncoding, LinearEncoding } from '../../constants';
+import { NoToneMapping, AddOperation, MixOperation, MultiplyOperation, EquirectangularRefractionMapping, CubeRefractionMapping, SphericalReflectionMapping, EquirectangularReflectionMapping, CubeUVRefractionMapping, CubeUVReflectionMapping, CubeReflectionMapping, PCFSoftShadowMap, PCFShadowMap, ESMShadowMap, CineonToneMapping, Uncharted2ToneMapping, ReinhardToneMapping, LinearToneMapping, GammaEncoding, RGBDEncoding, RGBM16Encoding, RGBM7Encoding, RGBEEncoding, sRGBEncoding, LinearEncoding } from '../../constants';
 
 var programIdCount = 0;
 
@@ -213,7 +213,12 @@ function WebGLProgram( renderer, code, material, parameters ) {
 
 		shadowMapTypeDefine = 'SHADOWMAP_TYPE_PCF_SOFT';
 
+	} else if ( parameters.shadowMapType === ESMShadowMap ) {
+
+		shadowMapTypeDefine = 'SHADOWMAP_TYPE_ESM';
+
 	}
+
 
 	var envMapTypeDefine = 'ENVMAP_TYPE_CUBE';
 	var envMapModeDefine = 'ENVMAP_MODE_REFLECTION';

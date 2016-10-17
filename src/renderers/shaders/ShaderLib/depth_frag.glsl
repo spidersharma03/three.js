@@ -11,6 +11,7 @@
 #include <alphamap_pars_fragment>
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
+varying vec4 viewPosition;
 
 void main() {
 
@@ -38,6 +39,14 @@ void main() {
 
 		gl_FragColor = packDepthToRGBA( gl_FragCoord.z );
 
+	#endif
+
+	#if defined( SHADOWMAP_TYPE_ESM )
+		const float nearPlane = 1.0;
+		const float farPlane = 1000.0;
+		const float c = 100.0;
+		gl_FragColor = packDepthToRGBA( (viewPosition.z + nearPlane)/( nearPlane - farPlane) );
+		//gl_FragColor = packDepthToRGBA(viewPosition.z);
 	#endif
 
 }

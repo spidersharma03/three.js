@@ -1,3 +1,5 @@
+varying vec4 viewPosition;
+
 #include <common>
 #include <uv_pars_vertex>
 #include <displacementmap_pars_vertex>
@@ -5,6 +7,7 @@
 #include <skinning_pars_vertex>
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
+
 
 void main() {
 
@@ -20,4 +23,9 @@ void main() {
 	#include <logdepthbuf_vertex>
 	#include <clipping_planes_vertex>
 
+	#if defined( SHADOWMAP_TYPE_ESM )
+
+	viewPosition = mvPosition;
+
+	#endif
 }
