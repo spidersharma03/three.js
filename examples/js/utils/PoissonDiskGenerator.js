@@ -147,7 +147,7 @@ PoissonDiskGenerator.prototype = {
   			}
   		}
   	}
-
+		// SamplePoints = this.shuffle(SamplePoints);
     return SamplePoints;
   },
 
@@ -186,7 +186,7 @@ PoissonDiskGenerator.prototype = {
   },
 
   createDataTexture: function( SamplePoints ) {
-    SamplePoints = this.shuffle(SamplePoints);
+    // SamplePoints = this.shuffle(SamplePoints);
     var floatArray = new Float32Array(SamplePoints.length * 2);
     for( var i=0; i<2*(SamplePoints.length); i+=2) {
       floatArray[i]   = SamplePoints[i/2].x - 0.5;
