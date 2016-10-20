@@ -113,10 +113,11 @@
 			) * ( 1.0 / 9.0 );
 
 		#elif defined( SHADOWMAP_TYPE_ESM )
-			float lightDist = (lightDepth + nearPlane)/(nearPlane - farPlane);
-			float zDist = unpackRGBAToDepth( texture2D( shadowMap, shadowCoord.xy ) );
-			const float c = 3000.0;
-			return clamp(exp(-c*(lightDist - zDist - 0.001)), 0.0, 1.0);
+			float lightDist = -lightDepth;// + nearPlane)/(nearPlane - farPlane);
+			float zDist = unpackRGBAToDepth( texture2D( shadowMap, shadowCoord.xy ) ) + 0.001;
+			zDist = zDist * ( farPlane - nearPlane ) + nearPlane;
+			const float c = 80.0;
+			return min(exp(-c*(lightDist - zDist)), 1.0);
 			return step( lightDist, unpackRGBAToDepth( texture2D( shadowMap, shadowCoord.xy ) ) + 0.001 );
 
 		#else // no percentage-closer filtering:
