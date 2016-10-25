@@ -41,15 +41,16 @@
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
-		<script src="js/utils/PoissonDiskGenerator.js"></script>
-		<script src="js/ProgressiveShadowPass.js"></script>
+		<script src="js/FilteredESM.js"></script>
 		<script src="js/Detector.js"></script>
+		<script src="js/libs/stats.min.js"></script>
 
 		<script>
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-			var progressiveShadowPass;
+			var filteredESM;
+			var stats;
 			var basicMaterial = new THREE.MeshLambertMaterial({color:0xffffff});
 			var renderer = new THREE.WebGLRenderer();
 
@@ -71,25 +72,24 @@
 			// matBox.wireframe = true;
 
 			var geoFloor = new THREE.PlaneGeometry( 200, 200 );
-			var geoBox = new THREE.BoxGeometry( 6, 30, 6 );
+			var geoBox = new THREE.SphereGeometry( 6, 30, 30 );
 
 			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
 			mshFloor.rotation.x = -Math.PI/2;
 			// mshFloor.side = THREE.DoubleSide;
 			var mshBox = new THREE.Mesh( geoBox, matBox );
+			var obj3d;
 
 			var ambient = new THREE.AmbientLight( 0xffffff, 0.1 );
 
 			var spotLight = new THREE.SpotLight( 0xffffff, 1 );
-			var spotLight1 = new THREE.SpotLight( 0xffffff, 1 );
 
 			var lightHelper;
 
-			progressiveShadowPass = new ProgressiveShadowPass(scene, camera);
-			progressiveShadowPass.addLight(spotLight1);
+			filteredESM = new FilteredESM(scene, camera, spotLight);
 			// progressiveShadowPass.addLight(spotLight);
 
-			plane.material.map = progressiveShadowPass.shadowBufferTemp;
+			// plane.material.map = progressiveShadowPass.shadowBufferTemp;
 
 			var gui, guiElements, param = { color: '0xffffff' };
 
@@ -97,17 +97,17 @@
 
 				renderer.shadowMap.enabled = true;
 				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+				stats = new Stats();
+				document.body.appendChild(stats.dom);
 
-				renderer.gammaInput = true;
-				renderer.gammaOutput = true;
+				// renderer.gammaInput = true;
+				// renderer.gammaOutput = true;
 
 				camera.position.set( 25, 40, -20 );
 
-				spotLight.position.set( -10, 40, 0 );
-				spotLight1.position.set( 30, 40, 0 );
+				spotLight.position.set( -0, 40, 0 );
 
 				lightHelper = new THREE.SpotLightHelper( spotLight );
-				lightHelper = new THREE.SpotLightHelper( spotLight1 );
 
 				matFloor.color.set( 0x808080 );
 
@@ -115,7 +115,7 @@
 				mshFloor.position.set( 0, - 0.05, 0 );
 
 				mshBox.castShadow = true;
-				mshBox.position.set( 20, 1.8, 0 );
+				mshBox.position.set( 40, 1.8, 0 );
 
 				scene.add( camera );
 				scene.add( mshFloor );
@@ -133,6 +133,7 @@
 							object.scale.x = 20;
 							object.scale.y = 20;
 							object.scale.z = 20;
+							obj3d = object;
 							scene.add( object );
 							object.traverse( function(mesh){
 								if( mesh instanceof THREE.Mesh ) {
@@ -173,12 +174,12 @@
 			}
 
 			function onMouseWheel() {
-				progressiveShadowPass.frameCount = 0;
+				// progressiveShadowPass.frameCount = 0;
 			}
 
 			function onMouseMove() {
 				if( isMouseDown ) {
-					progressiveShadowPass.frameCount = 0;
+					// progressiveShadowPass.frameCount = 0;
 				}
 			}
 
@@ -187,7 +188,7 @@
 				requestAnimationFrame( animate );
 
 				render();
-				// stats.update();
+				stats.update();
 				controls.update();
 			}
 
@@ -202,7 +203,10 @@
 			function render() {
 
 				// lightHelper.update(); // required
-				progressiveShadowPass.render( renderer );
+				filteredESM.render( renderer );
+
+				if(obj3d !== undefined)
+				obj3d.rotation.y += 0.01;
 				// renderer.render( scene, camera );
 				// renderer.autoClear = true;
 				// renderer.setClearColor(0xffffff, 1);
