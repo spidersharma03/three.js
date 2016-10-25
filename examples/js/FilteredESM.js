@@ -12,8 +12,8 @@ function FilteredESM( scene, camera, light ) {
 
   this.lightCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 );
 
-  var shadowMapWidth  = 512;
-  var shadowMapHeight = 512;
+  var shadowMapWidth  = 1024;
+  var shadowMapHeight = 1024;
   var params = { format: THREE.RGBAFormat, type: THREE.FloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowDepthMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
   this.shadowDepthMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
