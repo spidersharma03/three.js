@@ -72,7 +72,7 @@
 			// matBox.wireframe = true;
 
 			var geoFloor = new THREE.PlaneGeometry( 200, 200 );
-			var geoBox = new THREE.SphereGeometry( 6, 30, 30 );
+			var geoBox = new THREE.TorusGeometry( 8, 2, 30, 30 );
 
 			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
 			mshFloor.rotation.x = -Math.PI/2;
@@ -207,6 +207,7 @@
 
 				if(obj3d !== undefined)
 				obj3d.rotation.y += 0.01;
+				mshBox.rotation.y += 0.01;
 				// renderer.render( scene, camera );
 				// renderer.autoClear = true;
 				// renderer.setClearColor(0xffffff, 1);

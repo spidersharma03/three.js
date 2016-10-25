@@ -10,7 +10,9 @@ function FilteredESM( scene, camera, light ) {
   var plane = new THREE.Mesh( geometry, material );
   this.sceneOrtho.add(plane);
 
-  this.lightCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 );
+  var nearPlane = 1;
+  var farPlane = 100;
+  this.lightCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, nearPlane, farPlane );
 
   var shadowMapWidth  = 1024;
   var shadowMapHeight = 1024;
@@ -21,6 +23,7 @@ function FilteredESM( scene, camera, light ) {
   this.shadowDepthMapTemp.generateMipmaps = false;
 
   this.depthMaterial      = this.getShadowDepthWriteMaterial();
+  this.depthMaterial.uniforms["nearFarPlanes"].value = new THREE.Vector2(nearPlane, farPlane);
 
   this.shadowFilterMaterial = this.getShadowFilterMaterial();
   this.shadowFilterMaterial.uniforms["shadowMapSize"].value = new THREE.Vector2(shadowMapWidth, shadowMapHeight);
@@ -30,6 +33,7 @@ function FilteredESM( scene, camera, light ) {
   this.finalPassMaterial = this.getFinalPassMaterial();
   this.finalPassMaterial.uniforms["windowSize"].value = new THREE.Vector2(window.innerWidth, window.innerHeight);
   this.finalPassMaterial.uniforms["shadowMap"].value = this.shadowDepthMap;
+  this.finalPassMaterial.uniforms["nearFarPlanes"].value = new THREE.Vector2(nearPlane, farPlane);
 }
 
 FilteredESM.prototype = {
@@ -94,6 +98,7 @@ FilteredESM.prototype = {
     return new THREE.ShaderMaterial( {
 
 			uniforms: {
+        "nearFarPlanes" : { value: new THREE.Vector2() }
 			},
 
       vertexShader: "varying vec4 viewPosition;\
@@ -104,10 +109,9 @@ FilteredESM.prototype = {
 
       fragmentShader: "#include <packing>\
         varying vec4 viewPosition;\
+        uniform vec2 nearFarPlanes;\
         void main() {\
-          const float nearPlane = 1.0;\
-          const float farPlane = 1000.0;\
-          gl_FragColor = vec4( (viewPosition.z + nearPlane)/(nearPlane - farPlane) );\
+          gl_FragColor = vec4( (viewPosition.z + nearFarPlanes.x)/(nearFarPlanes.x - nearFarPlanes.y) );\
         }",
     } );
   },
@@ -136,11 +140,19 @@ FilteredESM.prototype = {
         const float SIGMA = float(KERNEL_WIDTH);\
         \
         float gaussianPdf(in float x, in float sigma) {\
-					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma;\
+					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma * 1.0;\
 				}\
         \
         float log_space_average(float w0, float d1, float w1, float d2) {\
         	return d1 + log(w0 + (w1 * exp(d2 - d1)));\
+        }\
+        \
+        float gaussianNorm() {\
+          float norm = 0.0;\
+          for( int i=-KERNEL_WIDTH; i<=KERNEL_WIDTH; i++) {\
+            norm += gaussianPdf(float(i), SIGMA);\
+          }\
+          return norm;\
         }\
         \
         float BoxBlur() {\
@@ -167,25 +179,26 @@ FilteredESM.prototype = {
         	float w = 1.0/float(2*KERNEL_WIDTH + 1);\
           vec2 invSize = 1.0/shadowMapSize;\
           vec2 delta = invSize * direction;\
+          float gaussNorm = gaussianNorm();\
           vec2 offset = invSize * direction * float(-KERNEL_WIDTH);\
-          float w1 = gaussianPdf(float(KERNEL_WIDTH), SIGMA);\
-        	B = (texture2D(shadowMap, vUv + offset).r);\
+          float w1 = gaussianPdf(float(KERNEL_WIDTH), SIGMA)/gaussNorm;\
+        	B = texture2D(shadowMap, vUv + offset).r;\
           offset += delta;\
         	B2 = (texture2D(shadowMap, vUv + offset).r);\
-          float w2 = gaussianPdf(float(KERNEL_WIDTH-1), SIGMA);\
+          float w2 = gaussianPdf(float(KERNEL_WIDTH-1), SIGMA)/gaussNorm;\
         	v = log_space_average(w1, B, w2, B2);\
           \
         	for(int i = -KERNEL_WIDTH + 2; i <= KERNEL_WIDTH; i++) {\
             offset += delta;\
-            float w3 = gaussianPdf(float(i), SIGMA);\
-        		B = (texture2D(shadowMap, vUv + offset).r);\
+            float w3 = gaussianPdf(float(i), SIGMA)/gaussNorm;\
+        		B = texture2D(shadowMap, vUv + offset).r;\
         		v = log_space_average(1.0, v, w3, B);\
         	}\
         	return v;\
         }\
         \
         void main() {\
-          float sum = BoxBlur();\
+          float sum = GaussianBlur();\
           gl_FragColor = vec4( sum );\
         }",
     } );
@@ -198,7 +211,8 @@ FilteredESM.prototype = {
         "shadowMap" : { value: null },
         "windowSize"   : { value: null },
         "shadowMatrix": { value: new THREE.Matrix4() },
-        "lightPosition": { value: new THREE.Vector3() }
+        "lightPosition": { value: new THREE.Vector3() },
+        "nearFarPlanes" : { value: new THREE.Vector2() }
 			},
 
       vertexShader: "varying vec3 normalEyeSpace;\
@@ -222,19 +236,18 @@ FilteredESM.prototype = {
         varying vec4 shadowCoord;\
         uniform vec2 windowSize;\
         uniform sampler2D shadowMap;\
+        uniform vec2 nearFarPlanes;\
         void main() {\
-          const float nearPlane = 1.0;\
-          const float farPlane = 1000.0;\
-          float lightDepth = shadowCoord.z + 2.0*farPlane*nearPlane/(farPlane - nearPlane);\
-		      lightDepth *= -((farPlane - nearPlane)/(farPlane + nearPlane));\
+          float lightDepth = shadowCoord.z + 2.0*nearFarPlanes.y*nearFarPlanes.x/(nearFarPlanes.y - nearFarPlanes.x);\
+		      lightDepth *= -((nearFarPlanes.y - nearFarPlanes.x)/(nearFarPlanes.y + nearFarPlanes.x));\
           float lightDist = -lightDepth;\
           vec2 shadowCoord2d = shadowCoord.xy/shadowCoord.w;\
           float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
           float bias = tan(acos(NdotL));\
-          bias = clamp(bias, 0.0, 0.001);\
+          bias = clamp(bias, 0.0, 0.01);\
           float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r + bias;\
-          shadowDepth = shadowDepth * ( farPlane - nearPlane ) + nearPlane;\
-          const float c = 0.5;\
+          shadowDepth = shadowDepth * ( nearFarPlanes.y - nearFarPlanes.x ) + nearFarPlanes.x;\
+          const float c = 0.75;\
           float shadowValue = step( lightDist, shadowDepth );\
  			    shadowValue = min(exp(-c*(lightDist - shadowDepth)), 1.0);\
           gl_FragColor = vec4(NdotL * shadowValue);\
