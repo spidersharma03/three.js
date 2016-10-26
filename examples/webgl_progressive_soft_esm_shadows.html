@@ -41,6 +41,7 @@
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/utils/PoissonDiskGenerator.js"></script>
 		<script src="js/FilteredESM.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -72,7 +73,7 @@
 			// matBox.wireframe = true;
 
 			var geoFloor = new THREE.PlaneGeometry( 200, 200 );
-			var geoBox = new THREE.TorusGeometry( 5, 2, 30, 30 );
+			var geoBox = new THREE.BoxGeometry( 5, 12, 2, 30, 30 );
 
 			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
 			mshFloor.rotation.x = -Math.PI/2;
@@ -174,12 +175,12 @@
 			}
 
 			function onMouseWheel() {
-				// progressiveShadowPass.frameCount = 0;
+				filteredESM.frameCount = 0;
 			}
 
 			function onMouseMove() {
 				if( isMouseDown ) {
-					// progressiveShadowPass.frameCount = 0;
+					filteredESM.frameCount = 0;
 				}
 			}
 
@@ -205,8 +206,8 @@
 				// lightHelper.update(); // required
 				filteredESM.render( renderer );
 
-				if(obj3d !== undefined)
-				obj3d.rotation.y += 0.01;
+				// if(obj3d !== undefined)
+				// obj3d.rotation.y += 0.01;
 				// mshBox.rotation.y += 0.01;
 				// renderer.render( scene, camera );
 				// renderer.autoClear = true;
