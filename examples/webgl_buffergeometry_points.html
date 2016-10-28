@@ -36,6 +36,8 @@
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
+		<script src="js/Half.js"></script>
+		<script src="js/utils/PoissonDiskGenerator.js"></script>
 
 		<script>
 
@@ -46,6 +48,7 @@
 			var camera, scene, renderer;
 
 			var mesh;
+			var poissonDiskGenerator = new PoissonDiskGenerator(500, -1, false, false);
 
 			init();
 			animate();
@@ -57,14 +60,17 @@
 				//
 
 				camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 5, 3500 );
-				camera.position.z = 2750;
+				camera.position.z = 50;
 
 				scene = new THREE.Scene();
 				scene.fog = new THREE.Fog( 0x050505, 2000, 3500 );
 
 				//
+				var samples = poissonDiskGenerator.generatePoints();
+				// poissonDiskGenerator.testSamples(samples);
+				poissonDiskGenerator.createDataTexture(samples);
 
-				var particles = 500000;
+				var particles = samples.length;
 
 				var geometry = new THREE.BufferGeometry();
 
@@ -73,15 +79,19 @@
 
 				var color = new THREE.Color();
 
-				var n = 1000, n2 = n / 2; // particles spread in the cube
+				var n = 10, n2 = n / 2; // particles spread in the cube
 
 				for ( var i = 0; i < positions.length; i += 3 ) {
 
 					// positions
 
-					var x = Math.random() * n - n2;
-					var y = Math.random() * n - n2;
-					var z = Math.random() * n - n2;
+					var x = (samples[i/3].x - 0.5) * 20;
+					var y = (samples[i/3].y - 0.5) * 20;
+					var z = 0;
+
+					// var x = Math.random() * n - n2;
+					// var y = Math.random() * n - n2;
+					// var z = Math.random() * n - n2;
 
 					positions[ i ]     = x;
 					positions[ i + 1 ] = y;
@@ -93,7 +103,7 @@
 					var vy = ( y / n ) + 0.5;
 					var vz = ( z / n ) + 0.5;
 
-					color.setRGB( vx, vy, vz );
+					color.setRGB( 1, 1, 1 );
 
 					colors[ i ]     = color.r;
 					colors[ i + 1 ] = color.g;
@@ -108,7 +118,7 @@
 
 				//
 
-				var material = new THREE.PointsMaterial( { size: 15, vertexColors: THREE.VertexColors } );
+				var material = new THREE.PointsMaterial( { size: 0.5, vertexColors: THREE.VertexColors } );
 
 				particleSystem = new THREE.Points( geometry, material );
 				scene.add( particleSystem );
@@ -157,8 +167,8 @@
 
 				var time = Date.now() * 0.001;
 
-				particleSystem.rotation.x = time * 0.25;
-				particleSystem.rotation.y = time * 0.5;
+				// particleSystem.rotation.x = time * 0.25;
+				// particleSystem.rotation.y = time * 0.5;
 
 				renderer.render( scene, camera );
 

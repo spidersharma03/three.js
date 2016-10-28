@@ -41,10 +41,26 @@
 		<script src="js/controls/FlyControls.js"></script>
 		<script src="js/pmrem/PMREMGenerator.js"></script>
 		<script src="js/pmrem/PMREMCubeUVPacker.js"></script>
+		<script src="js/shaders/CopyShader.js"></script>
+		<script src="js/shaders/SAOShader.js"></script>
+		<!-- <script src="js/shaders/CompositeShader.js"></script> -->
+    <script src="js/postprocessing/EffectComposer.js"></script>
+    <script src="js/postprocessing/MaskPass.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/Half.js"></script>
+		<script src="js/utils/PoissonDiskGenerator.js"></script>
+    <script src="js/postprocessing/SAOPass.js"></script>
+    <script src="js/postprocessing/ShaderPass.js"></script>
+		<script src="js/postprocessing/ProgressiveShadowPass.js"></script>
+		<script src="js/postprocessing/FilteredESM.js"></script>
 
 		<script>
 
 		var stats = new Stats();
+		var saoPass;
+		var progressiveShadowPass;
+		var filteredESM;
+
 		stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
 		document.body.appendChild( stats.dom );
 			// scene size
@@ -91,11 +107,51 @@
 			var rootNode = new THREE.Object3D();
 
 			var cameraControls;
+			var specialMaterial = new THREE.ShaderMaterial( {
+
+				uniforms: {
+	        "shadowBuffer" : { value: null },
+	        "saoBuffer"   : { value: null },
+	        "lightPosition": { value: new THREE.Vector3() },
+					"windowSize" : { value: new THREE.Vector2() }
+				},
+
+	      vertexShader: "varying vec3 normalEyeSpace;\
+	      varying vec3 lightVector;\
+	      uniform vec3 lightPosition;\
+	      void main() {\
+	        normalEyeSpace = normalize(normalMatrix * normal);\
+	        vec3 lightPositionEyeSpace = (viewMatrix * vec4(lightPosition, 1.0)).xyz;\
+	        lightVector = lightPositionEyeSpace - (modelViewMatrix * vec4( position, 1.0 )).xyz;\
+	        lightVector = normalize(lightVector);\
+	        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+	      }",
+
+	      fragmentShader: "#include <packing>\
+	        varying vec3 normalEyeSpace;\
+	        varying vec3 lightVector;\
+	        uniform vec2 windowSize;\
+	        uniform sampler2D shadowBuffer;\
+					uniform sampler2D saoBuffer;\
+	        void main() {\
+	          float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
+	          float shadowValue = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
+						float saoValue = texture2D( saoBuffer, gl_FragCoord.xy/windowSize).r;\
+	          gl_FragColor = vec4(shadowValue*saoValue);\
+	        }",
+	    } );
 
 			var verticalMirror, groundMirror;
 			var sphereGroup, smallSphere;
 			var allLoaded = false;
 			var roughnessMap;
+
+			this.sceneOrtho = new THREE.Scene();
+		  this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -0.001, 1000);
+		  var geometry = new THREE.PlaneGeometry( 2, 2, 1, 1 );
+		  var material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
+		  var plane = new THREE.Mesh( geometry, specialMaterial );
+		  this.sceneOrtho.add(plane);
 
 			var manager = new THREE.LoadingManager();
 			manager.onProgress = function ( item, loaded, total ) {
@@ -112,20 +168,29 @@
 			function init() {
 
 				// renderer
-				renderer = new THREE.WebGLRenderer({antialias : true});
-				renderer.shadowMap.type = THREE.PCSSSoftShadowMap;
-				renderer.shadowMap.enabled = true;
-				renderer.toneMapping = THREE.LinearToneMapping;
+				renderer = new THREE.WebGLRenderer({antialias : false});
+				renderer.shadowMap.type = THREE.BasicShadowMap;
+				// renderer.shadowMap.enabled = true;
+				// renderer.toneMapping = THREE.LinearToneMapping;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( WIDTH, HEIGHT );
 				renderer.setClearColor(0xeeeeff);
 				// scene
 				scene = new THREE.Scene();
 				scene.add(rootNode);
+				var sphGeometry = new THREE.SphereGeometry(5, 20, 20);
+				var sphMesh = new THREE.Mesh(sphGeometry, new THREE.MeshBasicMaterial({color:0xffffff}));
+				sphMesh.position.y = 35;
+				// rootNode.add(sphMesh);
+
 				loadModels();
 				// camera
 				camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
 				camera.position.set( 0, 75, 160 );
+				saoPass = new THREE.SAOPass( scene, camera );
+				progressiveShadowPass = new ProgressiveShadowPass(scene, camera);
+
+				specialMaterial.uniforms["windowSize"].value = new THREE.Vector2(window.innerWidth, window.innerHeight);
 
 				cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
 				cameraControls.target.set( 0, 40, 0);
@@ -135,7 +200,33 @@
 
 				var container = document.getElementById( 'container' );
 				container.appendChild( renderer.domElement );
+				window.addEventListener("mousedown", onMouseDown);
+				window.addEventListener("mouseup", onMouseUp);
+				window.addEventListener("mousemove", onMouseMove);
+				container.addEventListener("mousewheel", onMouseWheel);
+				renderer.domElement.addEventListener("mousewheel", onMouseWheel);
+			}
 
+			var isMouseDown = false;
+			function onMouseDown() {
+				isMouseDown = true;
+			}
+			function onMouseUp() {
+				isMouseDown = false;
+			}
+			function onMouseWheel() {
+				saoPass.frameCount = 1;
+				saoPass.currentFrameCount = 1;
+				progressiveShadowPass.frameCount = 0;
+				filteredESM.frameCount = 0;
+			}
+			function onMouseMove() {
+				if( isMouseDown ) {
+					saoPass.frameCount = 1;
+					saoPass.currentFrameCount = 1;
+					progressiveShadowPass.frameCount = 0;
+					filteredESM.frameCount = 0;
+				}
 			}
 
 			function IdentifyAndAddMeshes(mesh) {
@@ -448,7 +539,7 @@
 				// scene.add( graniteMesh2 );
 
 			  graniteMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05, metalness:0.0  } );
-				shMaterial = new THREE.MeshStandardMaterial( { color: 0x663311, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
+				shMaterial = new THREE.MeshStandardMaterial( { color: 0x003333, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
 				handleMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.1, metalness: 1.0  } );
 				skirtMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: graniteTexture, bumpScale:0.30, roughness:0.95, metalness: 0.0  } );
 				hobBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
@@ -494,23 +585,27 @@
 				// scene.add( spotLight );
 
 				var spotLight = new THREE.SpotLight( 0x666666, 2 );
-				spotLight.angle = Math.PI/3;
+				spotLight.angle = Math.PI/2.5;
 				spotLight.penumbra = 0.04;
 				// spotLight.decay = 1;
-				spotLight.position.set( 40, 1, 0 );
-				spotLight.target.position.set( 40, roomHeight, 0 );
+				spotLight.position.set( 0, roomHeight/1, 0 );
+				spotLight.target.position.set( 0, 0, 0 );
 				spotLight.castShadow = true;
-				spotLight.shadow.bias = 0.0005;
+				spotLight.shadow.bias = -0.001;
 
-				spotLight.shadow.mapSize.width = 1024;
-				spotLight.shadow.mapSize.height = 1024;
+				spotLight.shadow.mapSize.width = 512;
+				spotLight.shadow.mapSize.height = 512;
 
 				spotLight.shadow.camera.near = 10;
 				spotLight.shadow.camera.far = 4000;
 				spotLight.shadow.camera.fov = 30;
-				spotLight.shadow.radius = 6;
+				// spotLight.shadow.radius = 6;
 
 				scene.add( spotLight );
+				progressiveShadowPass.addLight(spotLight);
+				specialMaterial.uniforms["lightPosition"].value = (spotLight.position);
+				filteredESM = new FilteredESM(scene, camera, spotLight);
+
 
 				var greenLight = new THREE.PointLight( 0xcccccc, 1.0, 200, 1.5 );
 				greenLight.position.y = roomHeight/1.2;
@@ -533,6 +628,17 @@
 			}
 
 			function render() {
+
+				saoPass.render( renderer );
+				// progressiveShadowPass.render( renderer );
+				filteredESM.render( renderer );
+				// plane.material.map = saoPass.getSAOBuffer().texture;
+				// specialMaterial.uniforms["shadowBuffer"].value = progressiveShadowPass.getShadowBuffer().texture;
+				specialMaterial.uniforms["shadowBuffer"].value = filteredESM.getShadowBuffer().texture;
+				specialMaterial.uniforms["saoBuffer"].value = saoPass.getSAOBuffer().texture;
+				renderer.render(this.sceneOrtho, this.orthoCamera);
+
+				return;
 
 				renderer.render(scene, camera);
 
