@@ -56,6 +56,12 @@ IncidentLight directLight;
 
 		getSpotDirectLightIrradiance( spotLight, geometry, directLight );
 
+		#if defined( USE_ENVMAP )
+			float aoValue = clamp(texture2D( envMapProbe2, gl_FragCoord.xy/vec2(1280.0, 647.0)).r, 0.0, 1.0);
+			float shadowValue = unpackRGBAToDepth(texture2D( envMapProbe1, gl_FragCoord.xy/vec2(1280.0, 647.0)));
+			directLight.color = vec3(shadowValue * aoValue);
+		#endif
+
 		#ifdef USE_SHADOWMAP
 		directLight.color *= all( bvec2( spotLight.shadow, directLight.visible ) ) ? getShadow( spotShadowMap[ i ], spotLight.shadowMapSize, spotLight.shadowBias, spotLight.shadowRadius, 0.0, spotLight.shadowCameraParams, vSpotShadowCoord[ i ], 1 ) : 1.0;
 		#endif
@@ -117,7 +123,7 @@ IncidentLight directLight;
 	#if defined( USE_ENVMAP ) && defined( PHYSICAL ) && defined( ENVMAP_TYPE_CUBE_UV )
 
 		// TODO, replace 8 with the real maxMIPLevel
-	 	irradiance += getLightProbeIndirectIrradiance( /*lightProbe,*/ geometry, 8 );
+	 	irradiance += getLightProbeIndirectIrradiance( /*lightProbe,*/ geometry, 8 ) * aoValue;
 
 	#endif
 
@@ -128,7 +134,7 @@ IncidentLight directLight;
 #if defined( USE_ENVMAP ) && defined( RE_IndirectSpecular )
 
 	// TODO, replace 8 with the real maxMIPLevel
-	vec3 radiance = getLightProbeIndirectRadiance( /*specularLightProbe,*/ geometry, Material_BlinnShininessExponent( material ), 8 );
+	vec3 radiance = getLightProbeIndirectRadiance( /*specularLightProbe,*/ geometry, Material_BlinnShininessExponent( material ), 8 ) * aoValue;
 
 	RE_IndirectSpecular( radiance, geometry, material, reflectedLight );
 

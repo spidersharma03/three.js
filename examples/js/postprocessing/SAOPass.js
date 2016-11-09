@@ -20,13 +20,13 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scene = scene;
 	this.camera = camera;
 
-	this.intensity = 0.5;
+	this.intensity = 0.7;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.occlusionSphereWorldRadius = 4;
 
 	var poissonDiskGenerator = new PoissonDiskGenerator(5500, -1, true, true);
-	var samples = poissonDiskGenerator.generatePoints();
-	this.poissonTexture = poissonDiskGenerator.createDataTexture(samples);
+	this.samples = poissonDiskGenerator.generatePoints();
+	this.poissonTexture = poissonDiskGenerator.createDataTexture(this.samples);
 
 	this.depthMaterial = new THREE.MeshDepthMaterial();
 	this.depthMaterial.depthPacking = THREE.RGBADepthPacking;
@@ -164,12 +164,14 @@ THREE.SAOPass.prototype = {
 
 		var currentSAOWriteTarget = (this.currentFrameCount % 2 == 0) ? this.saoRenderTarget : this.saoRenderTargetPingPong;
 
-		this.frameCount += this.frameCountIncrement;
-		this.currentFrameCount += 1.0;
-
 		this.sceneOrtho.overrideMaterial = this.saoMaterial;
     renderer.render( this.sceneOrtho, this.orthoCamera, currentSAOWriteTarget, true);
     this.sceneOrtho.overrideMaterial = null;
+
+		this.frameCount += this.frameCountIncrement;
+		this.currentFrameCount += 1.0;
+		this.frameCount = this.frameCount >= this.samples.length ? this.samples.length : this.frameCount;
+		this.currentFrameCount = this.currentFrameCount >= this.samples.length ? this.samples.length : this.currentFrameCount;
 
 		renderer.autoClear = autoClear;
 		renderer.setClearColor( clearColor );

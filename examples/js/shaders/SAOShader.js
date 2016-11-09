@@ -171,7 +171,6 @@ THREE.SAOShader = {
 				"vec2 sampleUvOffset = poissonSample;",
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"vec2 sampleUv = vUv + sampleUvOffset;",
-
 				"float sampleDepth = getDepthMIP( sampleUv, 0 );",
 				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
 					"continue;",

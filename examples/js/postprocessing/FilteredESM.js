@@ -12,10 +12,10 @@ function FilteredESM( scene, camera, light ) {
 
   var nearPlane = 1;
   var farPlane = 1000;
-  this.lightCamera = new THREE.PerspectiveCamera( 120, window.innerWidth / window.innerHeight, nearPlane, farPlane );
+  this.lightCamera = new THREE.PerspectiveCamera( 130, window.innerWidth / window.innerHeight, nearPlane, farPlane );
 
-  var shadowMapWidth  = 512;
-  var shadowMapHeight = 512;
+  var shadowMapWidth  = 1024;
+  var shadowMapHeight = 1024;
   var params = { format: THREE.RGBAFormat, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowDepthMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
   this.shadowDepthMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
@@ -51,7 +51,7 @@ function FilteredESM( scene, camera, light ) {
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
-  this.arealightSize = 20;
+  this.arealightSize = 40;
 }
 
 FilteredESM.prototype = {
@@ -113,7 +113,7 @@ FilteredESM.prototype = {
     var currentShadowReadTarget = (this.frameCount % 2 == 0) ? this.shadowBuffer : this.shadowBufferTemp;
     this.accumulatePassMaterial.uniforms["shadowBuffer"].value = currentShadowReadTarget;
 
-    this.accumulatePassMaterial.uniforms["lightPosition"].value = this.light.position;
+    this.accumulatePassMaterial.uniforms["lightPosition"].value = this.lightCamera.position;
     this.scene.overrideMaterial = this.accumulatePassMaterial;
 
     var currentShadowWriteTarget = (this.frameCount % 2 == 0) ? this.shadowBufferTemp : this.shadowBuffer;
@@ -312,7 +312,7 @@ FilteredESM.prototype = {
           vec2 shadowCoord2d = shadowCoord.xy/shadowCoord.w;\
           float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
           float bias = tan(acos(NdotL));\
-          bias = clamp(bias, 0.0, 0.001);\
+          bias = clamp(bias, 0.001, 0.001);\
           float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r + bias;\
           shadowDepth = shadowDepth * ( nearFarPlanes.y - nearFarPlanes.x ) + nearFarPlanes.x;\
           const float c = 1.75;\
@@ -322,7 +322,7 @@ FilteredESM.prototype = {
           if(currentFrameCount > maxSamples){\
             shadowValue = prevShadow;\
           }\
-          float newShadowValue = (currentFrameCount - 1.0) * prevShadow + shadowValue;\
+          float newShadowValue = (currentFrameCount - 1.0) * prevShadow + shadowValue * NdotL;\
           newShadowValue /= currentFrameCount;\
           \
           gl_FragColor = packDepthToRGBA(newShadowValue);\

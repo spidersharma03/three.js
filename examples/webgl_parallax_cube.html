@@ -62,7 +62,7 @@
 		var filteredESM;
 
 		stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-		document.body.appendChild( stats.dom );
+		// document.body.appendChild( stats.dom );
 			// scene size
 			var WIDTH = window.innerWidth;
 			var HEIGHT = window.innerHeight;
@@ -90,6 +90,10 @@
 			var skirtMeshes = [];
 			var hobBlackMesh, hobChromeMesh;
 			var sinkMesh;
+			var toolMeshes = [];
+			var bowlSetMeshes = [];
+			var plateSetMeshes = [];
+			var sphMeshes = [];
 
 			var carMeshes = [];
 			var chimneyBlackMesh, chimneyChromeMesh;
@@ -100,6 +104,8 @@
 			var skirtMaterial;
 			var hobBlackMaterial, hobChromeMaterial;
 			var sinkMaterial;
+			var toolMaterial;
+			var bowlMaterial;
 
 			var carMaterial;
 			var chimneyBlackMaterial, chimneyChromeMaterial;
@@ -137,7 +143,7 @@
 	          float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
 	          float shadowValue = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
 						float saoValue = texture2D( saoBuffer, gl_FragCoord.xy/windowSize).r;\
-	          gl_FragColor = vec4(shadowValue*saoValue);\
+	          gl_FragColor = vec4(saoValue);\
 	        }",
 	    } );
 
@@ -168,25 +174,35 @@
 			function init() {
 
 				// renderer
-				renderer = new THREE.WebGLRenderer({antialias : false});
+				renderer = new THREE.WebGLRenderer({antialias : true});
 				renderer.shadowMap.type = THREE.BasicShadowMap;
 				// renderer.shadowMap.enabled = true;
-				// renderer.toneMapping = THREE.LinearToneMapping;
+				renderer.toneMapping = THREE.Uncharted2ToneMapping;
+				renderer.toneMappingExposure = 1;
+				renderer.toneMappingWhitePoint = 1;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( WIDTH, HEIGHT );
-				renderer.setClearColor(0xeeeeff);
+				renderer.setClearColor(0xffffff);
 				// scene
 				scene = new THREE.Scene();
 				scene.add(rootNode);
-				var sphGeometry = new THREE.SphereGeometry(5, 20, 20);
-				var sphMesh = new THREE.Mesh(sphGeometry, new THREE.MeshBasicMaterial({color:0xffffff}));
-				sphMesh.position.y = 35;
-				// rootNode.add(sphMesh);
+				var radius = 8;
+				var sphGeometry = new THREE.TorusGeometry(radius,radius/4, 20, 20);
+				var y = 0;
+				for( var i=0; i<5; i++) {
+				  sphMeshes[i] = new THREE.Mesh(sphGeometry, new THREE.MeshStandardMaterial({color:0xffffff}));
+					//sphMesh.position.z = -10;
+					//sphMesh.position.x = 10;
+					sphMeshes[i].position.y = y;
+					sphMeshes[i].rotation.y = 1.5;
+					// rootNode.add(sphMeshes[i]);
+					y += radius*2;
+				}
 
 				loadModels();
 				// camera
 				camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
-				camera.position.set( 0, 75, 160 );
+				camera.position.set( 0, 75, 120 );
 				saoPass = new THREE.SAOPass( scene, camera );
 				progressiveShadowPass = new ProgressiveShadowPass(scene, camera);
 
@@ -309,6 +325,72 @@
 				rootNode.position.x = 44;
 				rootNode.position.z = 0.2;
 
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/Kitchen tools_01.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								toolMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 0.03;
+						object.position.y = 50;
+						object.position.z = -59.4;
+						object.position.x = -25;
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/Bowl_set_00.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								bowlSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 0.03;
+						object.position.y = 34.5;
+						object.position.z = -45;
+						object.position.x = -75;
+					}
+				);
+
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/Plates_00.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								plateSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 0.06;
+						object.position.y = 39.7;
+						object.position.z = -57.5;
+						object.position.x = -75;
+						object.rotation.x = Math.PI/2.5;
+						object1 = object.clone();
+						object1.position.x += 80;
+						rootNode.add( object1 );
+						object1.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								plateSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+					}
+				);
+
 				modelLoader.load(
 					'models/obj/Model_KitchenLShape/com_m_clean_bottom.obj',
 					function ( object ) {
@@ -396,16 +478,17 @@
 
 				var loader = new THREE.TextureLoader(manager);
 			  roughnessMap = loader.load("textures/roughness_map.jpg");
-			  var wallTexture1 = loader.load("textures/kitchen_tile2.jpg");
+			  var wallTexture1 = loader.load("textures/Blanc Rose Lakhsass.jpg");
 				wallTexture1.wrapS = THREE.RepeatWrapping;
 				wallTexture1.wrapT = THREE.RepeatWrapping;
 				var wallTexture2 = loader.load("textures/5096.jpg");
 				var floorTexture = loader.load("textures/kitchen-tile-texture-seamless.jpg");
 				var wallTexture3 = loader.load("textures/Pink wall paint stucco plaster texture tileable.jpg");
 				var ceilingTexture = loader.load("textures/tilable_wall.jpg");
-				var graniteTexture = loader.load("textures/granite.jpg");
+				var graniteTexture = loader.load("textures/marble-tiles-500x500.jpg");
+				// var graniteTexture = loader.load("textures/granite.jpg");
 				// var graniteTexture = loader.load("textures/marble-tiles-500x500.jpg");
-				var cupboardTexture = loader.load("textures/Hickory.jpg");
+				var cupboardTexture = loader.load("textures/10592 MR+ Orchard Delight.jpg");
 
 				floorTexture.wrapS = THREE.RepeatWrapping;
 				floorTexture.wrapT = THREE.RepeatWrapping;
@@ -431,11 +514,11 @@
 
 				graniteTexture.wrapS = THREE.RepeatWrapping;
 				graniteTexture.wrapT = THREE.RepeatWrapping;
-				graniteTexture.repeat.set( 6, 1 );
+				graniteTexture.repeat.set( 1, 1 );
 
 				cupboardTexture.wrapS = THREE.RepeatWrapping;
 				cupboardTexture.wrapT = THREE.RepeatWrapping;
-				cupboardTexture.repeat.set( 6, 1 );
+				// cupboardTexture.repeat.set( 6, 1 );
 
 				renderer.gammaInput = true;
 				renderer.gammaOutput = true;
@@ -539,12 +622,14 @@
 				// scene.add( graniteMesh2 );
 
 			  graniteMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05, metalness:0.0  } );
-				shMaterial = new THREE.MeshStandardMaterial( { color: 0x003333, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
+				shMaterial = new THREE.MeshStandardMaterial( { color: 0x881111, metalness:0,map:cupboardTexture, bumpMap: null, bumpScale:0.0, roughness:0.02, metalness:0.0  } );
 				handleMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.1, metalness: 1.0  } );
 				skirtMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: graniteTexture, bumpScale:0.30, roughness:0.95, metalness: 0.0  } );
 				hobBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
 				hobChromeMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness: 1.0  } );
-				sinkMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness: 1.0  } );
+				toolMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.03, metalness: 1.0  } );
+				sinkMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.1, metalness: 1.0  } );
+				bowlMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
 
 				carMaterial = new THREE.MeshStandardMaterial( { color: 0xaaaaaa, metalness:0,map:null, bumpMap: null, bumpScale:0.0, roughness:0.2, metalness:0.0  } );
 				chimneyBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
@@ -588,7 +673,7 @@
 				spotLight.angle = Math.PI/2.5;
 				spotLight.penumbra = 0.04;
 				// spotLight.decay = 1;
-				spotLight.position.set( 0, roomHeight/1, 0 );
+				spotLight.position.set( -0, roomHeight/1, -0 );
 				spotLight.target.position.set( 0, 0, 0 );
 				spotLight.castShadow = true;
 				spotLight.shadow.bias = -0.001;
@@ -634,11 +719,11 @@
 				filteredESM.render( renderer );
 				// plane.material.map = saoPass.getSAOBuffer().texture;
 				// specialMaterial.uniforms["shadowBuffer"].value = progressiveShadowPass.getShadowBuffer().texture;
-				specialMaterial.uniforms["shadowBuffer"].value = filteredESM.getShadowBuffer().texture;
-				specialMaterial.uniforms["saoBuffer"].value = saoPass.getSAOBuffer().texture;
-				renderer.render(this.sceneOrtho, this.orthoCamera);
+				// specialMaterial.uniforms["shadowBuffer"].value = filteredESM.getShadowBuffer().texture;
+				// specialMaterial.uniforms["saoBuffer"].value = saoPass.getSAOBuffer().texture;
+				// renderer.render(this.sceneOrtho, this.orthoCamera);
 
-				return;
+				// return;
 
 				renderer.render(scene, camera);
 
@@ -695,54 +780,65 @@
 					}
 
 					planeBottom.material.envMap = probes[0];
-					planeBottom.material.envMapProbe1 = probes[1];
+					planeBottom.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					planeBottom.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					planeBottom.material.needsUpdate = true;
 					planeBottom.material.metalness = 0;
 					planeBottom.material.roughness = 0.0;
 
 					planeTop.material.envMap = probes[0];
-					planeTop.material.envMapProbe1 = probes[1];
+					planeTop.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					planeTop.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					planeTop.material.needsUpdate = true;
 
 					planeFront.material.envMap = probes[0];
-					planeFront.material.envMapProbe1 = probes[1];
+					planeFront.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					planeFront.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					planeFront.material.needsUpdate = true;
 					planeFront.material.metalness = 0;
 
 					planeBack.material.envMap = probes[0];
-					planeBack.material.envMapProbe1 = probes[1];
+					planeBack.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					planeBack.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					planeBack.material.needsUpdate = true;
 					planeBack.material.metalness = 0;
 
 					planeLeft.material.envMap = probes[0];
-					planeLeft.material.envMapProbe1 = probes[1];
+					planeLeft.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					planeLeft.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					planeLeft.material.needsUpdate = true;
 					planeLeft.material.metalness = 0;
 
 					planeRight.material.envMap = probes[0];
-					planeRight.material.envMapProbe1 = probes[1];
+					planeRight.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					planeRight.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					planeRight.material.needsUpdate = true;
 					planeRight.material.metalness = 0;
 
 					boxMesh1.material.envMap = probes[0];
-					boxMesh1.material.envMapProbe1 = probes[1];
+					boxMesh1.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					boxMesh1.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					boxMesh1.material.needsUpdate = true;
 
 					graniteMesh1.material.envMap = probes[0];
-					graniteMesh1.material.envMapProbe1 = probes[1];
+					graniteMesh1.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					graniteMesh1.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					graniteMesh1.material.needsUpdate = true;
 
 					boxMesh2.material.envMap = probes[0];
-					boxMesh2.material.envMapProbe1 = probes[1];
+					boxMesh2.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					boxMesh2.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					boxMesh2.material.needsUpdate = true;
 
 					graniteMesh2.material.envMap = probes[0];
-					graniteMesh2.material.envMapProbe1 = probes[1];
+					graniteMesh2.material.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					graniteMesh2.material.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					graniteMesh2.material.needsUpdate = true;
 
 					for( var i=0; i<graniteMeshes.length; i++) {
 						graniteMaterial.envMap = probes[0];
-						graniteMaterial.envMapProbe1 = probes[1];
+						graniteMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						graniteMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 						graniteMaterial.needsUpdate = true;
 						graniteMeshes[i].material = graniteMaterial;
 						var texture = graniteMaterial.map;
@@ -752,55 +848,103 @@
 					}
 					for( var i=0; i<shMeshes.length; i++) {
 						shMaterial.envMap = probes[0];
-						shMaterial.envMapProbe1 = probes[1];
+						shMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						shMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 						shMaterial.needsUpdate = true;
 						shMeshes[i].material = shMaterial;
 					}
 					for( var i=0; i<handleMeshes.length; i++) {
 						handleMaterial.envMap = probes[0];
-						handleMaterial.envMapProbe1 = probes[1];
+						handleMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						handleMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 						handleMaterial.needsUpdate = true;
 						handleMeshes[i].material = handleMaterial;
 					}
 					for( var i=0; i<skirtMeshes.length; i++) {
 						skirtMaterial.envMap = probes[0];
-						skirtMaterial.envMapProbe1 = probes[1];
+						skirtMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						skirtMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 						skirtMaterial.needsUpdate = true;
 						skirtMeshes[i].material = skirtMaterial;
 					}
 					for( var i=0; i<carMeshes.length; i++) {
 						carMaterial.envMap = probes[0];
-						carMaterial.envMapProbe1 = probes[1];
+						carMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						carMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 						carMaterial.needsUpdate = true;
 						carMeshes[i].material = carMaterial;
 					}
 					hobBlackMaterial.envMap = probes[0];
-					hobBlackMaterial.envMapProbe1 = probes[1];
+					hobBlackMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					hobBlackMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					hobBlackMaterial.needsUpdate = true;
 					hobBlackMesh.material = hobBlackMaterial;
 
 					hobChromeMaterial.envMap = probes[0];
-					hobChromeMaterial.envMapProbe1 = probes[1];
+					hobChromeMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					hobChromeMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					hobChromeMaterial.needsUpdate = true;
 					hobChromeMesh.material = hobChromeMaterial;
 
 					sinkMaterial.envMap = probes[0];
-					sinkMaterial.envMapProbe1 = probes[1];
+					sinkMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					sinkMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					sinkMaterial.needsUpdate = true;
 					sinkMesh.material = sinkMaterial;
 
 					chimneyBlackMaterial.envMap = probes[0];
-					chimneyBlackMaterial.envMapProbe1 = probes[1];
+					chimneyBlackMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					chimneyBlackMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					chimneyBlackMaterial.needsUpdate = true;
 					chimneyBlackMesh.material = chimneyBlackMaterial;
 
 					chimneyChromeMaterial.envMap = probes[0];
-					chimneyChromeMaterial.envMapProbe1 = probes[1];
+					chimneyChromeMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					chimneyChromeMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
 					chimneyChromeMaterial.needsUpdate = true;
 					chimneyChromeMesh.material = chimneyChromeMaterial;
+
+					toolMaterial.envMap = probes[0];
+					toolMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					toolMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
+					toolMaterial.needsUpdate = true;
+
+					bowlMaterial.envMap = probes[0];
+					bowlMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					bowlMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
+					bowlMaterial.needsUpdate = true;
+
+					for( var i=0; i<toolMeshes.length; i++) {
+						toolMeshes[i].material = toolMaterial;
+						toolMeshes[i].material.needsUpdate = true;
+						toolMeshes[i].envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						toolMeshes[i].envMapProbe2 = saoPass.getSAOBuffer().texture;
+					}
+					for( var i=0; i<bowlSetMeshes.length; i++) {
+						bowlSetMeshes[i].material = bowlMaterial;
+						bowlSetMeshes[i].material.needsUpdate = true;
+						bowlSetMeshes[i].envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						bowlSetMeshes[i].envMapProbe2 = saoPass.getSAOBuffer().texture;
+					}
+					for( var i=0; i<plateSetMeshes.length; i++) {
+						plateSetMeshes[i].material = bowlMaterial;
+						plateSetMeshes[i].material.needsUpdate = true;
+						plateSetMeshes[i].envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						plateSetMeshes[i].envMapProbe2 = saoPass.getSAOBuffer().texture;
+					}
 					// boxMesh2.material.envMap = pmremCubeUVPacker.CubeUVRenderTarget.texture;
 					// boxMesh2.material.needsUpdate = true;
 					boxMesh1.visible = true;
+
+					for( var i=0; i<sphMeshes.length; i++) {
+						sphMeshes[i].envMap = probes[0];
+						sphMeshes[i].envMapProbe1 = filteredESM.getShadowBuffer().texture;
+						sphMeshes[i].envMapProbe2 = saoPass.getSAOBuffer().texture;
+						sphMeshes[i].material = planeFront.material;
+						sphMeshes[i].material.needsUpdate = true;
+					}
+
+
 					updateCount++;
 				}
 
