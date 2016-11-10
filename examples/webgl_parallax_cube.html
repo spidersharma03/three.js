@@ -36,6 +36,7 @@
 
 		<script src="../build/three.js"></script>
 		<script src="../examples/js/libs/stats.min.js"></script>
+		<script src="js/loaders/ColladaLoader.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/controls/FlyControls.js"></script>
@@ -106,6 +107,8 @@
 			var sinkMaterial;
 			var toolMaterial;
 			var bowlMaterial;
+			var sofaMaterial;
+			sofaMaterial = new THREE.MeshStandardMaterial({color:0x000000, roughness:1});
 
 			var carMaterial;
 			var chimneyBlackMaterial, chimneyChromeMaterial;
@@ -325,6 +328,22 @@
 				rootNode.position.x = 44;
 				rootNode.position.z = 0.2;
 
+				var dae;
+				var daeLoader = new THREE.ColladaLoader();
+				daeLoader.options.convertUpAxis = true;
+				daeLoader.load( 'models/obj/Model_KitchenLShape/poliform_soho_sofa_s3.dae', function ( collada ) {
+					dae = collada.scene;
+					dae.traverse( function ( child ) {
+						if( child instanceof THREE.Mesh ) {
+							child.material = sofaMaterial;
+						}
+					} );
+					rootNode.add(dae);
+					dae.scale.x = dae.scale.y = dae.scale.z = 10;
+					dae.updateMatrix();
+					// init();
+					// animate();
+				} );
 
 				modelLoader.load(
 					'models/obj/Model_KitchenLShape/Kitchen tools_01.obj',
@@ -477,10 +496,20 @@
 				var planeGeo = new THREE.PlaneBufferGeometry( 1.0, 1.0 );
 
 				var loader = new THREE.TextureLoader(manager);
-			  roughnessMap = loader.load("textures/roughness_map.jpg");
+			  roughnessMap = loader.load("textures/leather_roughness.png");
 			  var wallTexture1 = loader.load("textures/Blanc Rose Lakhsass.jpg");
 				wallTexture1.wrapS = THREE.RepeatWrapping;
 				wallTexture1.wrapT = THREE.RepeatWrapping;
+
+				roughnessMap.wrapS = THREE.RepeatWrapping;
+				roughnessMap.wrapT = THREE.RepeatWrapping;
+				sofaMaterial.roughnessMap = roughnessMap;
+				sofaMaterial.bumpMap = roughnessMap;
+				roughnessMap.repeat.set( 4, 4 );
+				roughnessMap.generateMipmaps = true;
+
+				sofaMaterial.bumpScale = 0.02;
+
 				var wallTexture2 = loader.load("textures/5096.jpg");
 				var floorTexture = loader.load("textures/kitchen-tile-texture-seamless.jpg");
 				var wallTexture3 = loader.load("textures/Pink wall paint stucco plaster texture tileable.jpg");
@@ -943,7 +972,11 @@
 						sphMeshes[i].material = planeFront.material;
 						sphMeshes[i].material.needsUpdate = true;
 					}
-
+					//
+					sofaMaterial.envMap = probes[0];
+					sofaMaterial.envMapProbe1 = filteredESM.getShadowBuffer().texture;
+					sofaMaterial.envMapProbe2 = saoPass.getSAOBuffer().texture;
+					sofaMaterial.needsUpdate = true;
 
 					updateCount++;
 				}

@@ -200,7 +200,7 @@ THREE.SAOShader = {
 			"float centerViewZ = getViewZ( centerDepth );",
 			"vec3 viewPosition = getViewPosition( vUv, centerDepth, centerViewZ );",
 
-			"float ambientOcclusion = getAmbientOcclusion( viewPosition );",
+			"float ambientOcclusion = clamp(getAmbientOcclusion( viewPosition ), 0.0, 1.0);",
 
 			//"gl_FragColor = getDefaultColor( vUv );",
 
@@ -211,7 +211,7 @@ THREE.SAOShader = {
 			"}",
 			"float newAoValue = (currentFrameCount - 1.0) * prevAoSum + aoValue;",
 			"newAoValue /= currentFrameCount;",
-			"gl_FragColor = vec4( newAoValue);",
+			"gl_FragColor = vec4( (newAoValue));",
 		"}"
 
 	].join( "\n" )

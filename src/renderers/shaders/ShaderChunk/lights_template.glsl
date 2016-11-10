@@ -57,7 +57,7 @@ IncidentLight directLight;
 		getSpotDirectLightIrradiance( spotLight, geometry, directLight );
 
 		#if defined( USE_ENVMAP )
-			float aoValue = clamp(texture2D( envMapProbe2, gl_FragCoord.xy/vec2(1280.0, 647.0)).r, 0.0, 1.0);
+			float aoValue = texture2D( envMapProbe2, gl_FragCoord.xy/vec2(1280.0, 647.0)).r;
 			float shadowValue = unpackRGBAToDepth(texture2D( envMapProbe1, gl_FragCoord.xy/vec2(1280.0, 647.0)));
 			directLight.color = vec3(shadowValue * aoValue);
 		#endif

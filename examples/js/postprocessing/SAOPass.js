@@ -20,7 +20,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scene = scene;
 	this.camera = camera;
 
-	this.intensity = 0.7;
+	this.intensity = 1;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.occlusionSphereWorldRadius = 4;
 
