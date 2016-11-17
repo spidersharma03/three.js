@@ -12,7 +12,7 @@ function FilteredESM( scene, camera, light ) {
 
   var nearPlane = 1;
   var farPlane = 1000;
-  this.lightCamera = new THREE.PerspectiveCamera( 130, window.innerWidth / window.innerHeight, nearPlane, farPlane );
+  this.lightCamera = new THREE.PerspectiveCamera( 120, window.innerWidth / window.innerHeight, nearPlane, farPlane );
 
   var shadowMapWidth  = 1024;
   var shadowMapHeight = 1024;
@@ -51,7 +51,7 @@ function FilteredESM( scene, camera, light ) {
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
-  this.arealightSize = 30;
+  this.arealightSize = 40;
 }
 
 FilteredESM.prototype = {
@@ -59,6 +59,7 @@ FilteredESM.prototype = {
   constructor: FilteredESM,
 
   getShadowBuffer: function() {
+   return this.shadowBuffer;
    return this.frameCount %2 === 0 ? this.shadowBufferTemp : this.shadowBuffer;
   },
 

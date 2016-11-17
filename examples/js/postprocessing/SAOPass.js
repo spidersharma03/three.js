@@ -20,9 +20,9 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scene = scene;
 	this.camera = camera;
 
-	this.intensity = 1;
+	this.intensity = 1.0;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
-	this.occlusionSphereWorldRadius = 4;
+	this.occlusionSphereWorldRadius = 2.0;
 
 	var poissonDiskGenerator = new PoissonDiskGenerator(5500, -1, true, true);
 	this.samples = poissonDiskGenerator.generatePoints();
@@ -104,7 +104,7 @@ THREE.SAOPass.prototype = {
 			this.normalRenderTarget = new THREE.WebGLRenderTarget( width, height,
 				{ minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
 		}
-
+		// return;
 		if( ! depthTexture && ! this.depthRenderTarget ) {
 
 			this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
@@ -180,8 +180,8 @@ THREE.SAOPass.prototype = {
 	},
 
 	getSAOBuffer: function() {
-		var currentSAOWriteTarget = (this.currentFrameCount % 2 == 0) ? this.saoRenderTarget : this.saoRenderTargetPingPong;
-		return currentSAOWriteTarget;
+		var currentSAOWriteTarget = (this.currentFrameCount % 2 === 0) ? this.saoRenderTarget : this.saoRenderTargetPingPong;
+		return this.saoRenderTargetPingPong;
 	}
 
 };

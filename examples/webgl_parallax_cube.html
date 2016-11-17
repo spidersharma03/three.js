@@ -44,10 +44,16 @@
 		<script src="js/pmrem/PMREMCubeUVPacker.js"></script>
 		<script src="js/shaders/CopyShader.js"></script>
 		<script src="js/shaders/SAOShader.js"></script>
+		<script src="js/shaders/FXAAShader.js"></script>
 		<!-- <script src="js/shaders/CompositeShader.js"></script> -->
     <script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/shaders/SMAAShader.js"></script>
+		<script src="js/postprocessing/SMAAPass.js"></script>
     <script src="js/postprocessing/MaskPass.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
+		<script src="js/shaders/ConvolutionShader.js"></script>
+		<script src="js/shaders/LuminosityHighPassShader.js"></script>
+		<script src="js/postprocessing/UnrealBloomPass.js"></script>
 		<script src="js/Half.js"></script>
 		<script src="js/utils/PoissonDiskGenerator.js"></script>
     <script src="js/postprocessing/SAOPass.js"></script>
@@ -63,7 +69,7 @@
 		var filteredESM;
 
 		stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
-		// document.body.appendChild( stats.dom );
+		document.body.appendChild( stats.dom );
 			// scene size
 			var WIDTH = window.innerWidth;
 			var HEIGHT = window.innerHeight;
@@ -98,6 +104,7 @@
 
 			var carMeshes = [];
 			var chimneyBlackMesh, chimneyChromeMesh;
+			var composer, fxaa;
 
 			var graniteMaterial;
 			var shMaterial;
@@ -108,7 +115,7 @@
 			var toolMaterial;
 			var bowlMaterial;
 			var sofaMaterial;
-			sofaMaterial = new THREE.MeshStandardMaterial({color:0x000000, roughness:1});
+			sofaMaterial = new THREE.MeshStandardMaterial({color:0xffffee, roughness:0.5});
 
 			var carMaterial;
 			var chimneyBlackMaterial, chimneyChromeMaterial;
@@ -177,10 +184,14 @@
 			function init() {
 
 				// renderer
-				renderer = new THREE.WebGLRenderer({antialias : true});
+				renderer = new THREE.WebGLRenderer({antialias : false});
 				renderer.shadowMap.type = THREE.BasicShadowMap;
 				// renderer.shadowMap.enabled = true;
-				renderer.toneMapping = THREE.Uncharted2ToneMapping;
+				// ReinhardToneMapping: 2,
+				// Uncharted2ToneMapping: 3, // John Hable
+				// CineonToneMapping: 4, // optimized filmic operator by Jim Hejl and Richard Burgess-Dawson
+
+				// renderer.toneMapping = THREE.CineonToneMapping;
 				renderer.toneMappingExposure = 1;
 				renderer.toneMappingWhitePoint = 1;
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -224,6 +235,20 @@
 				window.addEventListener("mousemove", onMouseMove);
 				container.addEventListener("mousewheel", onMouseWheel);
 				renderer.domElement.addEventListener("mousewheel", onMouseWheel);
+
+				renderPass = new THREE.RenderPass( scene, camera );
+				var bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+				bloomPass.clear = false;
+				fxaa = new THREE.ShaderPass( THREE.FXAAShader );
+				smaaPass = new THREE.SMAAPass( window.innerWidth, window.innerHeight );
+				fxaa.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
+
+				fxaa.renderToScreen = true;
+				smaaPass.renderToScreen = true;
+				composer = new THREE.EffectComposer( renderer );
+				composer.addPass( renderPass );
+				// composer.addPass( bloomPass );
+				composer.addPass( fxaa );
 			}
 
 			var isMouseDown = false;
@@ -338,7 +363,7 @@
 							child.material = sofaMaterial;
 						}
 					} );
-					rootNode.add(dae);
+					// rootNode.add(dae);
 					dae.scale.x = dae.scale.y = dae.scale.z = 10;
 					dae.updateMatrix();
 					// init();
@@ -375,7 +400,7 @@
 							}
 						} );
 						object.scale.x = object.scale.y = object.scale.z = 0.03;
-						object.position.y = 34.5;
+						object.position.y = 34.7;
 						object.position.z = -45;
 						object.position.x = -75;
 					}
@@ -743,6 +768,9 @@
 
 			function render() {
 
+				// if(!allLoaded)
+					// return;
+
 				saoPass.render( renderer );
 				// progressiveShadowPass.render( renderer );
 				filteredESM.render( renderer );
@@ -754,14 +782,15 @@
 
 				// return;
 
-				renderer.render(scene, camera);
+				// renderer.render(scene, camera);
+				composer.render();
 
-				if ( updateCount < 3 && allLoaded ) {
+				if ( updateCount < 2 && allLoaded ) {
 					probes = [];
 					// boxMesh1.visible = false;
 					for( var i=0; i<numProbes; i++ ) {
 						cubeCamera.position.copy( probePositions[i] );
-						renderer.autoClear = true;
+						renderer.autoClear = false;
 						cubeCamera.updateCubeMap( renderer, scene );
 						updateCubemap = false;
 						var cubeMap = cubeCamera.renderTarget;
