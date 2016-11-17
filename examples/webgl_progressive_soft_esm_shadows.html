@@ -108,85 +108,106 @@
 						}
 					} );
 					scene.add(dae);
-					dae.scale.x = dae.scale.y = dae.scale.z = 1.5;
+					dae.scale.x = dae.scale.y = dae.scale.z = 1.2;
 					dae.updateMatrix();
 					// init();
 					// animate();
 				} );
 				var rootNode = new THREE.Object3D();
+				rootNode.scale.x = 0.1;
+				rootNode.scale.y = 0.1;
+				rootNode.scale.z = 0.1;
 				scene.add(rootNode);
+				var modelLoader = new THREE.OBJLoader();
 
-				// var modelLoader = new THREE.OBJLoader();
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_clean_bottom.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_clean_top.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_consumable_bottom.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_consumable_top.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_cook_bottom.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_cook_top.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_non consumable_bottom.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_non consumable_top.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_prep_bottom.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
-				// );
-				// modelLoader.load(
-				// 	'models/obj/Model_KitchenLShape/com_m_prep_top.obj',
-				// 	function ( object ) {
-				// 		rootNode.add( object );
-				// 		object.traverse( IdentifyAndAddMeshes );
-				// 	}
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/Bowl_set_00.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								// bowlSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 0.03;
+						object.position.y = 34.7;
+						object.position.z = -45;
+						object.position.x = -75;
+					}
+				);
 
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_clean_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_clean_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_consumable_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_consumable_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_cook_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_cook_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_non consumable_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_non consumable_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_prep_bottom.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
+				modelLoader.load(
+					'models/obj/Model_KitchenLShape/com_m_prep_top.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( IdentifyAndAddMeshes );
+					}
+				);
 				renderer.shadowMap.enabled = true;
 				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 				stats = new Stats();
@@ -243,7 +264,7 @@
 				// controls.addEventListener( 'change', render );
 				controls.minDistance = 10;
 				controls.maxDistance = 500;
-				controls.maxPolarAngle = Math.PI / 2;
+				// controls.maxPolarAngle = Math.PI / 2;
 				//controls.enablePan = false;
 				controls.target.copy( mshBox.position );
 				controls.update();

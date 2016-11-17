@@ -13,11 +13,11 @@ function FilteredESM( scene, camera, light ) {
   var nearPlane = 1;
   var farPlane = 100;
   this.lightCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, nearPlane, farPlane );
-  var d = 50;
+  var d = 20;
   this.lightCamera = new THREE.OrthographicCamera( -d, d, d, -d, nearPlane, farPlane );
 
-  var shadowMapWidth  = 512;
-  var shadowMapHeight = 512;
+  var shadowMapWidth  = 1024;
+  var shadowMapHeight = 1024;
   var params = { format: THREE.RGBAFormat, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowDepthMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
   this.shadowDepthMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
@@ -65,7 +65,7 @@ FilteredESM.prototype = {
   },
 
   sampleLightDirection: function( light, sampleNumber ) {
-      var radius = 60;
+      var radius = 50;
       var theta = Math.random() * Math.PI * 0.49;
       var phi = Math.random() * Math.PI * 2;
       var x = radius * Math.sin(theta) * Math.cos(phi);
@@ -375,7 +375,7 @@ FilteredESM.prototype = {
             void main() {\
               float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
               float shadowValue = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
-              gl_FragColor = vec4(pow(shadowValue, 0.75));\
+              gl_FragColor = vec4(pow(NdotL*shadowValue, 1.0));\
             }",
         } );
   }
