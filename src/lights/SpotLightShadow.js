@@ -1,21 +1,28 @@
+import { LightShadow } from './LightShadow';
+import { _Math } from '../math/Math';
+import { PerspectiveCamera } from '../cameras/PerspectiveCamera';
+
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-THREE.SpotLightShadow = function () {
+function SpotLightShadow() {
+
 	var fov = 50;
-	this.cameraParams = new THREE.Vector3( fov, 10.5, 1000 );
-	THREE.LightShadow.call( this, new THREE.PerspectiveCamera( this.cameraParams.x, 1, this.cameraParams.y, this.cameraParams.z ) );
+	this.cameraParams = new Vector3( fov, 10.5, 1000 );
+	LightShadow.call( this, new PerspectiveCamera( this.cameraParams.x, 1, this.cameraParams.y, this.cameraParams.z ) );
 
-};
+}
 
-THREE.SpotLightShadow.prototype = Object.assign( Object.create( THREE.LightShadow.prototype ), {
+SpotLightShadow.prototype = Object.assign( Object.create( LightShadow.prototype ), {
 
-	constructor: THREE.SpotLightShadow,
+	constructor: SpotLightShadow,
+
+	isSpotLightShadow: true,
 
 	update: function ( light ) {
 
-		var fov = THREE.Math.RAD2DEG * 2 * light.angle;
+		var fov = _Math.RAD2DEG * 2 * light.angle;
 		var aspect = this.mapSize.width / this.mapSize.height;
 		var far = light.distance || 500;
 
@@ -33,3 +40,5 @@ THREE.SpotLightShadow.prototype = Object.assign( Object.create( THREE.LightShado
 	}
 
 } );
+
+export { SpotLightShadow };

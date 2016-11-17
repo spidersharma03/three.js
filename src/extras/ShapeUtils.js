@@ -2,7 +2,7 @@
  * @author zz85 / http://www.lab4games.net/zz85/blog
  */
 
-THREE.ShapeUtils = {
+var ShapeUtils = {
 
 	// calculate area of the contour polygon
 
@@ -52,7 +52,7 @@ THREE.ShapeUtils = {
 			cx = contour[ verts[ w ] ].x;
 			cy = contour[ verts[ w ] ].y;
 
-			if ( Number.EPSILON > ( ( ( bx - ax ) * ( cy - ay ) ) - ( ( by - ay ) * ( cx - ax ) ) ) ) return false;
+			if ( ( bx - ax ) * ( cy - ay ) - ( by - ay ) * ( cx - ax ) <= 0 ) return false;
 
 			var aX, aY, bX, bY, cX, cY;
 			var apx, apy, bpx, bpy, cpx, cpy;
@@ -105,7 +105,7 @@ THREE.ShapeUtils = {
 
 			var u, v, w;
 
-			if ( THREE.ShapeUtils.area( contour ) > 0.0 ) {
+			if ( ShapeUtils.area( contour ) > 0.0 ) {
 
 				for ( v = 0; v < n; v ++ ) verts[ v ] = v;
 
@@ -654,7 +654,7 @@ THREE.ShapeUtils = {
 		// remove holes by cutting paths to holes and adding them to the shape
 		var shapeWithoutHoles = removeHoles( contour, holes );
 
-		var triangles = THREE.ShapeUtils.triangulate( shapeWithoutHoles, false ); // True returns indices for points of spooled shape
+		var triangles = ShapeUtils.triangulate( shapeWithoutHoles, false ); // True returns indices for points of spooled shape
 		//console.log( "triangles",triangles, triangles.length );
 
 		// check all face vertices against all points map
@@ -685,7 +685,7 @@ THREE.ShapeUtils = {
 
 	isClockWise: function ( pts ) {
 
-		return THREE.ShapeUtils.area( pts ) < 0;
+		return ShapeUtils.area( pts ) < 0;
 
 	},
 
@@ -763,3 +763,6 @@ THREE.ShapeUtils = {
 	} )()
 
 };
+
+
+export { ShapeUtils };

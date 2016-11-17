@@ -1,11 +1,16 @@
+import { Material } from './Material';
+
 /**
- * @author bhouston / http://clara.io/
+ * @author bhouston / https://clara.io
  *
+ * parameters = {
+ *
+ * }
  */
 
-THREE.MeshCubeMaterial = function ( parameters ) {
+function MeshCubeMaterial = function ( parameters ) {
 
-	THREE.Material.call( this, parameters );
+	Material.call( this );
 
 	this.type = 'MeshCubeMaterial';
 
@@ -24,12 +29,14 @@ THREE.MeshCubeMaterial = function ( parameters ) {
 
 };
 
-THREE.MeshCubeMaterial.prototype = Object.create( THREE.Material.prototype );
-THREE.MeshCubeMaterial.prototype.constructor = THREE.MeshCubeMaterial;
+MeshCubeMaterial.prototype = Object.create( Material.prototype );
+MeshCubeMaterial.prototype.constructor = MeshCubeMaterial;
 
-THREE.MeshCubeMaterial.prototype.copy = function ( source ) {
+MeshCubeMaterial.prototype.isMeshCubeMaterial = true;
 
-	THREE.Material.prototype.copy.call( this, source );
+MeshCubeMaterial.prototype.copy = function ( source ) {
+
+	Material.prototype.copy.call( this, source );
 
 	this.envMap = source.envMap;
 	this.envMapIntensity = source.envMapIntensity;

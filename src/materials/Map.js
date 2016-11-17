@@ -1,9 +1,11 @@
+import { Vector2 } from '../math/Vector2';
+
 /**
  * @author Ben Houston / bhouston / http://clara.io
  *
  */
 
-THREE.Map = function ( name, uvChannel, uvTransform, texelTransform ) {
+function Map( name, uvChannel, uvTransform, texelTransform ) {
 
   this.name = name || "unnamed";
 
@@ -23,7 +25,7 @@ THREE.Map = function ( name, uvChannel, uvTransform, texelTransform ) {
 
 };
 
-THREE.Map.prototype = {
+Map.prototype = {
 
   constructor: THREE.Map,
 
@@ -65,16 +67,16 @@ THREE.Map.prototype = {
 
 };
 
-THREE.Map.SupportedMapNames = [
+Map.SupportedMapNames = [
 	'map', 'lightMap', 'aoMap', 'emissiveMap', 'specularMap', 'bumpMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'displacementMap', 'falloffMap', 'falloffAlphaMap'
 ];
-THREE.Map.SupportedMapSlotNames = [];
-THREE.Map.SupportedMapUVNames = [];
-THREE.Map.SupportedMapTexelNames = [];
+Map.SupportedMapSlotNames = [];
+Map.SupportedMapUVNames = [];
+Map.SupportedMapTexelNames = [];
 
-for( var i = 0; i < THREE.Map.SupportedMapNames.length; i ++ ) {
-  var name = THREE.Map.SupportedMapNames [i];
-  THREE.Map.SupportedMapSlotNames.push( name + 'Slot' );
-  THREE.Map.SupportedMapUVNames.push( name + 'UVTransformParams' );
-  THREE.Map.SupportedMapTexelNames.push( name + 'TexelTransformParams' );
+for( var i = 0; i < Map.SupportedMapNames.length; i ++ ) {
+  var name = Map.SupportedMapNames [i];
+  Map.SupportedMapSlotNames.push( name + 'Slot' );
+  Map.SupportedMapUVNames.push( name + 'UVTransformParams' );
+  Map.SupportedMapTexelNames.push( name + 'TexelTransformParams' );
 }

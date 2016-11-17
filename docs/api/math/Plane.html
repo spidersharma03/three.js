@@ -86,6 +86,22 @@
 		Tests whether a line segment intersects with the plane. (Do not mistake this for a collinear check.)
 		</div>
 
+		<h3>[method:Boolean intersectsBox]( [page:Box3 box] ) [page:Plane this]</h3>
+		<div>
+		box -- Box to check for intersection against.
+		</div>
+		<div>
+		Determines whether or not this plane intersects *box*.
+		</div>
+
+		<h3>[method:Boolean intersectsSphere]( [page:Sphere sphere] ) [page:Plane this]</h3>
+		<div>
+		sphere -- Sphere to check for intersection against.
+		</div>
+		<div>
+		Determines whether or not this plane intersects *sphere*.
+		</div>
+
 		<h3>[method:Vector3 intersectLine]( [page:Line3 line], [page:Vector3 optionalTarget] ) or [page:undefined]</h3>
 		<div>
 		line -- [page:Line3] <br />
@@ -95,7 +111,7 @@
 		Returns the intersection point of the passed line and the plane. Returns undefined if the line does not intersect. Returns the line's starting point if the line is coplanar with the plane.
 		</div>
 
-		<h3>[method:Vector3 setFromNormalAndCoplanarPoint]( [page:Vector3 normal], [page:Vector3 point] ) [page:Vector3 this]</h3>
+		<h3>[method:Plane setFromNormalAndCoplanarPoint]( [page:Vector3 normal], [page:Vector3 point] ) [page:Vector3 this]</h3>
 		<div>
 		normal -- [page:Vector3] <br />
 		point -- [page:Vector3]

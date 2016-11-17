@@ -1,3 +1,6 @@
+import { MeshStandardMaterial } from './MeshStandardMaterial';
+import { Map } from './Map';
+
 /**
  * @author WestLangley / http://github.com/WestLangley
  *
@@ -6,9 +9,9 @@
  * }
  */
 
-THREE.MeshPhysicalMaterial = function ( parameters ) {
+function MeshPhysicalMaterial( parameters ) {
 
-	THREE.MeshStandardMaterial.call( this );
+	MeshStandardMaterial.call( this );
 
 	this.defines = { 'PHYSICAL': '' };
 
@@ -27,10 +30,12 @@ THREE.MeshPhysicalMaterial = function ( parameters ) {
 
 	this.setValues( parameters );
 
-};
+}
 
-THREE.MeshPhysicalMaterial.prototype = Object.create( THREE.MeshStandardMaterial.prototype );
-THREE.MeshPhysicalMaterial.prototype.constructor = THREE.MeshPhysicalMaterial;
+MeshPhysicalMaterial.prototype = Object.create( MeshStandardMaterial.prototype );
+MeshPhysicalMaterial.prototype.constructor = MeshPhysicalMaterial;
+
+MeshPhysicalMaterial.prototype.isMeshPhysicalMaterial = true;
 
 
 var closure = function () {
@@ -53,13 +58,13 @@ var closure = function () {
 		}
 	};
 	for( var propertyName in propertyMappings ) {
-		Object.defineProperty(THREE.MeshPhysicalMaterial.prototype, propertyName, propertyMappings[ propertyName ] );
+		Object.defineProperty( MeshPhysicalMaterial.prototype, propertyName, propertyMappings[ propertyName ] );
 	}
 }();
 
-THREE.MeshPhysicalMaterial.prototype.copy = function ( source ) {
+MeshPhysicalMaterial.prototype.copy = function ( source ) {
 
-	THREE.MeshStandardMaterial.prototype.copy.call( this, source );
+	MeshStandardMaterial.prototype.copy.call( this, source );
 
 	this.defines = { 'PHYSICAL': '' };
 
@@ -77,3 +82,6 @@ THREE.MeshPhysicalMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+
+export { MeshPhysicalMaterial };

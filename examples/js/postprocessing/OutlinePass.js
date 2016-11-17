@@ -148,7 +148,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 					object.visible = bVisible;
 				object.bVisible = visibility;
 			}
-		}
+		};
 
 		for( var i=0; i<this.selectedObjects.length; i++ ) {
 
@@ -169,7 +169,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				selectedMeshes.push(object);
 
 			}
-		}
+		};
 
 		for( var i=0; i<this.selectedObjects.length; i++ ) {
 
@@ -201,7 +201,8 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 					object.bVisible = visibility;
 				}
 			}
-		}
+		};
+		
 		this.renderScene.traverse( VisibilityChangeCallBack );
 	},
 
@@ -262,7 +263,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.tempPulseColor1.copy( this.visibleEdgeColor );
 		this.tempPulseColor2.copy( this.hiddenEdgeColor );
 		if( this.pulsePeriod > 0 ) {
-			var scalar = ( 1 + 0.25 ) / 2 + Math.cos( performance.now() * 0.01/ this.pulsePeriod ) * ( 1.0 - 0.25 )/2
+			var scalar = ( 1 + 0.25 ) / 2 + Math.cos( performance.now() * 0.01/ this.pulsePeriod ) * ( 1.0 - 0.25 )/2;
 			this.tempPulseColor1.multiplyScalar( scalar );
 			this.tempPulseColor2.multiplyScalar( scalar );
 		}
@@ -361,7 +362,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				"maskTexture": { value: null },
 				"texSize": { value: new THREE.Vector2( 0.5, 0.5 ) },
 				"visibleEdgeColor": { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) },
-				"hiddenEdgeColor":  { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) },
+				"hiddenEdgeColor":  { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) }
 			},
 
 			vertexShader:
@@ -402,7 +403,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		return new THREE.ShaderMaterial( {
 
 			defines: {
-				"MAX_RADIUS" : maxRadius,
+				"MAX_RADIUS" : maxRadius
 			},
 
 			uniforms: {
@@ -489,7 +490,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 					vec4 edgeValue = edgeValue1 + edgeValue2 * edgeGlow;\
 					vec4 finalColor = edgeStrength * maskColor.r * edgeValue;\
 					if(usePatternTexture)\
-						finalColor += visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
+						finalColor += + visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
 					gl_FragColor = finalColor;\
 				}",
 

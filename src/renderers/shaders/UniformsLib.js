@@ -1,13 +1,18 @@
+import { Vector4 } from '../../math/Vector4';
+import { Color } from '../../math/Color';
+import { Vector2 } from '../../math/Vector2';
+import { DataTexture } from '../../textures/DataTexture';
+
 /**
  * Uniforms library for shared webgl shaders
  */
 
-THREE.UniformsLib = {
+var UniformsLib = {
 
 	common: {
 
-		"diffuse": { value: new THREE.Color( 0xeeeeee ) },
-		"opacity": { value: 1.0 },
+		diffuse: { value: new Color( 0xeeeeee ) },
+		opacity: { value: 1.0 },
 
 		"map": { value: null },
 		"mapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
@@ -22,10 +27,10 @@ THREE.UniformsLib = {
 		"alphaMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
 		"alphaMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
 
-		"envMap": { value: null },
-		"flipEnvMap": { value: - 1 },
-		"reflectivity": { value: 1.0 },
-		"refractionRatio": { value: 0.98 }
+		envMap: { value: null },
+		flipEnvMap: { value: - 1 },
+		reflectivity: { value: 1.0 },
+		refractionRatio: { value: 0.98 }
 
 	},
 
@@ -118,81 +123,93 @@ THREE.UniformsLib = {
 
 	fog: {
 
-		"fogDensity": { value: 0.00025 },
-		"fogNear": { value: 1 },
-		"fogFar": { value: 2000 },
-		"fogColor": { value: new THREE.Color( 0xffffff ) }
+		fogDensity: { value: 0.00025 },
+		fogNear: { value: 1 },
+		fogFar: { value: 2000 },
+		fogColor: { value: new Color( 0xffffff ) }
 
 	},
 
 	lights: {
 
-		"ambientLightColor": { value: [] },
+		ambientLightColor: { value: [] },
 
-		"directionalLights": { value: [], properties: {
-			"direction": {},
-			"color": {},
-			"shadow": { type: "1i" },
-			"shadowBias": { type: "1f" },
-			"spreadAngle": { type: "1f" },
-			"shadowMapSize": { type: "v2" },
-			"shadowCameraParams": { type: "v3" }
+		directionalLights: { value: [], properties: {
+			direction: {},
+			color: {},
+
+			shadow: {},
+			shadowBias: {},
+			shadowRadius: {},
+			shadowMapSize: {}
+			//"spreadAngle": { type: "1f" },
+			shadowCameraParams: {}
 		} },
 
-		"directionalShadowMap": { type: "tv", value: [] },
-		"directionalShadowMatrix": { type: "m4v", value: [] },
+		directionalShadowMap: { value: [] },
+		directionalShadowMatrix: { value: [] },
 
-		"spotLights": { type: "sa", value: [], properties: {
-			"color": { type: "c" },
-			"position": { type: "v3" },
-			"direction": { type: "v3" },
-			"distance": { type: "1f" },
-			"coneCos": { type: "1f" },
-			"penumbraCos": { type: "1f" },
-			"decay": { type: "1f" },
+		spotLights: { value: [], properties: {
+			color: {},
+			position: {},
+			direction: {},
+			distance: {},
+			coneCos: {},
+			penumbraCos: {},
+			decay: {},
 
-			"shadow": { type: "1i" },
-			"shadowBias": { type: "1f" },
-			"shadowRadius": { type: "1f" },
-			"shadowMapSize": { type: "v2" },
-			"shadowCameraParams": { type: "v3" }
+			shadow: {},
+			shadowBias: {},
+			shadowRadius: {},
+			shadowMapSize: {}
+			shadowCameraParams: {}
 		} },
 
-		"spotShadowMap": { value: [] },
-		"spotShadowMatrix": { value: [] },
+		spotShadowMap: { value: [] },
+		spotShadowMatrix: { value: [] },
 
-		"pointLights": { value: [], properties: {
-			"color": {},
-			"position": {},
-			"decay": {},
-			"distance": {},
+		pointLights: { value: [], properties: {
+			color: {},
+			position: {},
+			decay: {},
+			distance: {},
 
-			"shadow": {},
-			"shadowBias": {},
-			"shadowRadius": {},
-			"shadowMapSize": {}
+			shadow: {},
+			shadowBias: {},
+			shadowRadius: {},
+			shadowMapSize: {}
 		} },
 
-		"pointShadowMap": { value: [] },
-		"pointShadowMatrix": { value: [] },
+		pointShadowMap: { value: [] },
+		pointShadowMatrix: { value: [] },
 
-		"hemisphereLights": { value: [], properties: {
-			"direction": {},
-			"skyColor": {},
-			"groundColor": {}
-		} }
+		hemisphereLights: { value: [], properties: {
+			direction: {},
+			skyColor: {},
+			groundColor: {}
+		} },
+
+        // TODO (abelnation): RectAreaLight BRDF data needs to be moved from example to main src
+        rectAreaLights: { value: [], properties: {
+            color: {},
+            position: {},
+            width: {},
+            height: {},
+        } }
 
 	},
 
 	points: {
 
-		"diffuse": { value: new THREE.Color( 0xeeeeee ) },
-		"opacity": { value: 1.0 },
-		"size": { value: 1.0 },
-		"scale": { value: 1.0 },
-		"map": { value: null },
-		"offsetRepeat": { value: new THREE.Vector4( 0, 0, 1, 1 ) }
+		diffuse: { value: new Color( 0xeeeeee ) },
+		opacity: { value: 1.0 },
+		size: { value: 1.0 },
+		scale: { value: 1.0 },
+		map: { value: null },
+		offsetRepeat: { value: new Vector4( 0, 0, 1, 1 ) }
 
 	}
 
 };
+
+export { UniformsLib };

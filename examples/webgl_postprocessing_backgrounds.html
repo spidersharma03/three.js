@@ -30,7 +30,8 @@
 	</head>
 	<body>
 		<div id="info">
-			<a href="http://threejs.org" target="_blank">three.js</a> - Backgrounds: ClearPass, TexturePass and CubeTexturePass by <a href="https://clara.io" target="_blank">Ben Houston</a></div>
+			<a href="http://threejs.org" target="_blank">three.js</a> - Backgrounds: ClearPass, TexturePass and CubeTexturePass by <a href="https://clara.io" target="_blank">Ben Houston</a>
+		</div>
 
 		<div id="container"></div>
 
@@ -82,7 +83,7 @@
 				cubeTextureRoughness: 0.2,
 
 				msaa: true,
-				renderPass: true,
+				renderPass: true
 
 				//autoRotate: true,
 
@@ -206,18 +207,17 @@
 				composer.addPass( texturePass );
 
 				var textureLoader = new THREE.TextureLoader();
-				textureLoader.load( "../examples/textures/hardwood2_diffuse.jpg", function( map ) {
+				textureLoader.load( "textures/hardwood2_diffuse.jpg", function( map ) {
 					texturePass.map = map;
 				});
 
 				cubeTexturePassP = new THREE.CubeTexturePass( cameraP );
 				composer.addPass( cubeTexturePassP );
 
-				var ldrUrls = genCubeUrls( "./textures/cube/pisa/", ".png" );
-				new THREE.CubeTextureLoader().load( ldrUrls, function ( cubeTexture ) {
-
-					ldrCubeTexture = cubeTexture;
-
+				var ldrUrls = genCubeUrls( "textures/cube/pisa/", ".png" );
+				new THREE.CubeTextureLoader().load( ldrUrls, function ( ldrCubeMap ) {
+					cubeTexturePassP.envMap = ldrCubeMap;
+					console.log( "loaded envmap");
 				});
 
 				var rgbmUrls = genCubeUrls( "./textures/cube/pisaRGBM16/", ".png" );
@@ -326,6 +326,5 @@
 			}
 
 		</script>
-		<div>
 	</body>
 </html>

@@ -66,7 +66,7 @@
 				reflectivity: 0.5,
 				bumpScale: 0.3,
 				background: false,
-				exposure: 1.0,
+				exposure: 1.0
 			};
 			var camera, scene, renderer, controls, objects = [];
 			var hdrCubeMap;
@@ -100,7 +100,7 @@
 					shading: THREE.SmoothShading
 				} );
 
-				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );;
+				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );
 				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
 				torusMesh1.position.x = 0.0;
 				torusMesh1.castShadow = true;
@@ -194,7 +194,7 @@
 				var spotLight = new THREE.SpotLight( 0xffffff );
 				spotLight.position.set( 50, 100, 50 );
 				spotLight.angle = Math.PI / 7;
-				spotLight.penumbra = 0.8
+				spotLight.penumbra = 0.8;
 				spotLight.castShadow = true;
 				scene.add( spotLight );
 

@@ -231,7 +231,7 @@ THREE.UnrealBloomPass.prototype = Object.assign( Object.create( THREE.Pass.proto
 			uniforms: {
 				"colorTexture": { value: null },
 				"texSize": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
-				"direction": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
+				"direction": 				{ value: new THREE.Vector2( 0.5, 0.5 ) }
 			},
 
 			vertexShader:
@@ -248,6 +248,9 @@ THREE.UnrealBloomPass.prototype = Object.assign( Object.create( THREE.Pass.proto
 				uniform vec2 texSize;\
 				uniform vec2 direction;\
 				\
+				float gaussianPdf(in float x, in float sigma) {\
+					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma;\
+				}\
 				void main() {\n\
 					vec2 invSize = 1.0 / texSize;\
 					float fSigma = float(SIGMA);\
