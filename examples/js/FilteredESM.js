@@ -13,9 +13,11 @@ function FilteredESM( scene, camera, light ) {
   var nearPlane = 1;
   var farPlane = 100;
   this.lightCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, nearPlane, farPlane );
+  var d = 50;
+  this.lightCamera = new THREE.OrthographicCamera( -d, d, d, -d, nearPlane, farPlane );
 
-  var shadowMapWidth  = 1024;
-  var shadowMapHeight = 1024;
+  var shadowMapWidth  = 512;
+  var shadowMapHeight = 512;
   var params = { format: THREE.RGBAFormat, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowDepthMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
   this.shadowDepthMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
@@ -51,7 +53,7 @@ function FilteredESM( scene, camera, light ) {
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
-  this.arealightSize = 4;
+  this.arealightSize = 10.1;
 }
 
 FilteredESM.prototype = {
@@ -60,6 +62,23 @@ FilteredESM.prototype = {
 
   getShadowBuffer: function() {
    return this.frameCount %2 === 0 ? this.shadowBufferTemp : this.shadowBuffer;
+  },
+
+  sampleLightDirection: function( light, sampleNumber ) {
+      var radius = 60;
+      var theta = Math.random() * Math.PI * 0.49;
+      var phi = Math.random() * Math.PI * 2;
+      var x = radius * Math.sin(theta) * Math.cos(phi);
+      var y = radius * Math.cos(theta);
+      var z = radius * Math.sin(theta) * Math.sin(phi);
+      var position = new THREE.Vector3(x, y, z);
+      var lightWorldMatrix = light.matrixWorld;
+      position.applyMatrix4(lightWorldMatrix);
+      this.currentLightSample.copy(position);
+      this.lightOrientation.copy(position);
+      this.lightOrientation.multiplyScalar(-1);
+      this.lightOrientation.normalize();
+      return this.currentLightSample;
   },
 
   sampleLight: function( light, sampleNumber ) {
@@ -83,7 +102,7 @@ FilteredESM.prototype = {
 
   render: function( renderer ) {
 
-    this.frameCount = this.frameCount >= this.lightPositionSamples.length ? this.lightPositionSamples.length : this.frameCount;
+    // this.frameCount = this.frameCount >= this.lightPositionSamples.length ? this.lightPositionSamples.length : this.frameCount;
 
     this.frameCount++;
     // 1. Render depth to shadow map
@@ -130,10 +149,10 @@ FilteredESM.prototype = {
   },
   // Render shadow map of a light
   renderShadowDepthMap: function( renderer, light, shadowDepthMap ) {
-    var lightPosition = this.sampleLight( light, this.frameCount - 1);
+    var lightPosition = this.sampleLightDirection( light, this.frameCount - 1);
     this.lightCamera.position.copy(lightPosition);
-    this.lightTarget.copy(lightPosition);
-    this.lightTarget.addScaledVector(this.lightOrientation, 1000);
+    // this.lightTarget.copy(lightPosition);
+    // this.lightTarget.addScaledVector(this.lightOrientation, 1000);
     this.lightCamera.lookAt(this.lightTarget);
     // this.lightCamera.lookAt(light.target.position);
     this.lightCamera.updateMatrixWorld();
@@ -171,7 +190,7 @@ FilteredESM.prototype = {
         varying vec4 viewPosition;\
         uniform vec2 nearFarPlanes;\
         void main() {\
-          gl_FragColor = vec4( (viewPosition.z + nearFarPlanes.x)/(nearFarPlanes.x - nearFarPlanes.y) );\
+          gl_FragColor = vec4(gl_FragCoord.z);\
         }",
     } );
   },
@@ -306,20 +325,18 @@ FilteredESM.prototype = {
         uniform float currentFrameCount;\
         uniform float maxSamples;\
         void main() {\
-          float lightDepth = shadowCoord.z + 2.0*nearFarPlanes.y*nearFarPlanes.x/(nearFarPlanes.y - nearFarPlanes.x);\
-		      lightDepth *= -((nearFarPlanes.y - nearFarPlanes.x)/(nearFarPlanes.y + nearFarPlanes.x));\
-          float lightDist = -lightDepth;\
-          vec2 shadowCoord2d = shadowCoord.xy/shadowCoord.w;\
+          float lightDepth = shadowCoord.z - 0.001;\
+          float lightDist = lightDepth;\
+          vec2 shadowCoord2d = shadowCoord.xy;\
           float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
           float bias = tan(acos(NdotL));\
           bias = clamp(bias, 0.0, 0.01);\
-          float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r + bias;\
-          shadowDepth = shadowDepth * ( nearFarPlanes.y - nearFarPlanes.x ) + nearFarPlanes.x;\
-          const float c = 0.75;\
+          float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r;\
+          const float c = 400.75;\
           float shadowValue = step( lightDist, shadowDepth );\
- 			    shadowValue = min(exp(-c*(lightDist - shadowDepth)), 1.0);\
+          shadowValue = min(exp( -c*(lightDist - shadowDepth) ), 1.0);\
           float prevShadow = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
-          if(currentFrameCount > maxSamples){\
+          if(currentFrameCount > maxSamples*1000.0){\
             shadowValue = prevShadow;\
           }\
           float newShadowValue = (currentFrameCount - 1.0) * prevShadow + shadowValue;\
@@ -358,7 +375,7 @@ FilteredESM.prototype = {
             void main() {\
               float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
               float shadowValue = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
-              gl_FragColor = vec4(shadowValue * NdotL);\
+              gl_FragColor = vec4(pow(shadowValue, 0.75));\
             }",
         } );
   }

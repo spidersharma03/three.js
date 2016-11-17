@@ -41,6 +41,7 @@
 		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
+		<script src="js/loaders/ColladaLoader.js"></script>
 		<script src="js/utils/PoissonDiskGenerator.js"></script>
 		<script src="js/FilteredESM.js"></script>
 		<script src="js/Detector.js"></script>
@@ -73,7 +74,7 @@
 			// matBox.wireframe = true;
 
 			var geoFloor = new THREE.PlaneGeometry( 200, 200 );
-			var geoBox = new THREE.BoxGeometry( 5, 12, 2, 30, 30 );
+			var geoBox = new THREE.SphereGeometry( 20, 30, 30 );
 
 			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
 			mshFloor.rotation.x = -Math.PI/2;
@@ -96,6 +97,96 @@
 
 			function init() {
 
+				var dae;
+				var daeLoader = new THREE.ColladaLoader();
+				daeLoader.options.convertUpAxis = true;
+				daeLoader.load( 'models/collada/poliform_soho_sofa_s3.dae', function ( collada ) {
+					dae = collada.scene;
+					dae.traverse( function ( child ) {
+						if( child instanceof THREE.Mesh ) {
+							// child.material = sofaMaterial;
+						}
+					} );
+					scene.add(dae);
+					dae.scale.x = dae.scale.y = dae.scale.z = 1.5;
+					dae.updateMatrix();
+					// init();
+					// animate();
+				} );
+				var rootNode = new THREE.Object3D();
+				scene.add(rootNode);
+
+				// var modelLoader = new THREE.OBJLoader();
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_clean_bottom.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_clean_top.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_consumable_bottom.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_consumable_top.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_cook_bottom.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_cook_top.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_non consumable_bottom.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_non consumable_top.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_prep_bottom.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+				// );
+				// modelLoader.load(
+				// 	'models/obj/Model_KitchenLShape/com_m_prep_top.obj',
+				// 	function ( object ) {
+				// 		rootNode.add( object );
+				// 		object.traverse( IdentifyAndAddMeshes );
+				// 	}
+
 				renderer.shadowMap.enabled = true;
 				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 				stats = new Stats();
@@ -116,11 +207,11 @@
 				mshFloor.position.set( 0, - 0.05, 0 );
 
 				mshBox.castShadow = true;
-				mshBox.position.set( 40, 1.8, 0 );
+				mshBox.position.set( 0, 0, 0 );
 
 				scene.add( camera );
 				scene.add( mshFloor );
-				scene.add( mshBox );
+				// scene.add( mshBox );
 				scene.add( ambient );
 
 				var loader = new THREE.OBJLoader();
@@ -135,7 +226,7 @@
 							object.scale.y = 20;
 							object.scale.z = 20;
 							obj3d = object;
-							scene.add( object );
+							// scene.add( object );
 							object.traverse( function(mesh){
 								if( mesh instanceof THREE.Mesh ) {
 									mesh.castShadow = true;
@@ -150,7 +241,7 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
 				// controls.addEventListener( 'change', render );
-				controls.minDistance = 20;
+				controls.minDistance = 10;
 				controls.maxDistance = 500;
 				controls.maxPolarAngle = Math.PI / 2;
 				//controls.enablePan = false;
