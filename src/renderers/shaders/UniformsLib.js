@@ -15,17 +15,17 @@ var UniformsLib = {
 		opacity: { value: 1.0 },
 
 		"map": { value: null },
-		"mapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"mapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
-		"offsetRepeat": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
+		"mapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"mapTexelTransformParams": { value: new Vector2( 1, 0 ) },
+		"offsetRepeat": { value: new Vector4( 0, 0, 1, 1 ) },
 
 		"specularMap": { value: null },
-		"specularMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"specularMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"specularMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"specularMapTexelTransformParams": { value: new Vector2( 1, 0 ) },
 
 		"alphaMap": { value: null },
-		"alphaMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"alphaMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"alphaMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"alphaMapTexelTransformParams": { value: new Vector2( 1, 0 ) },
 
 		envMap: { value: null },
 		flipEnvMap: { value: - 1 },
@@ -37,8 +37,8 @@ var UniformsLib = {
 	aomap: {
 
 		"aoMap": { value: null },
-		"aoMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"aoMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"aoMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"aoMapTexelTransformParams": { value: new Vector2( 1, 0 ) },
 		"aoMapIntensity": { value: 1 }
 
 	},
@@ -46,8 +46,8 @@ var UniformsLib = {
 	lightmap: {
 
 		"lightMap": { value: null },
-		"lightMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"lightMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) },
+		"lightMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"lightMapTexelTransformParams": { value: new Vector2( 1, 0 ) },
 		"lightMapIntensity": { value: 1 }
 
 	},
@@ -55,8 +55,8 @@ var UniformsLib = {
 	emissivemap: {
 
 		"emissiveMap": { value: null },
-		"emissiveMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"emissiveMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"emissiveMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"emissiveMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
@@ -64,17 +64,17 @@ var UniformsLib = {
 
 		"bumpMap": { value: null },
 		"bumpScale": { value: 1 },
-		"bumpMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"bumpMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"bumpMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"bumpMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
 	normalmap: {
 
 		"normalMap": { value: null },
-		"normalScale": { value: new THREE.Vector2( 1, 1 ) }, // for backwards compatibility
-		"normalMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"normalMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"normalScale": { value: new Vector2( 1, 1 ) }, // for backwards compatibility
+		"normalMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"normalMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
@@ -83,8 +83,8 @@ var UniformsLib = {
 		"displacementMap": { value: null },
 		"displacementScale": { value: 1 }, // for backwards compatibility
 		"displacementBias": { value: 0 }, // for backwards compatibility
-		"displacementMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"displacementMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"displacementMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"displacementMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
@@ -92,32 +92,32 @@ var UniformsLib = {
 	falloffmap: {
 
 		"falloffMap": { value: null },
-		"falloffMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"falloffMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"falloffMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"falloffMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
 	falloffalphamap: {
 
 		"falloffAlphaMap": { value: null },
-		"falloffAlphaMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"falloffAlphaMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"falloffAlphaMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"falloffAlphaMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
 	roughnessmap: {
 
 		"roughnessMap": { value: null },
-		"roughnessMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"roughnessMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"roughnessMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"roughnessMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
 	metalnessmap: {
 
 		"metalnessMap": { value: null },
-		"metalnessMapUVTransformParams": { value: new THREE.Vector4( 0, 0, 1, 1 ) },
-		"metalnessMapTexelTransformParams": { value: new THREE.Vector2( 1, 0 ) }
+		"metalnessMapUVTransformParams": { value: new Vector4( 0, 0, 1, 1 ) },
+		"metalnessMapTexelTransformParams": { value: new Vector2( 1, 0 ) }
 
 	},
 
@@ -141,8 +141,8 @@ var UniformsLib = {
 			shadow: {},
 			shadowBias: {},
 			shadowRadius: {},
-			shadowMapSize: {}
-			//"spreadAngle": { type: "1f" },
+			shadowMapSize: {},
+			shadowSpreadAngle: {},
 			shadowCameraParams: {}
 		} },
 
@@ -161,7 +161,7 @@ var UniformsLib = {
 			shadow: {},
 			shadowBias: {},
 			shadowRadius: {},
-			shadowMapSize: {}
+			shadowMapSize: {},
 			shadowCameraParams: {}
 		} },
 

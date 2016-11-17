@@ -14,8 +14,8 @@ function Map( name, uvChannel, uvTransform, texelTransform ) {
   this.uvChannel = uvChannel || 0;
 
   this.uvTransform = uvTransform || false;
-  this.uvOffset = new THREE.Vector2( 0, 0 );
-  this.uvRepeat = new THREE.Vector2( 1.0, 1.0 );
+  this.uvOffset = new Vector2( 0, 0 );
+  this.uvRepeat = new Vector2( 1.0, 1.0 );
   //this.uvRotation = 0;  - not implemented because offset/repeat fix in a vec4 uniform, rotation doesn't.
 
   this.texelTransform = uvTransform || false;
@@ -27,7 +27,7 @@ function Map( name, uvChannel, uvTransform, texelTransform ) {
 
 Map.prototype = {
 
-  constructor: THREE.Map,
+  constructor: Map,
 
   copy: function ( source ) {
 
@@ -80,3 +80,5 @@ for( var i = 0; i < Map.SupportedMapNames.length; i ++ ) {
   Map.SupportedMapUVNames.push( name + 'UVTransformParams' );
   Map.SupportedMapTexelNames.push( name + 'TexelTransformParams' );
 }
+
+export { Map };

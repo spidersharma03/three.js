@@ -4,7 +4,7 @@
 
 import { WebGLProgram } from './WebGLProgram';
 import { BackSide, DoubleSide, FlatShading, CubeUVRefractionMapping, CubeUVReflectionMapping, GammaEncoding, LinearEncoding } from '../../constants';
-import { Map } from '../../Materials/Map';
+import { Map } from '../../materials/Map';
 
 function WebGLPrograms( renderer, capabilities ) {
 

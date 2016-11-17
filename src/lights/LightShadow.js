@@ -1,7 +1,7 @@
 import { Matrix4 } from '../math/Matrix4';
 import { Vector2 } from '../math/Vector2';
 import { Vector3 } from '../math/Vector3';
-import { _Math } from './math/Math.js';
+import { _Math } from '../math/Math';
 
 /**
  * @author mrdoob / http://mrdoob.com/

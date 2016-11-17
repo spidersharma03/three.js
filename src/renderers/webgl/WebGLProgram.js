@@ -530,7 +530,6 @@ function WebGLProgram( renderer, code, material, parameters ) {
 			'\n'
 
 			].filter( filterEmptyLine ).join( '\n' );
-		}
 
 
 		var supportedMapNames = THREE.Map.SupportedMapNames;

@@ -147,28 +147,6 @@ var ShaderLib = {
 
 	},
 
-	/* -------------------------------------------------------------------------
-	//	Cube map shader
-	 ------------------------------------------------------------------------- */
-
-	cube: {
-
-		uniforms: TObject.assign( {},
-			UniformLib.common,
-			ShaderLib.standard.uniforms,
-			{
-				envMap: { value: null },
-				envMapIntensity: { value: 1.0 },
-				tFlip: { value: - 1 },
-				opacity: { value: 1.0 },
-				roughness: { value: 0.0 }
-			}
-		]),
-
-		vertexShader: ShaderChunk.cube_vert,
-		fragmentShader: ShaderChunk.cube_frag
-
-	},
 
 	/* -------------------------------------------------------------------------
 	//	Cube map shader
@@ -199,16 +177,38 @@ var ShaderLib = {
 
 };
 
-ShaderLib.physical = {
+/* -------------------------------------------------------------------------
+//	Cube map shader
+ ------------------------------------------------------------------------- */
+
+ShaderLib.cube = {
 
 	uniforms: Object.assign( {},
+		UniformsLib.common,
+		ShaderLib.standard.uniforms,
+		{
+			envMap: { value: null },
+			envMapIntensity: { value: 1.0 },
+			tFlip: { value: - 1 },
+			opacity: { value: 1.0 },
+			roughness: { value: 0.0 }
+		}
+	),
+
+	vertexShader: ShaderChunk.cube_vert,
+	fragmentShader: ShaderChunk.cube_frag
+
+};
+
+ShaderLib.physical = {
+
+		uniforms: Object.assign( {},
 		ShaderLib.standard.uniforms,
 		UniformsLib.falloffmap,
 		UniformsLib.falloffalphamap,
 		{
 			falloffDiffuse: { value: new THREE.Color( 0xffffff ) },
 			falloffOpacity: { value: 0 },
-
 			clearCoat: { value: 0 },
 			clearCoatRoughness: { value: 0 }
 		}
