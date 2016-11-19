@@ -50,20 +50,20 @@ THREE.SAOPass = function ( scene, camera ) {
 	if ( THREE.CopyShader === undefined )	console.error( "THREE.SAOPass relies on THREE.CopyShader" );
 
 	this.depthMinifyMaterial = new THREE.ShaderMaterial( THREE.SAODepthMinifyShader );
-	this.depthMinifyMaterial.uniforms = THREE.UniformsUtils.clone( this.depthMinifyMaterial.uniforms );
-	this.depthMinifyMaterial.defines = THREE.UniformsUtils.cloneDefines( this.depthMinifyMaterial.defines );
+	this.depthMinifyMaterial.uniforms = Object.assign( {}, this.depthMinifyMaterial.uniforms );
+	this.depthMinifyMaterial.defines = Object.assign( {}, this.depthMinifyMaterial.defines );
 	this.depthMinifyMaterial.blending = THREE.NoBlending;
 
 	this.saoMaterial = new THREE.ShaderMaterial( THREE.SAOShader );
-	this.saoMaterial.uniforms = THREE.UniformsUtils.clone( this.saoMaterial.uniforms );
-	this.saoMaterial.defines = THREE.UniformsUtils.cloneDefines( this.saoMaterial.defines );
+	this.saoMaterial.uniforms = Object.assign( {}, this.saoMaterial.uniforms );
+	this.saoMaterial.defines = Object.assign( {}, this.saoMaterial.defines );
 	this.saoMaterial.defines[ 'DIFFUSE_TEXTURE' ] = 0;
 	this.saoMaterial.defines[ 'NORMAL_TEXTURE' ] = this.implicitNormals ? 0 : 1;
 	this.saoMaterial.defines[ 'MODE' ] = 2;
 
 	this.bilateralFilterMaterial = new THREE.ShaderMaterial( THREE.SAOBilaterialFilterShader );
-	this.bilateralFilterMaterial.uniforms = THREE.UniformsUtils.clone( this.bilateralFilterMaterial.uniforms );
-	this.bilateralFilterMaterial.defines = THREE.UniformsUtils.cloneDefines( this.bilateralFilterMaterial.defines );
+	this.bilateralFilterMaterial.uniforms = Object.assign( {}, this.bilateralFilterMaterial.uniforms );
+	this.bilateralFilterMaterial.defines = Object.assign( {}, this.bilateralFilterMaterial.defines );
 	this.bilateralFilterMaterial.blending = THREE.NoBlending;
 	this.bilateralFilterMaterial.premultipliedAlpha = true;
 
