@@ -5,7 +5,7 @@ import { Vector2 } from '../math/Vector2';
  *
  */
 
-function Map( name, uvChannel, uvTransform, texelTransform ) {
+function MaterialMap( name, uvChannel, uvTransform, texelTransform ) {
 
   this.name = name || "unnamed";
 
@@ -25,9 +25,9 @@ function Map( name, uvChannel, uvTransform, texelTransform ) {
 
 };
 
-Map.prototype = {
+MaterialMap.prototype = {
 
-  constructor: Map,
+  constructor: MaterialMap,
 
   copy: function ( source ) {
 
@@ -67,18 +67,18 @@ Map.prototype = {
 
 };
 
-Map.SupportedMapNames = [
+MaterialMap.SupportedMapNames = [
 	'map', 'lightMap', 'aoMap', 'emissiveMap', 'specularMap', 'bumpMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'displacementMap', 'falloffMap', 'falloffAlphaMap'
 ];
-Map.SupportedMapSlotNames = [];
-Map.SupportedMapUVNames = [];
-Map.SupportedMapTexelNames = [];
+MaterialMap.SupportedMapSlotNames = [];
+MaterialMap.SupportedMapUVNames = [];
+MaterialMap.SupportedMapTexelNames = [];
 
-for( var i = 0; i < Map.SupportedMapNames.length; i ++ ) {
-  var name = Map.SupportedMapNames [i];
-  Map.SupportedMapSlotNames.push( name + 'Slot' );
-  Map.SupportedMapUVNames.push( name + 'UVTransformParams' );
-  Map.SupportedMapTexelNames.push( name + 'TexelTransformParams' );
+for( var i = 0; i < MaterialMap.SupportedMapNames.length; i ++ ) {
+  var name = MaterialMap.SupportedMapNames [i];
+  MaterialMap.SupportedMapSlotNames.push( name + 'Slot' );
+  MaterialMap.SupportedMapUVNames.push( name + 'UVTransformParams' );
+  MaterialMap.SupportedMapTexelNames.push( name + 'TexelTransformParams' );
 }
 
-export { Map };
+export { MaterialMap };

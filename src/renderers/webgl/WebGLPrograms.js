@@ -4,7 +4,7 @@
 
 import { WebGLProgram } from './WebGLProgram';
 import { BackSide, DoubleSide, FlatShading, CubeUVRefractionMapping, CubeUVReflectionMapping, GammaEncoding, LinearEncoding } from '../../constants';
-import { Map } from '../../materials/Map';
+import { MaterialMap } from '../../materials/MaterialMap';
 
 function WebGLPrograms( renderer, capabilities ) {
 
@@ -36,7 +36,7 @@ function WebGLPrograms( renderer, capabilities ) {
 		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "numClipIntersection", "depthPacking", 'falloff', 'falloffMap', 'falloffAlphaMap'
 	];
 
-	var supportedMaps = THREE.Map.SupportedMapNames;
+	var supportedMaps = MaterialMap.SupportedMapNames;
 	for( var i = 0; i < supportedMaps.length; i ++ ) {
 		var name = supportedMaps[i];
 		parameterNames.push( name );
@@ -201,11 +201,11 @@ function WebGLPrograms( renderer, capabilities ) {
 
 		};
 
-		var supportedMapNames = Map.SupportedMapNames;
+		var supportedMapNames = MaterialMap.SupportedMapNames;
 
 		for( var i = 0; i < supportedMapNames.length; i ++ ) {
 			var mapName = supportedMapNames[i];
-			var mapSlotName = Map.SupportedMapSlotNames[i];
+			var mapSlotName = MaterialMap.SupportedMapSlotNames[i];
 			// backwards compatibility
 			parameters[mapName] = !! material[ mapName ];
 

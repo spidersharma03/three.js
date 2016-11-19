@@ -1,6 +1,7 @@
 import { LightShadow } from './LightShadow';
 import { _Math } from '../math/Math';
 import { PerspectiveCamera } from '../cameras/PerspectiveCamera';
+import { Vector3 } from '../math/Vector3';
 
 /**
  * @author mrdoob / http://mrdoob.com/

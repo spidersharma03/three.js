@@ -1,7 +1,7 @@
 import { Material } from './Material';
-import { Map } from './Map';
 import { Vector2 } from '../math/Vector2';
 import { Color } from '../math/Color';
+import { MaterialMap } from './MaterialMap';
 
 /**
  * @author WestLangley / http://github.com/WestLangley
@@ -65,46 +65,46 @@ function MeshStandardMaterial( parameters ) {
 
 	this.color = new Color( 0xffffff ); // diffuse
 	//this.map = null;
-	this.mapSlot = new Map( "map", 0, false, false );
+	this.mapSlot = new MaterialMap( "map", 0, false, false );
 
 	this.reflectivity = 0.5;
 
 	this.roughness = 0.5;
 	//this.roughnessMap = null;
-	this.roughnessMapSlot = new Map( "roughnessMap", 0, false, false );
+	this.roughnessMapSlot = new MaterialMap( "roughnessMap", 0, false, false );
 
 	this.metalness = 0.5;
 	//this.metalnessMap = null;
-	this.metalnessMapSlot = new Map( "metalnessMap", 0, false, false );
+	this.metalnessMapSlot = new MaterialMap( "metalnessMap", 0, false, false );
 
 	this.emissive = new Color( 0x000000 );
 	this.emissiveIntensity = 1.0;
 	//this.emissiveMap = null;
-	this.emissiveMapSlot = new Map( "emissiveMap", 0, false, false );
+	this.emissiveMapSlot = new MaterialMap( "emissiveMap", 0, false, false );
 
 	//this.bumpMap = null;
 	//this.bumpScale = 1;
-	this.bumpMapSlot = new Map( "bumpMap", 0, false, true );
+	this.bumpMapSlot = new MaterialMap( "bumpMap", 0, false, true );
 
 	//this.normalMap = null;
 	this.normalScale = new Vector2( 1, 1 );
-	this.normalMapSlot = new Map( "normalMap", 0, false, false );
+	this.normalMapSlot = new MaterialMap( "normalMap", 0, false, false );
 
 	//this.displacementMap = null;
 	//this.displacementScale = 1;
 	//this.displacementBias = 0;
-	this.displacementMapSlot = new Map( "displacementMap", 0, false, true );
+	this.displacementMapSlot = new MaterialMap( "displacementMap", 0, false, true );
 
 	//this.lightMap = null;
 	//this.lightMapIntensity = 1.0;
-	this.lightMapSlot = new Map( "lightMap", 1, false, true );
+	this.lightMapSlot = new MaterialMap( "lightMap", 1, false, true );
 
 	//this.aoMap = null;
 	this.aoMapIntensity = 1.0;
-	this.aoMapSlot = new Map( "aoMap", 1, false, true );
+	this.aoMapSlot = new MaterialMap( "aoMap", 1, false, true );
 
 	//this.alphaMap = null;
-	this.alphaMapSlot = new Map( "alphaMap", 0, false, false );
+	this.alphaMapSlot = new MaterialMap( "alphaMap", 0, false, false );
 
 	this.envMap = null;
 	this.envMapIntensity = 1.0;

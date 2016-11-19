@@ -207,7 +207,7 @@ ShaderLib.physical = {
 		UniformsLib.falloffmap,
 		UniformsLib.falloffalphamap,
 		{
-			falloffDiffuse: { value: new THREE.Color( 0xffffff ) },
+			falloffDiffuse: { value: new Color( 0xffffff ) },
 			falloffOpacity: { value: 0 },
 			clearCoat: { value: 0 },
 			clearCoatRoughness: { value: 0 }

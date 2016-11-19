@@ -28,6 +28,9 @@ import envmap_fragment from './ShaderChunk/envmap_fragment.glsl';
 import envmap_pars_fragment from './ShaderChunk/envmap_pars_fragment.glsl';
 import envmap_pars_vertex from './ShaderChunk/envmap_pars_vertex.glsl';
 import envmap_vertex from './ShaderChunk/envmap_vertex.glsl';
+import falloff_fragment from './ShaderChunk/falloff_fragment.glsl';
+import falloffalphamap_fragment from './ShaderChunk/falloffalphamap_fragment.glsl';
+import falloffmap_fragment from './ShaderChunk/falloffmap_fragment.glsl';
 import fog_fragment from './ShaderChunk/fog_fragment.glsl';
 import fog_pars_fragment from './ShaderChunk/fog_pars_fragment.glsl';
 import lightmap_fragment from './ShaderChunk/lightmap_fragment.glsl';
@@ -68,6 +71,8 @@ import skinbase_vertex from './ShaderChunk/skinbase_vertex.glsl';
 import skinning_pars_vertex from './ShaderChunk/skinning_pars_vertex.glsl';
 import skinning_vertex from './ShaderChunk/skinning_vertex.glsl';
 import skinnormal_vertex from './ShaderChunk/skinnormal_vertex.glsl';
+import slot_texel_transform_template from './ShaderChunk/slot_texel_transform_template.glsl';
+import slot_uv_transform_template from './ShaderChunk/slot_uv_transform_template.glsl';
 import specularmap_fragment from './ShaderChunk/specularmap_fragment.glsl';
 import specularmap_pars_fragment from './ShaderChunk/specularmap_pars_fragment.glsl';
 import tonemapping_fragment from './ShaderChunk/tonemapping_fragment.glsl';
@@ -136,6 +141,9 @@ export var ShaderChunk = {
 	envmap_pars_fragment: envmap_pars_fragment,
 	envmap_pars_vertex: envmap_pars_vertex,
 	envmap_vertex: envmap_vertex,
+	falloff_fragment: falloff_fragment,
+	falloffalphamap_fragment: falloffalphamap_fragment,
+	falloffmap_fragment: falloffmap_fragment,
 	fog_fragment: fog_fragment,
 	fog_pars_fragment: fog_pars_fragment,
 	lightmap_fragment: lightmap_fragment,
@@ -176,6 +184,8 @@ export var ShaderChunk = {
 	skinning_pars_vertex: skinning_pars_vertex,
 	skinning_vertex: skinning_vertex,
 	skinnormal_vertex: skinnormal_vertex,
+	slot_texel_transform_template: slot_texel_transform_template,
+	slot_uv_transform_template: slot_uv_transform_template,
 	specularmap_fragment: specularmap_fragment,
 	specularmap_pars_fragment: specularmap_pars_fragment,
 	tonemapping_fragment: tonemapping_fragment,

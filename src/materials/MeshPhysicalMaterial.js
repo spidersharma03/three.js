@@ -1,5 +1,7 @@
 import { MeshStandardMaterial } from './MeshStandardMaterial';
-import { Map } from './Map';
+import { MaterialMap } from './MaterialMap';
+import { Color } from '../math/Color';
+
 
 /**
  * @author WestLangley / http://github.com/WestLangley
@@ -20,10 +22,10 @@ function MeshPhysicalMaterial( parameters ) {
 	this.reflectivity = 0.5; // maps to F0 = 0.04
 
 	this.falloff = false;
-	this.falloffColor = new THREE.Color( 0xffffff );
-	this.falloffMapSlot = new THREE.Map( "falloffMap", 0, false, false );
+	this.falloffColor = new Color( 0xffffff );
+	this.falloffMapSlot = new MaterialMap( "falloffMap", 0, false, false );
 	this.falloffOpacity = 1.0;
-	this.falloffAlphaMapSlot = new THREE.Map( "falloffAlphaMap", 0, false, false );
+	this.falloffAlphaMapSlot = new MaterialMap( "falloffAlphaMap", 0, false, false );
 
 	this.clearCoat = 0.0;
 	this.clearCoatRoughness = 0.0;

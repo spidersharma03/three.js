@@ -432,7 +432,7 @@ Object.assign( AnimationMixer.prototype, {
 		this._bindings = []; // 'nActiveBindings' followed by inactive ones
 		this._nActiveBindings = 0;
 
-		this._bindingsByRootAndName = {}; // inside: Map< name, PropertyMixer >
+		this._bindingsByRootAndName = {}; // inside: MaterialMap< name, PropertyMixer >
 
 
 		this._controlInterpolants = []; // same game as above

@@ -6,6 +6,7 @@ import { WebGLUniforms } from './WebGLUniforms';
 import { WebGLShader } from './WebGLShader';
 import { ShaderChunk } from '../shaders/ShaderChunk';
 import { NoToneMapping, AddOperation, MixOperation, MultiplyOperation, EquirectangularRefractionMapping, CubeRefractionMapping, SphericalReflectionMapping, EquirectangularReflectionMapping, CubeUVRefractionMapping, CubeUVReflectionMapping, CubeReflectionMapping, PCFSoftShadowMap, PCSSSoftShadowMap, PCFShadowMap, CineonToneMapping, Uncharted2ToneMapping, ReinhardToneMapping, LinearToneMapping, GammaEncoding, RGBDEncoding, RGBM16Encoding, RGBM7Encoding, RGBEEncoding, sRGBEncoding, LinearEncoding } from '../../constants';
+import { MaterialMap } from '../../materials/MaterialMap';
 
 var programIdCount = 0;
 
@@ -532,7 +533,7 @@ function WebGLProgram( renderer, code, material, parameters ) {
 			].filter( filterEmptyLine ).join( '\n' );
 
 
-		var supportedMapNames = THREE.Map.SupportedMapNames;
+		var supportedMapNames = MaterialMap.SupportedMapNames;
 
 		var mapUVChannelsCode = "";
 		var mapTexelTransformCode = "";

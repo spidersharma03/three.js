@@ -13,4 +13,5 @@ export { MeshDepthMaterial } from './MeshDepthMaterial.js';
 export { MeshBasicMaterial } from './MeshBasicMaterial.js';
 export { LineDashedMaterial } from './LineDashedMaterial.js';
 export { LineBasicMaterial } from './LineBasicMaterial.js';
+export { MaterialMap } from './MaterialMap.js';
 export { Material } from './Material.js';

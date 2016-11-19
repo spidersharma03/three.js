@@ -10,6 +10,7 @@ import { Mesh } from '../objects/Mesh';
 import { BoxBufferGeometry } from '../geometries/BoxBufferGeometry';
 import { PlaneBufferGeometry } from '../geometries/PlaneBufferGeometry';
 import { MeshBasicMaterial } from '../materials/MeshBasicMaterial';
+import { MaterialMap } from '../materials/MaterialMap';
 import { PerspectiveCamera } from '../cameras/PerspectiveCamera';
 import { OrthographicCamera } from '../cameras/OrthographicCamera';
 import { WebGLIndexedBufferRenderer } from './webgl/WebGLIndexedBufferRenderer';
@@ -1987,10 +1988,10 @@ function WebGLRenderer( parameters ) {
 
 		}
 
-		var supportedMapNames = THREE.Map.SupportedMapNames;
-		var supportedMapSlotNames = THREE.Map.SupportedMapSlotNames;
-		var supportedMapUVNames = THREE.Map.SupportedMapUVNames;
-		var supportedMapTexelNames = THREE.Map.SupportedMapTexelNames;
+		var supportedMapNames = MaterialMap.SupportedMapNames;
+		var supportedMapSlotNames = MaterialMap.SupportedMapSlotNames;
+		var supportedMapUVNames = MaterialMap.SupportedMapUVNames;
+		var supportedMapTexelNames = MaterialMap.SupportedMapTexelNames;
 
 		if( ! material.usedSlots || material.usedSlotsVersion != material.version ) {
 			material.usedSlots = [];
@@ -2802,7 +2803,7 @@ function WebGLRenderer( parameters ) {
 
 	};
 
-	// Map three.js constants to WebGL constants
+	// MaterialMap three.js constants to WebGL constants
 
 	function paramThreeToGL( p ) {
 
