@@ -8,7 +8,7 @@ import { Material } from './Material';
  * }
  */
 
-function MeshCubeMaterial = function ( parameters ) {
+function MeshCubeMaterial ( parameters ) {
 
 	Material.call( this );
 
@@ -46,3 +46,5 @@ MeshCubeMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+export { MeshCubeMaterial };
