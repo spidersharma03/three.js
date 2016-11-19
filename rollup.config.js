@@ -25,7 +25,7 @@ export default {
 	],
 	targets: [
 		{
-			format: 'umd',
+			format: 'amd',
 			moduleName: 'THREE',
 			dest: 'build/three.js'
 		},
