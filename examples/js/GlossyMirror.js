@@ -128,7 +128,7 @@ THREE.GlossyMirror = function ( options ) {
 	this.mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
 	
 	this.material = new THREE.ShaderMaterial( THREE.GlossyMirrorShader );
-	this.material.defines = THREE.UniformsUtils.cloneDefines( this.material.defines );
+	this.material.defines = Object.assign( {}, this.material.defines );
 	this.material.uniforms = THREE.UniformsUtils.clone( this.material.uniforms );
 	this.material.uniforms.tReflection.value = this.mirrorRenderTarget;
 	this.material.uniforms.reflectionTextureMatrix.value = this.reflectionTextureMatrix;
