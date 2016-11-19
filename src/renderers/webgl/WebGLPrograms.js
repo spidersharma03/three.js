@@ -18,7 +18,7 @@ function WebGLPrograms( renderer, capabilities ) {
 		MeshPhongMaterial: 'phong',
 		MeshStandardMaterial: 'physical',
 		MeshPhysicalMaterial: 'physical',
-		MeshCubeMaterial: 'cube',
+		MeshCubeMaterial: 'cubeEnv',
 		LineBasicMaterial: 'basic',
 		LineDashedMaterial: 'dashed',
 		PointsMaterial: 'points'

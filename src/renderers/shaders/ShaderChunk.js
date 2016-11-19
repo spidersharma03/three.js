@@ -87,6 +87,8 @@ import worldpos_vertex from './ShaderChunk/worldpos_vertex.glsl';
 
 import cube_frag from './ShaderLib/cube_frag.glsl';
 import cube_vert from './ShaderLib/cube_vert.glsl';
+import cubeEnv_frag from './ShaderLib/cubeEnv_frag.glsl';
+import cubeEnv_vert from './ShaderLib/cubeEnv_vert.glsl';
 import depth_frag from './ShaderLib/depth_frag.glsl';
 import depth_vert from './ShaderLib/depth_vert.glsl';
 import distanceRGBA_frag from './ShaderLib/distanceRGBA_frag.glsl';
@@ -200,6 +202,8 @@ export var ShaderChunk = {
 
 	cube_frag: cube_frag,
 	cube_vert: cube_vert,
+	cubeEnv_frag: cubeEnv_frag,
+	cubeEnv_vert: cubeEnv_vert,
 	depth_frag: depth_frag,
 	depth_vert: depth_vert,
 	distanceRGBA_frag: distanceRGBA_frag,

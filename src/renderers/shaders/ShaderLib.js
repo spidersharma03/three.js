@@ -147,6 +147,22 @@ var ShaderLib = {
 
 	},
 
+	/* -------------------------------------------------------------------------
+	//	Cube map shader
+	 ------------------------------------------------------------------------- */
+
+	cube: {
+
+		uniforms: {
+			tCube: { value: null },
+			tFlip: { value: - 1 },
+			opacity: { value: 1.0 }
+		},
+
+		vertexShader: ShaderChunk.cube_vert,
+		fragmentShader: ShaderChunk.cube_frag
+
+	},
 
 	/* -------------------------------------------------------------------------
 	//	Cube map shader
@@ -181,7 +197,7 @@ var ShaderLib = {
 //	Cube map shader
  ------------------------------------------------------------------------- */
 
-ShaderLib.cube = {
+ShaderLib.cubeEnv = {
 
 	uniforms: Object.assign( {},
 		UniformsLib.common,
@@ -195,8 +211,8 @@ ShaderLib.cube = {
 		}
 	),
 
-	vertexShader: ShaderChunk.cube_vert,
-	fragmentShader: ShaderChunk.cube_frag
+	vertexShader: ShaderChunk.cubeEnv_vert,
+	fragmentShader: ShaderChunk.cubeEnv_frag
 
 };
 
