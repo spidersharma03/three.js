@@ -129,6 +129,7 @@
 				msaaRenderPass.unbiased = true;
 				msaaRenderPass.clearColor = new THREE.Color( 1.0, 0.0, 0.0 );
 				msaaRenderPass.clearAlpha = 0.1;
+				msaaRenderPass.clear = true;
 				composer.addPass( msaaRenderPass );
 
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
