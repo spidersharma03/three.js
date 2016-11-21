@@ -10,7 +10,7 @@ This utility refactors THREE.js JSON model files that were exported using `Three
 
 * THREE.js JSON (.js)
 
-## Usage 
+## Usage
 
 ```
 annotate.py [-h] [-u] -i FILE -o FILE range [range ...]

@@ -25,7 +25,7 @@ Then there are separate commands for:
 Every command needs a constructor. In the constructor
 
 ```javascript
-	
+
 var DoSomethingCommand = function () {
 
 	Command.call( this ); // Required: Call default constructor
@@ -33,7 +33,7 @@ var DoSomethingCommand = function () {
 	this.type = 'DoSomethingCommand';            // Required: has to match the object-name!
 	this.name = 'Set/Do/Update Something'; // Required: description of the command, used in Sidebar.History
 
-	// TODO: store all the relevant information needed to 
+	// TODO: store all the relevant information needed to
 	// restore the old and the new state
 
 };
@@ -50,13 +50,13 @@ DoSomethingCommand.prototype = {
 
 	execute: function () {
 
-		// TODO: apply changes to 'object' to reach the new state 
+		// TODO: apply changes to 'object' to reach the new state
 
 	},
 
 	undo: function () {
 
-		// TODO: restore 'object' to old state 
+		// TODO: restore 'object' to old state
 
 	},
 

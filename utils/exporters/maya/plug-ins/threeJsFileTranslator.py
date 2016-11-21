@@ -63,7 +63,7 @@ class ThreeJsWriter(object):
 			if self.options["skeletalAnim"]:
 				print("exporting keyframe animations")
 				self._exportKeyframeAnimations()
-        
+
 
         print("writing file")
         output = {
@@ -461,9 +461,9 @@ class FramesPerSecond(object):
             return int(filter(lambda c: c.isdigit(), self.fpsString))
 
 ###################################################################
-## The code below was taken from the Blender 3JS Exporter 
+## The code below was taken from the Blender 3JS Exporter
 ## It's purpose is to fix the JSON output so that it does not
-## put each array value on it's own line, which is ridiculous 
+## put each array value on it's own line, which is ridiculous
 ## for this type of output.
 ###################################################################
 
@@ -473,7 +473,7 @@ ROUND = 6
 def _json_floatstr(o):
     if ROUND is not None:
         o = round(o, ROUND)
-        
+
     return '%g' % o
 
 
@@ -658,7 +658,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
 
 
 # override the encoder
-json.encoder._make_iterencode = _make_iterencode 
+json.encoder._make_iterencode = _make_iterencode
 
 
 

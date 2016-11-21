@@ -96,7 +96,7 @@ if '-u' in sys.argv and CAN_GUI:
     a = argparseui.ArgparseUi(parser)
     a.show()
     app.exec_()
-    
+
     if a.result() == 1:
         process(a)
 else:

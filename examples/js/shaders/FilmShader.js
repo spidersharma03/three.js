@@ -49,7 +49,7 @@ THREE.FilmShader = {
 	fragmentShader: [
 
 		"#include <common>",
-		
+
 		// control parameter
 		"uniform float time;",
 

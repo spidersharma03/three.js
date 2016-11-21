@@ -102,7 +102,7 @@ def _parse_rest_action(action, armature, options):
             if frame == start_frame:
 
                 time = (frame * frame_step - start_frame) / fps
-                
+
                 keyframe = {
                     constants.TIME: time,
                     constants.POS: [pos_x, pos_y, pos_z],
@@ -522,40 +522,40 @@ def _scale(bone, frame, action, armature_matrix):
     ngroups = len(action.groups)
 
     # animation grouped by bones
-	
+
     if ngroups > 0:
 
         index = -1
 
         for i in range(ngroups):
             if action.groups[i].name == bone.name:
-		
+
                 print(action.groups[i].name)
 
                 index = i
 
         if index > -1:
             for channel in action.groups[index].channels:
- 
+
                 if "scale" in channel.data_path:
                     has_changed = _handle_scale_channel(
                         channel, frame, scale)
                     change = change or has_changed
-                    
+
     # animation in raw fcurves
 
     else:
 
         bone_label = '"%s"' % bone.name
-	
+
         for channel in action.fcurves:
             data_path = channel.data_path
             if bone_label in data_path and "scale" in data_path:
                 has_changed = _handle_scale_channel(
                     channel, frame, scale)
                 change = change or has_changed
-    	
-   
+
+
     #scale.xyz = armature_matrix * scale.xyz
 
     return scale, change
@@ -638,9 +638,9 @@ def _handle_scale_channel(channel, frame, scale):
         for keyframe in channel.keyframe_points:
             if keyframe.co[0] == frame:
                 change = True
-       
+
         value = channel.evaluate(frame)
-      
+
         if channel.array_index == 0:
             scale.x = value
 

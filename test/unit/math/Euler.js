@@ -69,7 +69,7 @@ test( "set/setFromVector3/toVector3", function() {
 	ok( a.equals( b ), "Passed!" );
 
 	var c = b.toVector3();
-	ok( c.equals( vec ), "Passed!" );	
+	ok( c.equals( vec ), "Passed!" );
 });
 
 test( "Quaternion.setFromEuler/Euler.fromQuaternion", function() {

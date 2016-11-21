@@ -71,7 +71,7 @@
 
 			var spotLight = new THREE.SpotLight( 0xffffff, 100 );
 			var lightHelper;
-	
+
 			var params = {
 				lightHeight: 12.0,
 				lightShift: 3,
@@ -106,7 +106,7 @@
 				renderer.gammaOutput = true;
 
 				camera.position.set( 30, 10, 30 );
-				
+
 				spotLight.position.set( 0, params.lightZ, 0 );
 				spotLight.intensity = 1;
 				spotLight.castShadow = true;
@@ -117,11 +117,11 @@
 				spotLight.shadow.camera.far = 25;
 
 				lightHelper = new THREE.SpotLightHelper( spotLight );
-				
+
 				mshFloor.receiveShadow = true;
 				mshFloor.position.set( 0, - 0.5, 0 );
 
-				mshSphere.castShadow = true;				
+				mshSphere.castShadow = true;
 				mshSphere.receiveShadow = true;
 
 				scene.add( camera );
@@ -132,7 +132,7 @@
 			//	scene.add( lightHelper );
 				//scene.add( mshLight );
 				//scene.add( new THREE.AxisHelper( 10 ) );
-			
+
 				container.appendChild( renderer.domElement );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -171,7 +171,7 @@
 				spotLight.shadow.update( spotLight );
 
 				if ( lightHelper ) lightHelper.update();
-			
+
 				mshLight.position.copy( spotLight.position );
 				mshLight.scale.set( params.lightRadius, params.lightRadius, params.lightRadius );
 				mshLight.updateMatrixWorld();
@@ -197,7 +197,7 @@
 				stats.end();
 
 			}
-		
+
 
 			init();
 

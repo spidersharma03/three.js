@@ -10,7 +10,7 @@ THREE.MirrorHelper = function(mirror) {
   this.scene.add(this.quad);
   this.mirror = mirror;
   this.numMipMaps = 4;
-	
+
 
   this.mirrorTextureMipMaps = [];
   this.tempRenderTargets = [];
@@ -126,7 +126,7 @@ THREE.GlossyMirror = function ( options ) {
 	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
 
 	this.mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
-	
+
 	this.material = new THREE.ShaderMaterial( THREE.GlossyMirrorShader );
 	this.material.defines = Object.assign( {}, this.material.defines );
 	this.material.uniforms = THREE.UniformsUtils.clone( this.material.uniforms );
@@ -136,9 +136,9 @@ THREE.GlossyMirror = function ( options ) {
 	if ( ! THREE.Math.isPowerOfTwo( width ) || ! THREE.Math.isPowerOfTwo( height ) ) {
 
 		this.mirrorRenderTarget.texture.generateMipmaps = false;
-	
+
 	}
-	
+
 	this.clipPlane = new THREE.Plane( this.localMirrorNormal, 0 );
 	this.originalClipPlane = this.clipPlane.clone();
 	this.falseClipPlane = this.clipPlane.clone();
@@ -219,7 +219,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 		this.mirrorPlane.setFromNormalAndCoplanarPoint( this.mirrorNormal, this.mirrorWorldPosition );
 		this.mirrorPlane.applyMatrix4( this.mirrorCamera.matrixWorldInverse );
-		
+
 
 		this.material.uniforms[ 'mirrorCameraProjectionMatrix' ].value.copy( this.mirrorCamera.projectionMatrix );
 		this.material.uniforms[ 'mirrorCameraInverseProjectionMatrix' ].value.getInverse( this.mirrorCamera.projectionMatrix );
@@ -249,7 +249,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.matrixNeedsUpdate = true;
 
 		// Render the mirrored view of the current scene into the target texture
-	
+
 
 		if(this.clipPlane !== undefined) {
 
@@ -260,7 +260,7 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		}
 
 		renderer.clippingPlanes = this.clippingPlanes;
-	
+
 		if ( scene !== undefined && scene instanceof THREE.Scene ) {
 
 			// We can't render ourself to ourself
@@ -286,14 +286,14 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		scene.overrideMaterial = null;
 		renderer.setClearColor( oldClearColor, oldClearAlpha );
 
-	
+
 		this.material.visible = visible;
 		this.material.uniforms.distanceFade.value = this.distanceFade;
 		this.material.uniforms.metalness.value = this.metalness;
 		this.material.uniforms.fresnelStrength.value = this.fresnelStrength;
 		this.material.uniforms.specularColor.value.copy( this.specularColor );
 		this.material.uniforms.roughness.value = this.roughness;
-	
+
 		if(this.clipPlane !== undefined) {
 
 			this.clipPlane.copy(this.falseClipPlane);

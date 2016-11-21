@@ -1,10 +1,10 @@
 /**
  * @author qiao / https://github.com/qiao
- * @fileoverview This is a convex hull generator using the incremental method. 
+ * @fileoverview This is a convex hull generator using the incremental method.
  * The complexity is O(n^2) where n is the number of vertices.
  * O(nlogn) algorithms do exist, but they are much more complicated.
  *
- * Benchmark: 
+ * Benchmark:
  *
  *  Platform: CPU: P7350 @2.00GHz Engine: V8
  *

@@ -202,7 +202,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 				}
 			}
 		};
-		
+
 		this.renderScene.traverse( VisibilityChangeCallBack );
 	},
 

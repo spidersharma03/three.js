@@ -11,7 +11,7 @@ THREE.GlossyMirrorShader = {
 	uniforms: {
 
 	 	"metalness": { type: "f", value: 0.0 },
-	
+
 	 	"specularColor": { type: "c", value: new THREE.Color( 0xffffff ) },
 		"tSpecular": { type: "t", value: null },
 
@@ -25,7 +25,7 @@ THREE.GlossyMirrorShader = {
 		"roughness": { type: "f", value: 0.0 },
 	 	"distanceFade": { type: "f", value: 0.01 },
 	 	"fresnelStrength": { type: "f", value: 1.0 },
- 	
+
 		"reflectionTextureMatrix" : { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraWorldMatrix": { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
@@ -77,7 +77,7 @@ THREE.GlossyMirrorShader = {
 		"uniform float metalness;",
 		"uniform float distanceFade;",
 		"uniform float fresnelStrength;",
-	
+
 		"uniform vec3 specularColor;",
 		"#if SPECULAR_MAP == 1",
 			"uniform sampler2D tSpecular;",
@@ -172,7 +172,7 @@ THREE.GlossyMirrorShader = {
 		"}",
 
 		"void main() {",
-	
+
 			"vec3 specular = specularColor;",
 			"#if SPECULAR_MAP == 1",
 				"specular *= texture2D( tSpecular, vUv );",
@@ -193,17 +193,17 @@ THREE.GlossyMirrorShader = {
 
 				"vec3 reflectionViewPosition = getReflectionViewPosition( screenPosition, reflectionDepth, reflectionViewZ );",
 				"vec3 reflectionWorldPosition = ( mirrorCameraWorldMatrix * vec4( reflectionViewPosition, 1.0 ) ).xyz;",
-				
+
 				"vec3 closestPointOnMirror = projectOnPlane( reflectionWorldPosition, mirrorWorldPosition, mirrorNormal );",
-		
+
 
 				"vec3 pointOnMirror = linePlaneIntersect( cameraPosition, normalize( reflectionWorldPosition - cameraPosition ), mirrorWorldPosition, mirrorNormal );",
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
-			
+
 
 				"localRoughness = localRoughness * distance * 0.2;",
 				"float lodLevel = localRoughness;",
-				
+
 				"fade = 1.0 - ( distanceFade * distance );",
 			"#else",
 

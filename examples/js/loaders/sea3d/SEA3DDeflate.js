@@ -735,14 +735,14 @@ var zip_inflate = function(data) {
     zip_inflate_start();
     zip_inflate_data = new Uint8Array(data);
     zip_inflate_pos = 0;
-	
+
     var buff = new Uint8Array(1024);
-	
+
     var out = [];
     while((i = zip_inflate_internal(buff, 0, buff.length)) > 0)
 		for(j = 0; j < i; j++)
-			out[pos++] = buff[j];		    
-	
+			out[pos++] = buff[j];
+
     zip_inflate_data = null; // G.C.
     return new Uint8Array(out).buffer;
 };

@@ -78,11 +78,11 @@
 
 				stats = new Stats();
 				container.appendChild( stats.dom );
-				
+
 
 				var loader = new THREE.ColladaLoader();
 				loader.load( "./models/collada/avatar.dae", function ( collada ) {
-				
+
 					collada.scene.traverse( function ( child ) {
 
 						if ( child instanceof THREE.SkinnedMesh ) {

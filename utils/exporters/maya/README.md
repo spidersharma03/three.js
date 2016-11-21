@@ -45,7 +45,7 @@ Use the regular Export menus within Maya, select `Three.js`.
 
 Export Selected will not export bones or animations. That is only supported in Export All.
 
-The Maya "Color" Maps are exported as the diffuseColor and mapDiffuse attributes in JSON. The Maya "Diffuse" Maps do NOT export. 
+The Maya "Color" Maps are exported as the diffuseColor and mapDiffuse attributes in JSON. The Maya "Diffuse" Maps do NOT export.
 
 It is recommended to do one character per scene if you are planning to export animations. All geometry will be merged together in the JSON during an export all.
 
@@ -53,6 +53,6 @@ It is recommended to do one character per scene if you are planning to export an
 
 If you are getting errors while exporting there are a couple things you can try that may help.
 
-- Triangulate all objects before exporting. I have encountered geometry that will not export until I do this. 
+- Triangulate all objects before exporting. I have encountered geometry that will not export until I do this.
 
-- Freeze Transforms. If you've scaled your objects any amount before exporting you'll need to freeze transforms to ensure the normals are exported properly. 
+- Freeze Transforms. If you've scaled your objects any amount before exporting you'll need to freeze transforms to ensure the normals are exported properly.

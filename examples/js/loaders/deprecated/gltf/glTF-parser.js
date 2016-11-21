@@ -102,7 +102,7 @@ var global = window;
 				if (isDataUriRegex.test(path)) {
 					return path;
 				}
-				
+
 				return this.baseURL + path;
 			}
 		},

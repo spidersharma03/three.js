@@ -7,7 +7,7 @@ ROUND = constants.DEFAULT_PRECISION
 def _json_floatstr(o):
     if ROUND is not None:
         o = round(o, ROUND)
-        
+
     return '%g' % o
 
 
@@ -27,7 +27,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
     '''
     Overwrite json.encoder for Python 2.7 and above to not
     assign each index of a list or tuple to its own row as
-    this is completely asinine behaviour 
+    this is completely asinine behaviour
     '''
 
     ## @THREE
@@ -203,6 +203,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
 
 
 # override the encoder
-json.encoder._make_iterencode = _make_iterencode 
+json.encoder._make_iterencode = _make_iterencode
 
 

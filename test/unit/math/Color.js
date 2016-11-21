@@ -106,7 +106,7 @@ test( "lerp", function(){
     ok( c.r == 0.2, "Red: " + c.r );
     ok( c.g == 0.2, "Green: " + c.g );
     ok( c.b == 0.2, "Blue: " + c.b );
-    
+
 });
 
 

@@ -41,17 +41,17 @@ THREE.ToneMapShader = {
 		"#else",
 			"uniform float averageLuminance;",
 		"#endif",
-		
+
 		"const vec3 LUM_CONVERT = vec3(0.299, 0.587, 0.114);",
 
 		"vec3 ToneMap( vec3 vColor ) {",
 			"#ifdef ADAPTED_LUMINANCE",
-				// Get the calculated average luminance 
+				// Get the calculated average luminance
 				"float fLumAvg = texture2D(luminanceMap, vec2(0.5, 0.5)).r;",
 			"#else",
 				"float fLumAvg = averageLuminance;",
 			"#endif",
-			
+
 			// Calculate the luminance of the current pixel
 			"float fLumPixel = dot(vColor, LUM_CONVERT);",
 
@@ -65,7 +65,7 @@ THREE.ToneMapShader = {
 		"void main() {",
 
 			"vec4 texel = texture2D( tDiffuse, vUv );",
-			
+
 			"gl_FragColor = vec4( ToneMap( texel.xyz ), texel.w );",
 
 		"}"

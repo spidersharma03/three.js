@@ -313,13 +313,13 @@ struct Material {
   float Kd[3];
   std::string map_Kd;
   std::string d;
-  
+
 
   void DumpJson(FILE* out = stdout) const {
     fprintf(out, "    \"%s\": { ", name.c_str());
     if (!d.empty()) {
       fprintf(out, "\"d\": %s ,", d.c_str());
-    }    
+    }
     if (map_Kd.empty()) {
       fprintf(out, "\"Kd\": [%hu, %hu, %hu] }",
               Quantize(Kd[0], 0, 1, 255),

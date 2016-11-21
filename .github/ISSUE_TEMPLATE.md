@@ -1,6 +1,6 @@
 (*** This section is for bug reports and feature requests only. This is NOT a help site. Do not ask help questions here. If you need help, please use stackoverflow. ***)
 
-##### Description of the problem 
+##### Description of the problem
 
 
 ##### Three.js version

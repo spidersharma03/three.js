@@ -170,7 +170,7 @@ function WebGLRenderer( parameters ) {
 		_projScreenMatrix = new Matrix4(),
 
 		_vector3 = new Vector3(),
-		_matrix4 = new Matrix4(), 
+		_matrix4 = new Matrix4(),
 		_matrix42 = new Matrix4(),
 
 		// light arrays cache
@@ -1998,7 +1998,7 @@ function WebGLRenderer( parameters ) {
 			for( var i = 0, il = supportedMapNames.length; i < il; i ++ ) {
 				var mapName = supportedMapNames[i];
 				var mapSlotName = supportedMapSlotNames[i];
-		
+
 				var map = material[ mapSlotName ];
 
 				material.usedSlots.push( {
@@ -2017,7 +2017,7 @@ function WebGLRenderer( parameters ) {
 
 			var mapName = supportedMapNames[i];
 			var mapSlotName = supportedMapSlotNames[i];
-		
+
 			var map = material[ mapSlotName ];
 			if( map ) {
 				usedSlots.mapUniform.value = map.texture;

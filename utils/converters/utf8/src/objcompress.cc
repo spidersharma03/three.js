@@ -40,7 +40,7 @@ int main(int argc, const char* argv[]) {
     materials[i].DumpJson();
   }
   puts("  },");
-  
+
   const MaterialBatches& batches = obj.material_batches();
 
   // Pass 1: compute bounds.
@@ -51,7 +51,7 @@ int main(int argc, const char* argv[]) {
     const DrawBatch& draw_batch = iter->second;
     bounds.Enclose(draw_batch.draw_mesh().attribs);
   }
-  webgl_loader::BoundsParams bounds_params = 
+  webgl_loader::BoundsParams bounds_params =
     webgl_loader::BoundsParams::FromBounds(bounds);
   printf("  decodeParams: ");
   bounds_params.DumpJson();
@@ -66,7 +66,7 @@ int main(int argc, const char* argv[]) {
     utf8.clear();
     const DrawMesh& draw_mesh = iter->second.draw_mesh();
     if (draw_mesh.indices.empty()) continue;
-    
+
     QuantizedAttribList quantized_attribs;
     webgl_loader::AttribsToQuantizedAttribs(draw_mesh.attribs, bounds_params,
 					    &quantized_attribs);
@@ -96,7 +96,7 @@ int main(int argc, const char* argv[]) {
       const size_t num_indices = webgl_meshes[i].indices.size();
       const bool kBadSizes = num_attribs % 8 || num_indices % 3;
       CHECK(!kBadSizes);
-      webgl_loader::CompressQuantizedAttribsToUtf8(webgl_meshes[i].attribs, 
+      webgl_loader::CompressQuantizedAttribsToUtf8(webgl_meshes[i].attribs,
 						   &sink);
       webgl_loader::CompressIndicesToUtf8(webgl_meshes[i].indices, &sink);
       material.push_back(iter->first);

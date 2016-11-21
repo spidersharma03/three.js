@@ -1182,7 +1182,7 @@ THREE.ColladaLoader = function () {
 				if ( num_materials > 1 ) {
 
 					material = new THREE.MultiMaterial( used_materials_array );
-					
+
 					for ( j = 0; j < geom.faces.length; j ++ ) {
 
 						var face = geom.faces[ j ];

@@ -5,11 +5,11 @@ Utility for converting model files to the Three.js JSON format
 ## Supported Formats
 
 * Fbx (.fbx)
-* Collada (.dae) 
+* Collada (.dae)
 * Wavefront/Alias (.obj)
 * 3D Studio Max (.3ds)
 
-## Usage 
+## Usage
 
 ```
 convert_to_threejs.py [source_file] [output_file] [options]
@@ -36,10 +36,10 @@ Options:
 ## Dependencies
 
 ### FBX SDK
-* Requires Autodesk FBX SDK Python 2013.3 bindings. 
+* Requires Autodesk FBX SDK Python 2013.3 bindings.
 
 ```
-You can download the python bindings from the Autodesk website: 
+You can download the python bindings from the Autodesk website:
   http://usa.autodesk.com/fbx/
 ```
 
@@ -54,7 +54,7 @@ Don't forget the visit the FBX SDK documentation website:
 /Applications/Autodesk/FBX Python SDK/[VERSION]/lib/
 ```
 
-If the tool still can't find the FBX SDK, you may need to copy the `fbx.so`, `FbxCommon.py` and `sip.so` files into your site_packages folder. 
+If the tool still can't find the FBX SDK, you may need to copy the `fbx.so`, `FbxCommon.py` and `sip.so` files into your site_packages folder.
 
 If you don't know your site_packages folder, run `python` from shell and paste this:
 

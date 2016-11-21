@@ -89,7 +89,7 @@
  * // And compute each frame, before rendering to screen:
  * gpuCompute.doRenderTarget( myFilter1, myRenderTarget );
  * gpuCompute.doRenderTarget( myFilter2, outputRenderTarget );
- * 
+ *
  *
  *
  * @param {int} sizeX Computation problem size is always 2d: sizeX * sizeY elements.
@@ -137,7 +137,7 @@ function GPUComputationRenderer( sizeX, sizeY, renderer ) {
 		this.variables.push( variable );
 
 		return variable;
-		
+
 	};
 
 	this.setVariableDependencies = function( variable, dependencies ) {

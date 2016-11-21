@@ -192,11 +192,11 @@
 
 				var gui = new dat.GUI();
 
-		
-				gui.add( params, 'opacity', 0, 1 );				
+
+				gui.add( params, 'opacity', 0, 1 );
 				gui.add( params, 'falloff' );
 				gui.add( params, 'falloffScale', 0, 1 );
-				gui.add( params, 'falloffOpacity', 0, 1 );				
+				gui.add( params, 'falloffOpacity', 0, 1 );
 				gui.add( params, 'bumpScale', - 5, 5 );
 				gui.open();
 
@@ -238,7 +238,7 @@
 
 					if( mainMaterial.falloff !== params.falloff ) mainMaterial.needsUpdate = true;
 					mainMaterial.falloff = params.falloff;
-					
+
 				//	mainMaterial.falloffColor = params.falloffColor;
 					mainMaterial.falloffOpacity = params.falloffOpacity;
 					mainMaterial.transparent = true;

@@ -33,7 +33,7 @@ THREE.MorphAnimMesh.prototype.playAnimation = function ( label, fps ) {
 
 		this.activeAction.stop();
 		this.activeAction = null;
-		
+
 	}
 
 	var clip = THREE.AnimationClip.findByName( this, label );

@@ -59,7 +59,7 @@ def copy_for_review(tmp_json, tag):
     if data['metadata']['type'] == 'Object' and images:
         for each in images:
             textures.append(each['url'])
-    
+
     textures = list(set(textures))
     print('found %d maps' % len(textures))
     dir_tmp = os.path.dirname(tmp_json)
@@ -93,7 +93,7 @@ def copy_for_review(tmp_json, tag):
             dst = os.path.join(tag_dir, value)
             print('moving %s > %s' % (src, dst))
             shutil.move(src, dst)
-            
+
 
 def _parse_geometry_materials(materials):
     maps = ('mapDiffuse', 'mapSpecular', 'mapBump',

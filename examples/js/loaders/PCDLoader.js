@@ -234,7 +234,7 @@ Object.assign( THREE.PCDLoader.prototype, THREE.EventDispatcher.prototype, {
 		vertexColors: !(color == false) } );
 		if ( color == false )
 			material.color.setHex( Math.random() * 0xffffff );
-		
+
 		var mesh = new THREE.Points( geometry, material );
 		var name = url.split( '' ).reverse().join( '' );
 		name = /([^\/]*)/.exec( name );

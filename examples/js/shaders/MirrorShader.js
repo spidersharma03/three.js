@@ -33,7 +33,7 @@ THREE.MirrorShader = {
 
 		"uniform sampler2D tDiffuse;",
 		"uniform int side;",
-		
+
 		"varying vec2 vUv;",
 
 		"void main() {",

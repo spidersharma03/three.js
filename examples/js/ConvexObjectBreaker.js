@@ -25,7 +25,7 @@
  *
  * @param {double} minSizeForBreak Min size a debris can have to break.
  * @param {double} smallDelta Max distance to consider that a point belongs to a plane.
- * 
+ *
   */
 
 THREE.ConvexObjectBreaker = function( minSizeForBreak, smallDelta ) {
@@ -103,9 +103,9 @@ THREE.ConvexObjectBreaker.prototype = {
 				debris.push( subObject );
 
 				return;
-				
+
 			}
-			
+
 			var angle = Math.PI;
 
 			if ( numIterations === 0 ) {
@@ -117,7 +117,7 @@ THREE.ConvexObjectBreaker.prototype = {
 			else {
 
 				if ( numIterations <= maxRadialIterations ) {
-					
+
 					angle = ( endAngle - startAngle ) * ( 0.2 + 0.6 * Math.random() ) + startAngle;
 
 					// Rotate tempPlane2 at impact point around normal axis and the angle

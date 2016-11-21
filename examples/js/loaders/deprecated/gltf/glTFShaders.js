@@ -57,7 +57,7 @@ THREE.glTFShader = function(material, params, object, scene) {
 // bindParameters - connect the uniform values to their source parameters
 THREE.glTFShader.prototype.bindParameters = function(scene) {
 
-	function findObject(o, p) { 
+	function findObject(o, p) {
 		if (o.glTFID == param.node) {
 			p.sourceObject = o;
 		}
@@ -68,9 +68,9 @@ THREE.glTFShader.prototype.bindParameters = function(scene) {
 		var param = this.parameters[pname];
 		if (param.semantic) {
 
-			var p = { 
+			var p = {
 				semantic : param.semantic,
-				uniform: this.material.uniforms[uniform] 
+				uniform: this.material.uniforms[uniform]
 			};
 
 			if (param.node) {
@@ -78,7 +78,7 @@ THREE.glTFShader.prototype.bindParameters = function(scene) {
 			}
 			else {
 				p.sourceObject = this.object;
-			}			
+			}
 
 			this.semantics[pname] = p;
 
@@ -100,29 +100,29 @@ THREE.glTFShader.prototype.update = function(scene, camera) {
 
 	for (var sname in this.semantics) {
 		var semantic = this.semantics[sname];
-        if (semantic) {
-	        switch (semantic.semantic) {
-	            case "MODELVIEW" :
-	            	var m4 = semantic.uniform.value;
-	            	m4.multiplyMatrices(camera.matrixWorldInverse, 
-	            		semantic.sourceObject.matrixWorld);
-	                break;
+		if (semantic) {
+			switch (semantic.semantic) {
+				case "MODELVIEW" :
+					var m4 = semantic.uniform.value;
+					m4.multiplyMatrices(camera.matrixWorldInverse,
+						semantic.sourceObject.matrixWorld);
+					break;
 
-	            case "MODELVIEWINVERSETRANSPOSE" :
-	            	var m3 = semantic.uniform.value;
-	            	this.m4.multiplyMatrices(camera.matrixWorldInverse, 
-	            		semantic.sourceObject.matrixWorld);
+				case "MODELVIEWINVERSETRANSPOSE" :
+					var m3 = semantic.uniform.value;
+					this.m4.multiplyMatrices(camera.matrixWorldInverse,
+						semantic.sourceObject.matrixWorld);
 					m3.getNormalMatrix(this.m4);
-	                break;
+					break;
 
-	            case "PROJECTION" :
-	            	var m4 = semantic.uniform.value;
-	            	m4.copy(camera.projectionMatrix);            		
-	                break;
+				case "PROJECTION" :
+					var m4 = semantic.uniform.value;
+					m4.copy(camera.projectionMatrix);
+					break;
 
-	            case "JOINTMATRIX" :
-	            
-	            	var m4v = semantic.uniform.value;
+				case "JOINTMATRIX" :
+
+					var m4v = semantic.uniform.value;
 					for (var mi = 0; mi < m4v.length; mi++) {
 						// So it goes like this:
 						// SkinnedMesh world matrix is already baked into MODELVIEW;
@@ -132,14 +132,14 @@ THREE.glTFShader.prototype.update = function(scene, camera) {
 							multiply(this.joints[mi].matrixWorld).
 							multiply(this.object.skeleton.boneInverses[mi]);
 					}
-	            
-	                //console.log("Joint:", semantic)
-	                break;
 
-	            default :
-	                throw new Error("Unhandled shader semantic" + semantic);
-	                break;
-	        }
-        }
+					//console.log("Joint:", semantic)
+					break;
+
+				default :
+					throw new Error("Unhandled shader semantic" + semantic);
+					break;
+			}
+		}
 	}
 }

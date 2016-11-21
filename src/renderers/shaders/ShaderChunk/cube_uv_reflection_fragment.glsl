@@ -3,7 +3,7 @@
 #define cubeUV_textureSize (1024.0)
 
 int getFaceFromDirection(vec3 direction) {
-	vec3 absDirection = abs(direction); 
+	vec3 absDirection = abs(direction);
 	int face = -1;
 	if( absDirection.x > absDirection.z ) {
 		if(absDirection.x > absDirection.y )

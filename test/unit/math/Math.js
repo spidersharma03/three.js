@@ -6,7 +6,7 @@ module( "Math" );
 
 //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/sign
 //http://people.mozilla.org/~jorendorff/es6-draft.html#sec-math.sign
-/* 
+/*
 20.2.2.29 Math.sign(x)
 
 Returns the sign of the x, indicating whether x is positive, negative or zero.
