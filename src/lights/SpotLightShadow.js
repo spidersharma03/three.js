@@ -29,7 +29,7 @@ SpotLightShadow.prototype = Object.assign( Object.create( LightShadow.prototype 
 
 		var camera = this.camera;
 
-		this.cameraParams.x = fov * THREE.Math.DEG2RAD;
+		this.cameraParams.x = fov * _Math.DEG2RAD;
 		this.cameraParams.y = light.shadow.camera.near;
 		this.cameraParams.z = far;
 

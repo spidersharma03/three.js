@@ -2,16 +2,16 @@
  * @author aallison / http://github.com/abelnation
  */
 
-THREE.RectAreaLightShadow = function () {
+RectAreaLightShadow = function () {
 
-	THREE.LightShadow.call( this, new THREE.PerspectiveCamera( 50, 1, 0.5, 500 ) );
+	LightShadow.call( this, new PerspectiveCamera( 50, 1, 0.5, 500 ) );
 
 };
 
-THREE.RectAreaLightShadow.prototype = Object.create( THREE.LightShadow.prototype );
-THREE.RectAreaLightShadow.prototype.constructor = THREE.RectAreaLightShadow;
+RectAreaLightShadow.prototype = Object.create( LightShadow.prototype );
+RectAreaLightShadow.prototype.constructor = RectAreaLightShadow;
 
-THREE.RectAreaLightShadow.prototype.update = function ( light ) {
+RectAreaLightShadow.prototype.update = function ( light ) {
 
 	// TODO (abelnation): implement
 
