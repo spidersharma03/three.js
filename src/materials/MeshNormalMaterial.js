@@ -1,4 +1,5 @@
 import { Material } from './Material';
+import { Color } from '../math/Color';
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -25,7 +26,7 @@ function MeshNormalMaterial( parameters ) {
 	this.morphTargets = false;
 
 	// default normal is facing the camera.
-	this.clearColor = new THREE.Color( 0.5, 0.5, 1.0 );
+	this.clearColor = new Color( 0.5, 0.5, 1.0 );
 	this.clearAlpha = 1.0;
 
 	this.setValues( parameters );

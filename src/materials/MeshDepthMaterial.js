@@ -1,5 +1,6 @@
 import { Material } from './Material';
 import { BasicDepthPacking } from '../constants';
+import { Color } from '../math/Color';
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -50,7 +51,7 @@ function MeshDepthMaterial( parameters ) {
 	this.lights = false;
 
 	// far clipping plane in both RGBA and Basic encoding
-	this.clearColor = new THREE.Color( 1.0, 1.0, 1.0 );
+	this.clearColor = new Color( 1.0, 1.0, 1.0 );
 	this.clearAlpha = 1.0;
 
 	this.setValues( parameters );
