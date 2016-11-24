@@ -26,7 +26,7 @@ var includes = [
 var output = "./build/three.extra.js";
 
 var buffer = [];
-+buffer.push( "var THREE = require('./three');\n" );
+buffer.push( "var THREE = require('./three');\n" );
 
 for ( var j = 0; j < includes.length; j ++ ){
 
@@ -39,7 +39,7 @@ for ( var j = 0; j < includes.length; j ++ ){
 	buffer.push( '\n' );
 }
 
-+buffer.push( '\nmodule.exports = THREE;\n' );
+buffer.push( '\nmodule.exports = THREE;\n' );
 var temp = buffer.join( '' );
 
 // Write un-minified output
