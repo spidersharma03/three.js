@@ -21,12 +21,12 @@ var includes = [
 	"examples/js/GlossyMirror.js"
 ];
 
-fs.writeFileSync( "../Clara.io/threehub/vendor/three.js", fs.readFileSync( "build/three.js", 'utf8' ), 'utf8' );
+//fs.writeFileSync( "../Clara.io/threehub/vendor/three.js", fs.readFileSync( "build/three.js", 'utf8' ), 'utf8' );
 
-var output = "../Clara.io/threehub/vendor/three.extra.js";
+var output = "./build/three.extra.js";
 
 var buffer = [];
-buffer.push( "import THREE from 'three';\n" );
++buffer.push( "var THREE = require('./three');\n" );
 
 for ( var j = 0; j < includes.length; j ++ ){
 
@@ -39,6 +39,7 @@ for ( var j = 0; j < includes.length; j ++ ){
 	buffer.push( '\n' );
 }
 
++buffer.push( '\nmodule.exports = THREE;\n' );
 var temp = buffer.join( '' );
 
 // Write un-minified output
