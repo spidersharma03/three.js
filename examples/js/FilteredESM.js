@@ -16,8 +16,8 @@ function FilteredESM( scene, camera, light ) {
   var d = 20;
   this.lightCamera = new THREE.OrthographicCamera( -d, d, d, -d, nearPlane, farPlane );
 
-  var shadowMapWidth  = 1024;
-  var shadowMapHeight = 1024;
+  var shadowMapWidth  = 512;
+  var shadowMapHeight = 512;
   var params = { format: THREE.RGBAFormat, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowDepthMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
   this.shadowDepthMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
@@ -47,13 +47,13 @@ function FilteredESM( scene, camera, light ) {
   this.accumulatePassMaterial.uniforms["shadowBuffer"].value = this.getShadowBuffer();
 
   this.frameCount = 0;
-  this.poissonSampler = new PoissonDiskGenerator(500, -1);
+  this.poissonSampler = new PoissonDiskGenerator(60, -1);
   this.lightPositionSamples = this.poissonSampler.generatePoints();
   this.currentLightSample = new THREE.Vector3();
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
-  this.arealightSize = 10.1;
+  this.arealightSize = 0.1;
 }
 
 FilteredESM.prototype = {
@@ -63,10 +63,10 @@ FilteredESM.prototype = {
   getShadowBuffer: function() {
    return this.frameCount %2 === 0 ? this.shadowBufferTemp : this.shadowBuffer;
   },
-
+  
   sampleLightDirection: function( light, sampleNumber ) {
       var radius = 50;
-      var theta = Math.random() * Math.PI * 0.49;
+      var theta = Math.random() * Math.PI;
       var phi = Math.random() * Math.PI * 2;
       var x = radius * Math.sin(theta) * Math.cos(phi);
       var y = radius * Math.cos(theta);
@@ -78,6 +78,7 @@ FilteredESM.prototype = {
       this.lightOrientation.copy(position);
       this.lightOrientation.multiplyScalar(-1);
       this.lightOrientation.normalize();
+      // this.lightOrientation.transformDirection(lightWorldMatrix);
       return this.currentLightSample;
   },
 
@@ -100,16 +101,48 @@ FilteredESM.prototype = {
     return this.currentLightSample;
   },
 
+  perturbProjectionMatrix: function( sampleNumber ) {
+    var projectionMatrix = this.camera.projectionMatrix;
+    var sample;
+    var N = sampleNumber;
+    N = sampleNumber % (this.lightPositionSamples.length);
+    // if( N < this.lightPositionSamples.length )
+    {
+      sample = this.lightPositionSamples[N];
+    }
+    // else {
+      // sample = this.lightPositionSamples[0];
+    // }
+    // var aspect = this.camera.aspect;
+    // var top = this.camera.near * Math.tan(this.camera.fov/2) + sample.y;
+    // var bottom = -top + sample.y;
+    // var left = -top * aspect + sample.x;
+    // var right = -left + sample.x;
+    // var jitterMatrix = new THREE.Matrix4();
+    // this.camera.view.offsetX = sample.x;
+    // this.camera.view.offsetY = sample.y;
+    // projectionMatrix.makeFrustum(left, right, bottom, top, this.camera.near, this.camera.far);
+    // projectionMatrix.copy(jitterMatrix);
+    // this.camera.updateProjectionMatrix();
+    var w = window.innerWidth; var h = window.innerHeight;
+    // sample.multiplyScalar(0.9);
+    // sample.x = 0.5*Math.random() - 0.5;
+    // sample.y = 0.5*Math.random() - 0.5;
+    this.camera.setViewOffset(w, h, sample.x, sample.y, w, h);
+    // this.camera.updateProjectionMatrix();
+  },
+
   render: function( renderer ) {
 
     // this.frameCount = this.frameCount >= this.lightPositionSamples.length ? this.lightPositionSamples.length : this.frameCount;
 
+    this.perturbProjectionMatrix(this.frameCount);
     this.frameCount++;
     // 1. Render depth to shadow map
     this.renderShadowDepthMap( renderer, this.light, this.shadowDepthMap );
 
     // 2. Filter
-    this.filterShadowDepthMap( renderer );
+    // this.filterShadowDepthMap( renderer );
 
     // Final Pass
     renderer.setClearColor( 0xaaaaaa );
@@ -132,7 +165,7 @@ FilteredESM.prototype = {
     var currentShadowReadTarget = (this.frameCount % 2 == 0) ? this.shadowBuffer : this.shadowBufferTemp;
     this.accumulatePassMaterial.uniforms["shadowBuffer"].value = currentShadowReadTarget;
 
-    this.accumulatePassMaterial.uniforms["lightPosition"].value = this.light.position;
+    this.accumulatePassMaterial.uniforms["lightPosition"].value = this.lightOrientation;
     this.scene.overrideMaterial = this.accumulatePassMaterial;
 
     var currentShadowWriteTarget = (this.frameCount % 2 == 0) ? this.shadowBufferTemp : this.shadowBuffer;
@@ -141,7 +174,7 @@ FilteredESM.prototype = {
     this.scene.overrideMaterial = null;
 
     this.finalPassMaterial.uniforms["shadowBuffer"].value = this.shadowBuffer;
-    this.finalPassMaterial.uniforms["lightPosition"].value = this.light.position;
+    this.finalPassMaterial.uniforms["lightPosition"].value = this.lightOrientation;
     this.scene.overrideMaterial = this.finalPassMaterial;
     renderer.render( this.scene, this.camera, null, true );
     this.scene.overrideMaterial = null;
@@ -296,7 +329,7 @@ FilteredESM.prototype = {
         "lightPosition": { value: new THREE.Vector3() },
         "nearFarPlanes" : { value: new THREE.Vector2() },
         "currentFrameCount" : { value: 0 },
-        "maxSamples" : { value: 0}
+        "maxSamples" : { value: 0 }
 			},
 
       vertexShader: "varying vec3 normalEyeSpace;\
@@ -310,6 +343,7 @@ FilteredESM.prototype = {
         normalEyeSpace = normalize(normalMatrix * normal);\
         vec3 lightPositionEyeSpace = (viewMatrix * vec4(lightPosition, 1.0)).xyz;\
         lightVector = lightPositionEyeSpace - (modelViewMatrix * vec4( position, 1.0 )).xyz;\
+        lightVector =  (viewMatrix * vec4( lightPosition, 0.0 )).xyz;\
         lightVector = normalize(lightVector);\
         gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\
       }",
@@ -328,18 +362,18 @@ FilteredESM.prototype = {
           float lightDepth = shadowCoord.z - 0.001;\
           float lightDist = lightDepth;\
           vec2 shadowCoord2d = shadowCoord.xy;\
-          float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
+          float NdotL = max(dot( normalize(normalEyeSpace), normalize(-lightVector)), 0.0);\
           float bias = tan(acos(NdotL));\
           bias = clamp(bias, 0.0, 0.01);\
           float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r;\
-          const float c = 400.75;\
+          const float c = 400000.75;\
           float shadowValue = step( lightDist, shadowDepth );\
           shadowValue = min(exp( -c*(lightDist - shadowDepth) ), 1.0);\
           float prevShadow = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
-          if(currentFrameCount > maxSamples*1000.0){\
+          if(currentFrameCount > maxSamples*10000.0){\
             shadowValue = prevShadow;\
           }\
-          float newShadowValue = (currentFrameCount - 1.0) * prevShadow + shadowValue;\
+          float newShadowValue = (currentFrameCount - 1.0) * prevShadow +  shadowValue * NdotL;\
           newShadowValue /= currentFrameCount;\
           \
           gl_FragColor = packDepthToRGBA(newShadowValue);\
@@ -363,6 +397,7 @@ FilteredESM.prototype = {
             normalEyeSpace = normalize(normalMatrix * normal);\
             vec3 lightPositionEyeSpace = (viewMatrix * vec4(lightPosition, 1.0)).xyz;\
             lightVector = lightPositionEyeSpace - (modelViewMatrix * vec4( position, 1.0 )).xyz;\
+            lightVector =  (modelViewMatrix * vec4( lightPosition, 0.0 )).xyz;\
             lightVector = normalize(lightVector);\
             gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
           }",
@@ -375,7 +410,7 @@ FilteredESM.prototype = {
             void main() {\
               float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
               float shadowValue = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
-              gl_FragColor = vec4(pow(NdotL*shadowValue, 1.0));\
+              gl_FragColor = 1.5*vec4(pow(shadowValue, 0.75));\
             }",
         } );
   }
