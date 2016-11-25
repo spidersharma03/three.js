@@ -30,6 +30,7 @@ import { WebGLClipping } from './webgl/WebGLClipping';
 import { Frustum } from '../math/Frustum';
 import { Vector4 } from '../math/Vector4';
 import { Color } from '../math/Color';
+import { Scene } from '../scenes/Scene';
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -1102,9 +1103,9 @@ function WebGLRenderer( parameters ) {
 	this.renderPass = function ( passMaterial, renderTarget, forceClear ) {
 
 		if( passScene === null ) {
-			passCamera = new THREE.OrthographicCamera( -1, 1, 1, -1, 0, 1 );
-			passQuad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
-			passScene = new THREE.Scene();
+			passCamera = new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
+			passQuad = new Mesh( new PlaneBufferGeometry( 2, 2 ), null );
+			passScene = new Scene();
 			passScene.add( passQuad );
 		}
 
