@@ -25,9 +25,14 @@ export default {
 	],
 	targets: [
 		{
-			format: 'cjs',
+			format: 'umd',
 			moduleName: 'THREE',
 			dest: 'build/three.js'
+		},
+		{
+			format: 'cjs',
+			moduleName: 'THREE',
+			dest: 'build/three.cjs.js'
 		},
 		{
 			format: 'es',
