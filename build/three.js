@@ -7748,7 +7748,7 @@ function MeshDepthMaterial( parameters ) {
 	this.lights = false;
 
 	// far clipping plane in both RGBA and Basic encoding
-	this.clearColor = new THREE.Color( 1.0, 1.0, 1.0 );
+	this.clearColor = new Color( 1.0, 1.0, 1.0 );
 	this.clearAlpha = 1.0;
 
 	this.setValues( parameters );
@@ -16131,7 +16131,7 @@ function WebGLLights() {
 						shadowRadius: 1,
 						shadowSpreadAngle: 0,
 						shadowMapSize: new Vector2(),
-						shadowCameraParams: new THREE.Vector3()
+						shadowCameraParams: new Vector3()
 					};
 					break;
 
@@ -16150,8 +16150,8 @@ function WebGLLights() {
 						shadowBias: 0,
 						shadowRadius: 1,
 						shadowMapSize: new Vector2(),
-						shadowCameraFovNearFar: new THREE.Vector3(),
-						shadowCameraParams: new THREE.Vector3()
+						shadowCameraFovNearFar: new Vector3(),
+						shadowCameraParams: new Vector3()
 					};
 					break;
 
@@ -16295,7 +16295,7 @@ function getTexelTransformFunction( mapName, map ) {
 	}
 
 	var transform = map.getFlattenedTexelTransform();
-	var template = THREE.ShaderChunk[ 'slot_texel_transform_template' ];
+	var template = ShaderChunk[ 'slot_texel_transform_template' ];
 	var result = template.replace( /\$SLOT_NAME\$/g, mapName );
 	return result;
 
@@ -16313,7 +16313,7 @@ function getUVFunction( mapName, map, isVertexShader ) {
 	}
 
 	var transform = map.getFlattenedTexelTransform();
-	var template = THREE.ShaderChunk[ 'slot_uv_transform_template' ];
+	var template = ShaderChunk[ 'slot_uv_transform_template' ];
 	var result = template.replace( /\$SLOT_NAME\$/g, mapName );
 	result = result.replace( /\$UV_VAR_NAME\$/g, uvVariableName );
 	return result;
@@ -16748,7 +16748,7 @@ function WebGLProgram( renderer, code, material, parameters ) {
 			parameters.logarithmicDepthBuffer ? '#define USE_LOGDEPTHBUF' : '',
 			parameters.logarithmicDepthBuffer && renderer.extensions.get( 'EXT_frag_depth' ) ? '#define USE_LOGDEPTHBUF_EXT' : '',
 
-			( parameters.outputEncoding || parameters.mapEncoding || parameters.envMapEncoding || parameters.falloffMapEncoding || parameters.emissiveMapEncoding ) ? THREE.ShaderChunk[ 'encodings_pars_fragment' ] : '', // this code is required here because it is used by the various encoding/decoding function defined below
+			( parameters.outputEncoding || parameters.mapEncoding || parameters.envMapEncoding || parameters.falloffMapEncoding || parameters.emissiveMapEncoding ) ? ShaderChunk[ 'encodings_pars_fragment' ] : '', // this code is required here because it is used by the various encoding/decoding function defined below
 			parameters.mapEncoding ? getTexelDecodingFunction( 'mapTexelToLinear', parameters.mapEncoding ) : '',
 			parameters.envMapEncoding ? getTexelDecodingFunction( 'envMapTexelToLinear', parameters.envMapEncoding ) : '',
 			parameters.emissiveMapEncoding ? getTexelDecodingFunction( 'emissiveMapTexelToLinear', parameters.emissiveMapEncoding ) : '',
@@ -19826,6 +19826,54 @@ function WebGLClipping() {
 }
 
 /**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function Scene () {
+
+	Object3D.call( this );
+
+	this.type = 'Scene';
+
+	this.background = null;
+	this.fog = null;
+	this.overrideMaterial = null;
+
+	this.autoUpdate = true; // checked by the renderer
+
+}
+
+Scene.prototype = Object.create( Object3D.prototype );
+
+Scene.prototype.constructor = Scene;
+
+Scene.prototype.copy = function ( source, recursive ) {
+
+	Object3D.prototype.copy.call( this, source, recursive );
+
+	if ( source.background !== null ) this.background = source.background.clone();
+	if ( source.fog !== null ) this.fog = source.fog.clone();
+	if ( source.overrideMaterial !== null ) this.overrideMaterial = source.overrideMaterial.clone();
+
+	this.autoUpdate = source.autoUpdate;
+	this.matrixAutoUpdate = source.matrixAutoUpdate;
+
+	return this;
+
+};
+
+Scene.prototype.toJSON = function ( meta ) {
+
+	var data = Object3D.prototype.toJSON.call( this, meta );
+
+	if ( this.background !== null ) data.object.background = this.background.toJSON( meta );
+	if ( this.fog !== null ) data.object.fog = this.fog.toJSON();
+
+	return data;
+
+};
+
+/**
  * @author supereggbert / http://www.paulbrunt.co.uk/
  * @author mrdoob / http://mrdoob.com/
  * @author alteredq / http://alteredqualia.com/
@@ -20896,9 +20944,9 @@ function WebGLRenderer( parameters ) {
 	this.renderPass = function ( passMaterial, renderTarget, forceClear ) {
 
 		if( passScene === null ) {
-			passCamera = new THREE.OrthographicCamera( -1, 1, 1, -1, 0, 1 );
-			passQuad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
-			passScene = new THREE.Scene();
+			passCamera = new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
+			passQuad = new Mesh( new PlaneBufferGeometry( 2, 2 ), null );
+			passScene = new Scene();
 			passScene.add( passQuad );
 		}
 
@@ -22791,54 +22839,6 @@ Fog.prototype.toJSON = function ( meta ) {
 		near: this.near,
 		far: this.far
 	};
-
-};
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function Scene () {
-
-	Object3D.call( this );
-
-	this.type = 'Scene';
-
-	this.background = null;
-	this.fog = null;
-	this.overrideMaterial = null;
-
-	this.autoUpdate = true; // checked by the renderer
-
-}
-
-Scene.prototype = Object.create( Object3D.prototype );
-
-Scene.prototype.constructor = Scene;
-
-Scene.prototype.copy = function ( source, recursive ) {
-
-	Object3D.prototype.copy.call( this, source, recursive );
-
-	if ( source.background !== null ) this.background = source.background.clone();
-	if ( source.fog !== null ) this.fog = source.fog.clone();
-	if ( source.overrideMaterial !== null ) this.overrideMaterial = source.overrideMaterial.clone();
-
-	this.autoUpdate = source.autoUpdate;
-	this.matrixAutoUpdate = source.matrixAutoUpdate;
-
-	return this;
-
-};
-
-Scene.prototype.toJSON = function ( meta ) {
-
-	var data = Object3D.prototype.toJSON.call( this, meta );
-
-	if ( this.background !== null ) data.object.background = this.background.toJSON( meta );
-	if ( this.fog !== null ) data.object.fog = this.fog.toJSON();
-
-	return data;
 
 };
 
@@ -29134,7 +29134,7 @@ function MeshNormalMaterial( parameters ) {
 	this.morphTargets = false;
 
 	// default normal is facing the camera.
-	this.clearColor = new THREE.Color( 0.5, 0.5, 1.0 );
+	this.clearColor = new Color( 0.5, 0.5, 1.0 );
 	this.clearAlpha = 1.0;
 
 	this.setValues( parameters );
@@ -29306,7 +29306,7 @@ function MeshCubeMaterial ( parameters ) {
 
 	this.depthTest = false;
 	this.depthWrite = false;
-	this.side = THREE.BackSide;
+	this.side = BackSide;
 
 	this.lights = false;
 
@@ -30368,7 +30368,7 @@ SpotLightShadow.prototype = Object.assign( Object.create( LightShadow.prototype 
 
 		var camera = this.camera;
 
-		this.cameraParams.x = fov * THREE.Math.DEG2RAD;
+		this.cameraParams.x = fov * _Math.DEG2RAD;
 		this.cameraParams.y = light.shadow.camera.near;
 		this.cameraParams.z = far;
 
