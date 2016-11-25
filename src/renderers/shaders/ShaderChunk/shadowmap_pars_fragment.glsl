@@ -132,7 +132,7 @@
 
 			// STEP 1: blocker search
 			float blockerLightZ = findBlockerLightZ( shadowMap, uv, receiverLightZ, zReceiverLightSpace, shadowRadius, spreadAngle, shadowCameraParams, uv, lightType );
-		
+
 			//There are no occluders so early out (this saves filtering)
 			if( blockerLightZ == -1.0 ) return 1.0;
 

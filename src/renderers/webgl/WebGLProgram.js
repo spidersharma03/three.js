@@ -56,7 +56,7 @@ function getTexelTransformFunction( mapName, map ) {
 	}
 
 	var transform = map.getFlattenedTexelTransform();
-	var template = THREE.ShaderChunk[ 'slot_texel_transform_template' ];
+	var template = ShaderChunk[ 'slot_texel_transform_template' ];
 	var result = template.replace( /\$SLOT_NAME\$/g, mapName );
 	return result;
 
@@ -74,7 +74,7 @@ function getUVFunction( mapName, map, isVertexShader ) {
 	}
 
 	var transform = map.getFlattenedTexelTransform();
-	var template = THREE.ShaderChunk[ 'slot_uv_transform_template' ];
+	var template = ShaderChunk[ 'slot_uv_transform_template' ];
 	var result = template.replace( /\$SLOT_NAME\$/g, mapName );
 	result = result.replace( /\$UV_VAR_NAME\$/g, uvVariableName );
 	return result;
@@ -509,7 +509,7 @@ function WebGLProgram( renderer, code, material, parameters ) {
 			parameters.logarithmicDepthBuffer ? '#define USE_LOGDEPTHBUF' : '',
 			parameters.logarithmicDepthBuffer && renderer.extensions.get( 'EXT_frag_depth' ) ? '#define USE_LOGDEPTHBUF_EXT' : '',
 
-			( parameters.outputEncoding || parameters.mapEncoding || parameters.envMapEncoding || parameters.falloffMapEncoding || parameters.emissiveMapEncoding ) ? THREE.ShaderChunk[ 'encodings_pars_fragment' ] : '', // this code is required here because it is used by the various encoding/decoding function defined below
+			( parameters.outputEncoding || parameters.mapEncoding || parameters.envMapEncoding || parameters.falloffMapEncoding || parameters.emissiveMapEncoding ) ? ShaderChunk[ 'encodings_pars_fragment' ] : '', // this code is required here because it is used by the various encoding/decoding function defined below
 			parameters.mapEncoding ? getTexelDecodingFunction( 'mapTexelToLinear', parameters.mapEncoding ) : '',
 			parameters.envMapEncoding ? getTexelDecodingFunction( 'envMapTexelToLinear', parameters.envMapEncoding ) : '',
 			parameters.emissiveMapEncoding ? getTexelDecodingFunction( 'emissiveMapTexelToLinear', parameters.emissiveMapEncoding ) : '',

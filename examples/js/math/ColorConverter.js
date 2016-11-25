@@ -33,7 +33,7 @@ THREE.ColorConverter = {
 	},
 
 	// where c, m, y, k is between 0 and 1
-	
+
 	setCMYK: function ( color, c, m, y, k ) {
 
 		var r = ( 1 - c ) * ( 1 - k );

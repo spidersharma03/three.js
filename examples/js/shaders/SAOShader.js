@@ -234,7 +234,7 @@ THREE.SAOShader = {
 			"vec2 invSize = 1.0 / size;",
 
 			"vec2 occlusionSphereScreenRadius = occlusionSphereWorldRadius * worldToScreenRatio / centerViewPosition.z;",
-		
+
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float random = rand( vUv + randomSeed );",
 			"float angle = random * PI2;",
@@ -440,7 +440,7 @@ THREE.SAOBilaterialFilterShader = {
 
 		"uniform vec2 kernelDirection;",
 
-		"#include <packing>",		
+		"#include <packing>",
 
 		"float getViewZ( const in float depth ) {",
 

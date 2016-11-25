@@ -12,7 +12,7 @@ THREE.ReflectionShader = {
 
 	 	"reflectivity": { type: "f", value: 0.5 },
 	 	"metalness": { type: "f", value: 0.0 },
-	
+
 	 	"specularColor": { type: "c", value: new THREE.Color( 0xffffff ) },
 		"tSpecular": { type: "t", value: null },
 
@@ -25,7 +25,7 @@ THREE.ReflectionShader = {
 
 		"roughness": { type: "f", value: 0.0 },
 	 	"distanceFade": { type: "f", value: 0.01 },
- 	
+
 		"reflectionTextureMatrix" : { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraViewMatrix": { type: "m4", value: new THREE.Matrix4() },
 		"mirrorCameraProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
@@ -80,7 +80,7 @@ THREE.ReflectionShader = {
 		"uniform float metalness;",
 		"uniform float reflectivity;",
 		"uniform float distanceFade;",
-	
+
 		"uniform vec3 specularColor;",
 		"#if SPECULAR_MAP == 1",
 			"uniform sampler2D tSpecular;",
@@ -181,9 +181,9 @@ THREE.ReflectionShader = {
 		"}",
 
 		"void main() {",
-	
+
 			"return vec4( 1.0, 0.0, 0.0, 1.0 );",
-			
+
 			"vec3 specular = specularColor;",
 			"#if SPECULAR_MAP == 1",
 				"specular *= texture2D( tSpecular, vUv );",
@@ -202,7 +202,7 @@ THREE.ReflectionShader = {
 				"float reflectionDepth = getReflectionDepth();",
 				"float reflectionViewZ = getReflectionViewZ( reflectionDepth );",
 				"vec3 reflectionWorldPosition = getReflectionWorldPosition( screenPosition, reflectionDepth, reflectionViewZ );",
-	
+
 				"vec3 closestPointOnMirror = projectOnPlane( reflectionWorldPosition, mirrorWorldPosition, mirrorNormal );",
 				"vec3 pointOnMirror = linePlaneIntersect( cameraPosition, normalize( reflectionWorldPosition - cameraPosition ), mirrorWorldPosition, mirrorNormal );",
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
@@ -221,7 +221,7 @@ THREE.ReflectionShader = {
 
 			// apply dieletric-conductor model parameterized by metalness parameter.
 			"float reflectance = mix( MAXIMUM_SPECULAR_COEFFICIENT * pow2( reflectivity ), 1.0, metalness );",
-	
+
 			"float dotNV = clamp( dot( normalize( worldNormal ), normalize( vecPosition ) ), EPSILON, 1.0 );",
 			"float fresnel = F_Schlick( reflectance, dotNV );",
 			"specular = mix( vec3( 1.0 ), specular, metalness );",

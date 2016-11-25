@@ -91,7 +91,7 @@ class VertexOptimizer {
         const int index = indices[3*best_triangle + i];
         VertexData& vertex_data = per_vertex_[index];
         vertex_data.RemoveFace(best_triangle);
-      
+
         InsertIndexToCache(index);
         const int cached_output_index = per_vertex_[index].output_index;
         // Have we seen this index before?
@@ -254,12 +254,12 @@ class VertexOptimizer {
       cache_[i] = to_insert;
       per_vertex_[to_insert].cache_tag = i;
       per_vertex_[to_insert].UpdateScore();
-      
+
       // No need to continue if we find an empty entry.
       if (current_index == kUnknownIndex) {
         break;
       }
-      
+
       to_insert = current_index;
     }
   }

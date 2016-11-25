@@ -95,7 +95,7 @@ Object.assign( THREE.TAARenderPass.prototype, {
 			}
 
 			if ( this.camera.clearViewOffset ) this.camera.clearViewOffset();
-			
+
 		}
 
 		var accumulationWeight = this.accumulateIndex * sampleWeight;

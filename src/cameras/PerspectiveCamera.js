@@ -150,7 +150,7 @@ PerspectiveCamera.prototype = Object.assign( Object.create( Camera.prototype ), 
 			this.view = null;
 			return;
 		}
-		
+
 		this.aspect = fullWidth / fullHeight;
 
 		this.view = {

@@ -48,7 +48,7 @@ THREE.CubeTexturePass.prototype = Object.assign( Object.create( THREE.Pass.proto
 		this.cubeMaterial.roughness = this.roughness;
 		this.cubeMaterial.opacity = this.opacity;
 		this.cubeMaterial.transparent = ( this.opacity < 1.0 );
-	
+
 		renderer.render( this.cubeScene, this.cubeCamera, this.renderToScreen ? null : readBuffer, this.clear );
 
 		renderer.autoClear = oldAutoClear;

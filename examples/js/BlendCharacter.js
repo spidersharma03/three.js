@@ -82,7 +82,7 @@ THREE.BlendCharacter = function () {
 		} );
 
 	};
-	
+
 	this.update = function( dt ) {
 
 		this.mixer.update( dt );

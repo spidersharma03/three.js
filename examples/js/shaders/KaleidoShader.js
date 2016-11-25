@@ -38,7 +38,7 @@ THREE.KaleidoShader = {
 		"uniform sampler2D tDiffuse;",
 		"uniform float sides;",
 		"uniform float angle;",
-		
+
 		"varying vec2 vUv;",
 
 		"void main() {",

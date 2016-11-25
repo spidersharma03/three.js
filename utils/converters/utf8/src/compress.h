@@ -123,19 +123,19 @@ class EdgeCachingCompressor {
       const size_t num_matches = LruEdge(triangle,
                                          match_indices, match_winding);
       switch (num_matches) {
-        case 0: 
+        case 0:
           LruEdgeZero(triangle);
           // No edges match, so use simple predictor.
           continue;
-        case 1: 
-          LruEdgeOne(triangle[match_winding[1]], 
+        case 1:
+          LruEdgeOne(triangle[match_winding[1]],
                      triangle[match_winding[2]], match_indices[0]);
           break;
-        case 2: 
-          LruEdgeTwo(triangle[match_winding[2]], 
-                     match_indices[0], match_indices[1]); 
+        case 2:
+          LruEdgeTwo(triangle[match_winding[2]],
+                     match_indices[0], match_indices[1]);
           break;
-        case 3: 
+        case 3:
           LruEdgeThree(match_indices[0], match_indices[1], match_indices[2]);
           break;
         default:
@@ -200,7 +200,7 @@ class EdgeCachingCompressor {
       deltas_[6*num_attribs + idx] = dy;
       deltas_[7*num_attribs + idx] = dz;
     }
-    for (size_t triangle_start_index = 0; 
+    for (size_t triangle_start_index = 0;
          triangle_start_index < indices_.size(); triangle_start_index += 3) {
       const uint16 i0 = indices_[triangle_start_index + 0];
       const uint16 i1 = indices_[triangle_start_index + 1];
@@ -349,7 +349,7 @@ class EdgeCachingCompressor {
       const uint16 i1 = indices_[triangle_start_index + 1];
       const size_t num_attribs = attribs_.size() / 8;
       for (size_t j = 0; j < 5; ++j) {
-        const uint16 orig = attribs_[8*i2 + j]; 
+        const uint16 orig = attribs_[8*i2 + j];
         int delta = attribs_[8*i0 + j];
         delta += attribs_[8*i1 + j];
         delta -= attribs_[8*backref_vert + j];
@@ -361,7 +361,7 @@ class EdgeCachingCompressor {
   }
 
   // Returns |true| if |index_high_water_mark_| is incremented, otherwise
-  // returns |false| and automatically updates |last_attrib_|. 
+  // returns |false| and automatically updates |last_attrib_|.
   bool HighWaterMark(uint16 index, uint16 start_code = 0) {
     codes_.push_back(index_high_water_mark_ - index + start_code);
     if (index == index_high_water_mark_) {
@@ -486,8 +486,8 @@ class EdgeCachingCompressor {
   }
 
   // All edges were found, so just remove them from |edge_lru_|.
-  void LruEdgeThree(size_t match_index0, 
-                    size_t match_index1, 
+  void LruEdgeThree(size_t match_index0,
+                    size_t match_index1,
                     size_t match_index2) {
     const size_t shift_two = match_index1 - 1;
     for (size_t i = match_index0; i < shift_two; ++i) {
@@ -519,7 +519,7 @@ class EdgeCachingCompressor {
   // |codes_| contains the compressed indices. Small values encode an
   // edge match; that is, the first edge of the next triangle matches
   // a recently-seen edge.
-  OptimizedIndexList codes_; 
+  OptimizedIndexList codes_;
   // |index_high_water_mark_| is used as it is in |CompressIndicesToUtf8|.
   uint16 index_high_water_mark_;
   // |last_attrib_referenced_| is the index of the last referenced

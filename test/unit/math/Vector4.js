@@ -132,9 +132,9 @@ test( "multiply/divide", function() {
 
 	b.multiplyScalar( -2 );
 	ok( b.x == 2*x, "Passed!" );
-	ok( b.y == 2*y, "Passed!" );	
-	ok( b.z == 2*z, "Passed!" );	
-	ok( b.w == 2*w, "Passed!" );	
+	ok( b.y == 2*y, "Passed!" );
+	ok( b.z == 2*z, "Passed!" );
+	ok( b.w == 2*w, "Passed!" );
 
 	a.divideScalar( -2 );
 	ok( a.x == x, "Passed!" );
@@ -202,7 +202,7 @@ test( "length/lengthSq", function() {
 	var c = new THREE.Vector4( 0, 0, z, 0 );
 	var d = new THREE.Vector4( 0, 0, 0, w );
 	var e = new THREE.Vector4( 0, 0, 0, 0 );
-	
+
 	ok( a.length() == x, "Passed!" );
 	ok( a.lengthSq() == x*x, "Passed!" );
 	ok( b.length() == y, "Passed!" );
@@ -224,7 +224,7 @@ test( "normalize", function() {
 	var b = new THREE.Vector4( 0, -y, 0, 0 );
 	var c = new THREE.Vector4( 0, 0, z, 0 );
 	var d = new THREE.Vector4( 0, 0, 0, -w );
-	
+
 	a.normalize();
 	ok( a.length() == 1, "Passed!" );
 	ok( a.x == 1, "Passed!" );
@@ -249,7 +249,7 @@ test( "distanceTo/distanceToSquared", function() {
 	var c = new THREE.Vector4( 0, 0, z, 0 );
 	var d = new THREE.Vector4( 0, 0, 0, -w );
 	var e = new THREE.Vector4();
-	
+
 	ok( a.distanceTo( e ) == x, "Passed!" );
 	ok( a.distanceToSquared( e ) == x*x, "Passed!" );
 

@@ -46,7 +46,7 @@ int main(int argc, const char* argv[]) {
     fputs(",\n" + last, json_out);
   }
   fputs("  },\n", json_out);
-  
+
   const MaterialBatches& batches = obj.material_batches();
 
   // Pass 1: compute bounds.
@@ -57,7 +57,7 @@ int main(int argc, const char* argv[]) {
     const DrawBatch& draw_batch = iter->second;
     bounds.Enclose(draw_batch.draw_mesh().attribs);
   }
-  webgl_loader::BoundsParams bounds_params = 
+  webgl_loader::BoundsParams bounds_params =
       webgl_loader::BoundsParams::FromBounds(bounds);
   fputs("  \"decodeParams\": ", json_out);
   bounds_params.DumpJson(json_out);
@@ -103,7 +103,7 @@ int main(int argc, const char* argv[]) {
       const size_t num_indices = webgl_meshes[i].indices.size();
       CHECK(num_attribs % 8 == 0);
       CHECK(num_indices % 3 == 0);
-      webgl_loader::CompressQuantizedAttribsToUtf8(webgl_meshes[i].attribs, 
+      webgl_loader::CompressQuantizedAttribsToUtf8(webgl_meshes[i].attribs,
 						   &utf8_sink);
       webgl_loader::CompressIndicesToUtf8(webgl_meshes[i].indices, &utf8_sink);
       material.push_back(iter->first);

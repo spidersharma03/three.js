@@ -598,8 +598,8 @@ THREE.MMDPhysics.ResourceHelper.prototype = {
 			s = Math.sqrt( t + 1.0 ) * 2;
 			w = 0.25 * s;
 			x = ( m[ 7 ] - m[ 5 ] ) / s;
-			y = ( m[ 2 ] - m[ 6 ] ) / s; 
-			z = ( m[ 3 ] - m[ 1 ] ) / s; 
+			y = ( m[ 2 ] - m[ 6 ] ) / s;
+			z = ( m[ 3 ] - m[ 1 ] ) / s;
 
 		} else if( ( m[ 0 ] > m[ 4 ] ) && ( m[ 0 ] > m[ 8 ] ) ) {
 

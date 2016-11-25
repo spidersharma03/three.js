@@ -1,4 +1,5 @@
 import { Material } from './Material';
+import { BackSide } from '../constants';
 
 /**
  * @author bhouston / https://clara.io
@@ -21,7 +22,7 @@ function MeshCubeMaterial ( parameters ) {
 
 	this.depthTest = false;
 	this.depthWrite = false;
-	this.side = THREE.BackSide;
+	this.side = BackSide;
 
 	this.lights = false;
 

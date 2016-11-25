@@ -23,9 +23,9 @@ Goto Usage.
 Should look like this:
 
     C:\Program Files\Blender Foundation\Blender\2.7X\scripts\addons
-    
+
 OR (for 2.6)
-    
+
     C:\Users\USERNAME\AppData\Roaming\Blender Foundation\Blender\2.6X\scripts\addons
 
 ### OSX
@@ -43,7 +43,7 @@ By default, this should look like:
 For Ubuntu users who installed Blender 2.68 via apt-get, this is the location:
 
     /usr/lib/blender/scripts/addons
-    
+
 
 ## Usage
 

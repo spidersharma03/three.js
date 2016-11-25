@@ -3,7 +3,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	-- Variables
 
 	local ostream,
-	
+
 	threeMatrix = (matrix3 [1,0,0] [0,0,1] [0,-1,0] [0,0,0]),
 
 	headerFormat = "\"metadata\":
@@ -34,7 +34,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	footerFormat = "\n}",
 
 
-	
+
 	boneFormat = "\t\t{
 \t\t\t\"parent\" : %,
 \t\t\t\"name\"   : \"%\",
@@ -48,7 +48,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 \t\t\"fps\"       : %,
 \t\t\"length\" : %,
 \t\t\"hierarchy\" : [\n",
-	
+
 	animBoneHeaderFormat = "\t\t\t{
 \t\t\t\t\"parent\" : %,
 \t\t\t\t\"keys\"    : [\n",
@@ -90,9 +90,9 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		checkbox flipUV "Flip UV" checked:false enabled:false
 		checkbox flipFace "Flip all faces" checked:false enabled:false
 		checkbox autoflipFace "Try fixing flipped faces" checked:false enabled:false
-		
+
 		label dummy3 "--------------------------------------------------------" align:#left
-		
+
 		spinner fps "Animation speed (FPS)" range:[0,1000,25] type:#integer
 
 		label dummy4 "--------------------------------------------------------" align:#left
@@ -100,8 +100,8 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		button btn_export "Export selected objects"
 
 	)
-	
-	
+
+
 
 	-------------------------------------------------------------------------------------
 	-- Dump vertices
@@ -485,19 +485,19 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		)
 
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Dump bones
 	-- src = #( #(index, name, position, scale, rotation), .. )
 	-- boneOrder lists the correct output order of the bones
 	-- newIndices is inverse of boneOrder
-	
+
 	function DumpBones src boneOrder newIndices =
 	(
 		numBones = boneOrder.count
-		
+
 		Format ",\n\n\t\"bones\" : [\n" to:ostream
-		
+
 		for i = 1 to numBones do
 		(
 			b = src[boneOrder[i]]
@@ -511,15 +511,15 @@ rollout ThreeJSExporter "ThreeJSExporter"
 			p = b[3]
 			s = b[4]
 			r = b[5]
-			
+
 			Format boneFormat parent_index bone_name p s r.x r.y r.z r.w to:ostream
-			
+
 			if (i < numBones) then (Format "," to:ostream)
 			Format "\n\n" to:ostream
 		)
 		Format "\t],\n\n" to:ostream
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Dump skin indices
 	-- src = #( #(skinned?, #(index1A, index1B, ..), name )
@@ -527,7 +527,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	-- If it's not there, leave as 0
 	-- boneOrder lists the correct output order of the bones
 	-- newIndices is inverse of boneOrder
-	
+
 	function DumpIndices src boneNames newIndices =
 	(
 		output = #()
@@ -545,10 +545,10 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				join output src[i][2]
 			)
 		)
-			
+
 		Format "\t\"skinIndices\" : [" to:ostream
 		num = output.count
-		
+
 		if num > 0 then
 		(
 			for i = 1 to num do
@@ -560,19 +560,19 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				)
 			)
 		)
-		
+
 		Format "],\n\n" to:ostream
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Dump skin weights
 	-- src = #( weight1, weight2, .. )
-	
+
 	function DumpWeights src =
 	(
 		Format "\t\"skinWeights\" : [" to:ostream
 		num = src.count
-		
+
 		if num > 0 then
 		(
 			for i = 1 to num do
@@ -581,23 +581,23 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				if i < num then Format "," to:ostream
 			)
 		)
-		
+
 		Format "],\n\n" to:ostream
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Dump the keyframes for every bone
 	-- src = #( #( parent, #( time, #( posx, posy, posz ), rot, scl ), .. ), .. )
 	--          ||---Bone-- |---------------Keyframe----------------| ----||
 	-- boneOrder lists the correct output order of the bones
 	-- newIndices is inverse of boneOrder
-	
+
 	function DumpKeyframes src boneOrder newIndices fps =
 	(
 		Format animHeaderFormat fps src[1][2][src[1][2].count][1] to:ostream
-		
+
 		numBones = boneOrder.count
-		
+
 		for i = 1 to (numBones) do
 		(
 			if (src[boneOrder[i]][1] == -1) then
@@ -607,28 +607,28 @@ rollout ThreeJSExporter "ThreeJSExporter"
 			(
 				parent_index = newIndices[src[boneOrder[i]][1]+1]
 			)
-			
+
 			Format animBoneHeaderFormat parent_index to:ostream
-			
+
 			bnkeys = src[boneOrder[i]][2]
-			
+
 			for j = 1 to bnkeys.count do
 			(
 				Format keyFormat bnkeys[j][1] bnkeys[j][2][1] bnkeys[j][2][2] bnkeys[j][2][3] bnkeys[j][3].x bnkeys[j][3].y bnkeys[j][3].z bnkeys[j][3].w bnkeys[j][4] to:ostream
-				
+
 				if j < bnkeys.count then Format "," to:ostream
 				Format "\n" to:ostream
 			)
-			
+
 			Format animBoneFooterFormat to:ostream
-			
+
 			if i < (numBones) then
 			(
 				Format "," to:ostream
 			)
 			Format "\n" to:ostream
 		)
-		
+
 		Format animFooterFormat to:ostream
 	)
 
@@ -638,24 +638,24 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	--        |List of meshes ----------------------------------------------|
 	--        |- |List of targets: only one mesh may have multiple ---| ----|
 	--        |- |- |Individual target(s) ----------------------| ----| ----|
-	
+
 	function DumpMorphTargets src =
 	(
 		-- This procedure assumes that only one element of src has actual morph targets.
 		-- The targets field of the other elements is used to store the vertices of static meshes.
 		-- These vertices are duplicated and joined with the vertices of the actual morph targets.
-		
+
 		-- Initialize with whatever happens to be first
-		
+
 		output = src[1]
 
 		for m=2 to src.count do
 		(
-			
+
 			if (src[m].count == 1) then
 			(
 				-- This is a static mesh; attach its vertices, but do nothing else.
-				
+
 				for t=1 to output.count do
 				(
 					join output[t][3] src[m][1][3]
@@ -667,16 +667,16 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				while ( output.count < src[m].count ) do
 				(
 					-- Duplicate vertices
-					
+
 					append output (deepCopy output[1])
 				)
-				
+
 				for t=1 to src[m].count do
 				(
-					
+
 					-- Vertices
 					join output[t][3] src[m][t][3]
-					
+
 					-- Index, name
 					output[t][1] = src[m][t][1]
 					output[t][2] = src[m][t][2]
@@ -684,17 +684,17 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				)
 			)
 		)
-		
+
 		Format "\"morphTargets\": [" to:ostream
-		
+
 		for k=1 to output.count do
 		(
 			target = output[k]
-			
+
 			Format "{ \"name\": \"morph_%\", \"vertices\": [" target[2] to:ostream
-			
+
 			vertices = target[3]
-			
+
 			for j=1 to vertices.count do
 			(
 				Format "%,%,%" vertices[j][1] vertices[j][2] vertices[j][3] to:ostream
@@ -703,17 +703,17 @@ rollout ThreeJSExporter "ThreeJSExporter"
 					Format "," to:ostream
 				)
 			)
-			
+
 			Format "] }" to:ostream
 			if (k != output.count) then
 			(
 				Format ",\n" to:ostream
 			)
 		)
-		
+
 		Format "],\n" to:ostream
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Export materials
 
@@ -1155,7 +1155,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		return #( false, node.name, 0, false, false )
 
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Extract the morph targets
 	-- whereto = #( #( #(index, name, vertices = #( #( x,y,z ), .. ) ), .. ), .. )
@@ -1163,16 +1163,16 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	--            |- |List of targets -------------------------------------| ----|
 	--            |- |- |Individual target --------------------------| ----| ----|
 
-	function ExtractMorphTargets node whereto &morphFlag = 
+	function ExtractMorphTargets node whereto &morphFlag =
 	(
 		targets = #()
 		morphs = #()
-		
+
 		if ( node.modifiers[#morpher] != undefined ) then (
 			-- Export the morph target, if one exists
-			
+
 			morphFlag = true
-			
+
 			for i=1 to 100 do
 			(
 				nPts = WM3_MC_NumMPts node.morpher i
@@ -1181,14 +1181,14 @@ rollout ThreeJSExporter "ThreeJSExporter"
 					append targets #(i, nPts)
 				)
 			)
-			
+
 			--Set all to zero
 			for k=1 to targets.count do
 			(
 				i = targets[k][1]
 				node.morpher[i].controller.value = 0
 			)
-			
+
 			--Max out one at a time, record it, then zero out again
 			for k=1 to targets.count do
 			(
@@ -1204,57 +1204,57 @@ rollout ThreeJSExporter "ThreeJSExporter"
 					p = GetVert node j
 					append verts #(p.x, p.y, p.z)
 				)
-				
+
 				node.morpher[i].controller.value = 0
-				
+
 				append morphs #(i, name, verts)
 			)
 			append whereto morphs
 		) else (
 			-- Export the mesh vertices as a dummy morph target
-			
+
 			verts = #()
 			for k=1 to node.numVerts do
 			(
 				p = GetVert node k
 				append verts #(p.x, p.y, p.z)
 			)
-			
+
 			dummy = #()
 			append dummy #(0, "DUMMY", verts)
 			append whereto dummy
 		)
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Transforms the matrix of a bone into its parent space, if a parent exists.
-	
+
 	function thinkLocally bone_node localForm =
 	(
 		localForm = bone_node.transform
-		
+
 		if ( bone_node.parent != undefined ) then
 		(
 			parentForm = bone_node.parent.transform
 			localForm = localForm * inverse parentForm
 		)
-		
+
 		newLocal = matrix3 1
-		
+
 		px = localForm.translationpart.x
 		py = localForm.translationpart.y
 		pz = localForm.translationpart.z
 		lTran = transMatrix (localForm.translationpart)
-		
+
 		lRot = (inverse localForm.rotationpart) as matrix3
-		
+
 		lScale = scaleMatrix localForm.scalepart
-		
+
 		localForm = lScale * lRot * lTran * newLocal
-		
+
 		localForm
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Extract bones and keyframes
 
@@ -1263,14 +1263,14 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		if node.modifiers[#skin] != undefined then
 		(
 			skinFlag = true
-			
+
 			---------------------------------------------------------------------------------
 			-- A dummy root bone is first created and roatated to orient the model
-			
+
 			p = (matrix3 1).translationpart
 			s = (matrix3 1).scalepart
 			r = (matrix3 1).rotationpart
-			
+
 			append bones #(-1,"flipRoot",p,s,r)
 
 			/*
@@ -1281,85 +1281,85 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				r = (matrix3 1).rotationpart
 			)
 			*/
-			
+
 			r = threeMatrix.rotationpart
-			
+
 			root_keys = #(#(0, p, r, s))
-			
+
 			slidertime = animationrange.start
-			
+
 			while (slidertime < animationrange.end) do
 			(
 				slidertime += 1
 				sTime = ((slidertime - animationrange.start) / FPS) as String
-				
+
 				append root_keys #(substring sTime 1 (sTime.count - 1), p, r, s)
 			)
-			
+
 			append keyframes #(-1, root_keys)
-			
+
 			---------------------------------------------------------------------------------
 			-- The model's bones and keyframes are then extracted
-			
+
 			max modify mode
-			
+
 			modPanel.setCurrentObject node.modifiers[#skin]
 			total_bones = skinops.getnumberbones node.modifiers[#skin]
-			
+
 			vertex_count = getNumverts node
-			
-			-- Find parents by looking up their names; bone names MUST be unique			
+
+			-- Find parents by looking up their names; bone names MUST be unique
 			-- Can't guarantee that parent will be read before child; store all names beforehand
 			for i = 1 to total_bones do
 			(
 				bone_name = skinops.getbonename node.modifiers[#skin] i 0
 				append bone_names bone_name
 			)
-			
+
 			for i = 1 to total_bones do
 			(
 				slidertime = animationrange.start
-				
+
 				bone_name = skinops.getbonename node.modifiers[#skin] i 0
 				bone_node = getNodeByName bone_name
-				
+
 				parent_index = 0
 				if ( bone_node.parent != undefined ) then
 				(
 					parent_name = bone_node.parent.name
 					parent_index = (findItem bone_names parent_name)
 				)
-				
+
 				localForm = bone_node.transform
 				localForm = thinkLocally bone_node localForm
 
 				p = localForm.translationpart
 				r = localForm.rotationpart
 				s = localForm.scalepart
-				
+
 				append bones #(parent_index, bone_name, p, bone_node.transform.scalepart, r)
-				
+
 				in coordsys parent bone_keys = #(#(0, p, r, bone_node.transform.scalepart))
-				
+
 				while (slidertime < animationrange.end) do
 				(
 					slidertime += 1
 					sTime = ((slidertime - animationrange.start) / FPS) as String
-					
+
 					localForm = bone_node.transform
 					localForm = thinkLocally bone_node localForm
-					
+
 					p = localForm.translationpart
 					r = localForm.rotationpart
 					s = localForm.translationpart
-					
+
 					append bone_keys #(substring sTime 1 (sTime.count - 1), p, r, bone_node.transform.scalepart)
 				)
 				append keyframes #(parent_index, bone_keys)
 			)
-		)			
+		)
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Extract the skin indices and weights in one pass
 	-- If it's a skin, skinned? = true and indices contains the bones
@@ -1369,12 +1369,12 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	function ExtractInfluences node indices weights =
 	(
 		vertex_count = getNumverts node
-		
+
 		meshIndices = #()
-		
+
 		if node.modifiers[#skin] != undefined then
 		(
-			
+
 			for i = 1 to vertex_count do
 			(
 				-- Insane defaults for the sort; these shouldn't escape into the output
@@ -1382,34 +1382,34 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				index2 = -1
 				weight1 = -1
 				weight2 = -1
-				
+
 				numBones = skinOps.GetVertexWeightCount node.modifiers[#skin] i
-				
+
 				--Two passes of a bubble sort to get the 2 heaviest weights
 				for j = 1 to numBones do
 				(
 					thisIndex = skinops.getVertexWeightBoneID node.modifiers[#skin] i j
 					thisWeight = skinops.getvertexweight node.modifiers[#skin] i j
-					
+
 					if (thisWeight) > weight1 then
 					(
 						weight1 = thisWeight
 						index1 = thisIndex
 					)
 				)
-				
+
 				for j = 1 to numBones do
 				(
 					thisIndex = skinops.getVertexWeightBoneID node.modifiers[#skin] i j
 					thisWeight = skinops.getvertexweight node.modifiers[#skin] i j
-					
+
 					if ((thisWeight > weight2) and (thisIndex != index1)) then
 					(
 						weight2 = thisWeight
 						index2 = thisIndex
 					)
 				)
-				
+
 				-- Establish legal defaults: no weight from the root
 				if (index1 == -1) then
 				(
@@ -1421,48 +1421,48 @@ rollout ThreeJSExporter "ThreeJSExporter"
 					index2 = 0
 					weight2 = 0
 				)
-				
-				
+
+
 				append meshIndices (index1)
 				append meshIndices (index2)
-				
+
 				append weights weight1
 				append weights weight2
 
 			)
-			
+
 			append indices #(true, meshIndices, "ROOT")
-			
+
 		) else (
 			for i = 1 to vertex_count do
 			(
 				append meshIndices 0
 				append meshIndices 0
-				
+
 				append weights 1
 				append weights 1
 			)
-			
+
 			name = "Scene Root"
 			if node.parent != undefined then
 			(
 				name = node.parent.name
 			)
-			
+
 			append indices #(false, meshIndices, name)
 		)
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Enforce that parent is above all of its children in the output
 	-- This fixes several amusing bugs (mostly fingers of infinite length)
 	--
 	-- boneOrder: order to dump the bones in #(bones)
 	-- newIndices: new positional indices of bones
-	
+
 	function ReorderBones bones boneOrder newIndices =
 	(
-	
+
 		/*************************************************************************************
 		 * Reorder bones
 		 * Python function prototype:
@@ -1474,21 +1474,21 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		 *			boneOrder.append(b)
 		 *			break;
 		 *************************************************************************************/
-		
+
 		total_bones = bones.count
-		
+
 		-- Keeps track of which parents have been accounted for
 		inOut = #()
-		
+
 		for i = 1 to total_bones do
 		(
 			append inOut false
 		)
-		
+
 		rootNotAdded = true
 		for i = 1 to total_bones do
 		(
-			
+
 			notFound = true
 			for b = 1 to total_bones while notFound do
 			(
@@ -1512,17 +1512,17 @@ rollout ThreeJSExporter "ThreeJSExporter"
 			)
 
 		)
-		
+
 		-- Takes original bone index/parent + 1, returns new correct index for parent, skinIndices, etc
 		for i=1 to total_bones do
 		(
 			newIndices[boneOrder[i]] = i - 1
 		)
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Export scene
-	-- 
+	--
 	-- This will BREAK in HORRIBLE WAYS if you feed it more than one object for now.
 
 	function ExportScene =
@@ -1544,18 +1544,18 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		mergedMaterialsColors = #()
 
 		sceneHasVColors = false
-		
+
 		hasSkin = false
 		bones = #()
 		keyframes = #()
-		
+
 		influences = #()
 		weights = #()
-		
+
 		boneOrder = #()
 		newIndices = #()
 		bone_names = #()
-		
+
 		hasMorph = false
 		mergedMorphTargets = #()
 
@@ -1565,9 +1565,9 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		(
 			append original_selection obj.name
 		)
-		
+
 		max select none
-		
+
 		for name in original_selection do
 		(
 			obj = getnodebyname name
@@ -1603,15 +1603,15 @@ rollout ThreeJSExporter "ThreeJSExporter"
 				ExtractFaces meshObj meshMaterial mergedFaces mergedMaterials needsFlip hasVColors vertexOffset uvOffset colorOffset
 
 				ExtractAnimation obj bones keyframes fps.value bone_names &hasSkin
-				
+
 				ExtractInfluences obj influences weights
-				
+
 				ReorderBones bones boneOrder newIndices
-				
+
 				ExtractMorphTargets obj mergedMorphTargets &hasMorph
 
 			)
-			
+
 			max select none
 		)
 
@@ -1662,22 +1662,22 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		-- Dump merged data from all selected geometries
 
 		DumpVertices mergedVertices
-		
+
 		if hasMorph then
 		(
 			DumpMorphTargets mergedMorphTargets
 		)
-		
+
 		DumpNormals mergedNormals
 		DumpColors mergedColors useColors
 		DumpUvs mergedUvs
 		DumpFaces mergedFaces useColors
-		
+
 		if hasSkin then
 		(
 			DumpBones bones boneOrder newIndices
 			DumpIndices influences bone_names newIndices
-			DumpWeights weights		
+			DumpWeights weights
 			DumpKeyframes keyframes boneOrder newIndices fps.value
 		)
 
@@ -1686,7 +1686,7 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		Format footerFormat to:ostream
 
 	)
-	
+
 	-------------------------------------------------------------------------------------
 	-- Open and prepare a file handle for writing
 

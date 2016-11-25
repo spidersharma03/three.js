@@ -46,7 +46,7 @@ int main(int argc, const char* argv[]) {
     fputs(",\n" + last, json_out);
   }
   fputs("  },\n", json_out);
-  
+
   const MaterialBatches& batches = obj.material_batches();
 
   // Pass 1: compute bounds.
@@ -57,7 +57,7 @@ int main(int argc, const char* argv[]) {
     const DrawBatch& draw_batch = iter->second;
     bounds.Enclose(draw_batch.draw_mesh().attribs);
   }
-  webgl_loader::BoundsParams bounds_params = 
+  webgl_loader::BoundsParams bounds_params =
       webgl_loader::BoundsParams::FromBounds(bounds);
   fputs("  \"decodeParams\": ", json_out);
   bounds_params.DumpJson(json_out);
@@ -98,7 +98,7 @@ int main(int argc, const char* argv[]) {
 
     std::vector<std::string> material;
     // TODO: is this buffering still necessary?
-    std::vector<size_t> attrib_start, attrib_length, 
+    std::vector<size_t> attrib_start, attrib_length,
         code_start, code_length, num_tris;
     for (size_t i = 0; i < webgl_meshes.size(); ++i) {
       const size_t num_attribs = webgl_meshes[i].attribs.size();

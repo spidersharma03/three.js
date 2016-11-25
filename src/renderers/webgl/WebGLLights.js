@@ -36,7 +36,7 @@ function WebGLLights() {
 						shadowRadius: 1,
 						shadowSpreadAngle: 0,
 						shadowMapSize: new Vector2(),
-						shadowCameraParams: new THREE.Vector3()
+						shadowCameraParams: new Vector3()
 					};
 					break;
 
@@ -55,8 +55,8 @@ function WebGLLights() {
 						shadowBias: 0,
 						shadowRadius: 1,
 						shadowMapSize: new Vector2(),
-						shadowCameraFovNearFar: new THREE.Vector3(),
-						shadowCameraParams: new THREE.Vector3()
+						shadowCameraFovNearFar: new Vector3(),
+						shadowCameraParams: new Vector3()
 					};
 					break;
 

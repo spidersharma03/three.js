@@ -359,20 +359,20 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 
 			return baseUrl + url;
 		};
-		
+
 		function setMapForType ( mapType, value ) {
 
 			if ( params[ mapType ] ) return; // Keep the first encountered texture
 
 			var texParams = scope.getTextureParams( value, params );
 			var map = scope.loadTexture( resolveURL( scope.baseUrl, texParams.url ) );
-			
+
 			map.repeat.copy( texParams.scale );
 			map.offset.copy( texParams.offset );
 
 			map.wrapS = scope.wrap;
 			map.wrapT = scope.wrap;
-			
+
 			params[ mapType ] = map;
 		}
 
@@ -412,7 +412,7 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 				case 'map_ks':
 
 					// Specular map
-					
+
 					setMapForType( "specularMap", value );
 
 					break;
@@ -420,8 +420,8 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 				case 'map_bump':
 				case 'bump':
 
-					// Bump texture map				
-					
+					// Bump texture map
+
 					setMapForType( "bumpMap", value );
 
 					break;

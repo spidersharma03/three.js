@@ -47,7 +47,7 @@ class NullSink : public ByteSinkInterface {
   NullSink() { }
 
   virtual void Put(char) { }
-  
+
   virtual size_t PutN(const char*, size_t len) { return len; }
 };
 
@@ -76,7 +76,7 @@ class VectorSink : public ByteSinkInterface {
   explicit VectorSink(std::vector<char>* vec)
     : vec_(vec) {
   }
-  
+
   virtual void Put(char c) {
     vec_->push_back(c);
   }
@@ -141,10 +141,10 @@ class ByteHistogramSink : public ByteSinkInterface {
   ByteSinkInterface* sink_;  // unowned.
 };
 
-// TODO: does it make sense to have a global enum? How should 
-// new BufferedInput implementations define new error codes? 
+// TODO: does it make sense to have a global enum? How should
+// new BufferedInput implementations define new error codes?
 enum ErrorCode {
-  kNoError = 0, 
+  kNoError = 0,
   kEndOfFile = 1,
   kFileError = 2,  // TODO: translate errno.
 };

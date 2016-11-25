@@ -11,13 +11,13 @@ function eav_attime obj t =
 	local i
 	local s_out = ""
 	s_out = s_out as stringstream
-	
+
 	local zmesh = at time t (SnapshotAsMesh obj)
 	local n = zmesh.numverts
-	
+
 	local vrs_ar = #()
 	local v = [0,0,0]
-	
+
 	for i = 1 to n do
 	(
 		v = (GetVert zmesh i)
@@ -28,7 +28,7 @@ function eav_attime obj t =
 	(
 		v = vrs_ar[i]
 		format "%, %, %" v.x v.z -v.y to:s_out
-		
+
 		if i < vrs_ar.count then
 		(
 			format ",  " to:s_out
@@ -45,46 +45,46 @@ Export animation from modifiers
 */
 function eav_get_range_from_trans_con obj &i_t1 &i_t2 =
 (
---	Get keys range from Pos, rotation, scale controllers	
+--	Get keys range from Pos, rotation, scale controllers
 	local i
 	local con
 	local t1min = 0, t2max = 0
-	
+
 	for i = 1 to 3 do
 	(
 		con = obj.controller[i]
-		
+
 		format "\nController: %" obj.controller[i].name
 		format " (keys count: %)" con.keys.count
-		
+
 		if con.keys.count == 0 then
 		(
 			continue
 		)
-		
+
 		t1 = con.keys[1].time.frame as integer
 		t2 = (con.keys[con.keys.count].time.frame) as integer
-		
+
 		if i == 1 then
 		(
 			t1min = t1
 			t2max = t2
 		)
-		
+
 		if t1 < t1min then
 		(
 			t1min = t1
 		)
-		
+
 		if t2 > t2max then
 		(
 			t2max = t2
 		)
 	)
-	
+
 	i_t1 = t1min
 	i_t2 = t2max
-	
+
 	if( i_t1 == 0 )and( i_t2 == 0 )then
 	(
 		return(false)
@@ -101,22 +101,22 @@ function eav_get_range_from_mods_con obj &i_t1 &i_t2 =
 	local cmod, mod_con
 	local props, pr
 	local t1min = 0, t2max = 0
-	
+
 --	format "\n\nModifiers:\n"
-	
+
 	for i = 1 to obj.modifiers.count do
 	(
 		cmod = obj.modifiers[i]
-		
+
 	--	format "\n%: \"%\" (%)\n" i (cmod.name) (classof cmod)
-		
+
 		props = getpropnames cmod
-		
+
 		for pr in props do
 		(
 			mod_con = (getPropertyController cmod pr)
-		
-			--format "% = % (Animatable - %)\n" pr mod_con	(isPropertyAnimatable obj pr)	
+
+			--format "% = % (Animatable - %)\n" pr mod_con	(isPropertyAnimatable obj pr)
 			if mod_con == undefined then
 			(
 				if cmod.name == "Morpher" then
@@ -124,44 +124,44 @@ function eav_get_range_from_mods_con obj &i_t1 &i_t2 =
 					format "% = %" pr cmod[pr]
 					mod_con = cmod[pr]
 				)
-				
+
 				if mod_con == undefined then
 				(
 					continue
 				)
 			)
-			
+
 			if mod_con.keys.count <= 0 then
 			(
 				continue
 			)
-			
+
 		--	format "\t%\t(keys: %)\n" pr (mod_con.keys.count)
-			
+
 			t1 = mod_con.keys[1].time.frame as integer
 			t2 = (mod_con.keys[mod_con.keys.count].time.frame) as integer
-			
+
 			if i == 1 then
 			(
 				t1min = t1
 				t2max = t2
 			)
-			
+
 			if t1 < t1min then
 			(
 				t1min = t1
 			)
-			
+
 			if t2 > t2max then
 			(
 				t2max = t2
 			)
 		)
 	)
-	
+
 	i_t1 = t1min
 	i_t2 = t2max
-	
+
 	if( i_t1 == 0 )and( i_t2 == 0 )then
 	(
 		return(false)
@@ -170,7 +170,7 @@ function eav_get_range_from_mods_con obj &i_t1 &i_t2 =
 	(
 		return(true)
 	)
-	
+
 )
 
 function eav_exp_obj obj ostream =
@@ -184,15 +184,15 @@ function eav_exp_obj obj ostream =
 /*	local frames_num = animationRange.end.frame - animationRange.start.frame
 	frames_num = frames_num as integer
 */
-	
+
 	-- Range detection between keys:
 	b_ran_set = eav_get_range_from_trans_con obj &t1 &t2
 	b_ran_mod_set = eav_get_range_from_mods_con obj &t1_m &t2_m
-	
+
 	format "\n\nKey ranges detected:\n"
 	format "  transform: (% to %) - %\n" t1 t2 b_ran_set
 	format "  modifiers: (% to %) - %\n" t1_m t2_m b_ran_mod_set
-	
+
 	if b_ran_set and b_ran_mod_set then
 	(
 	--	format "\nAll ranges set - compare\n"
@@ -201,7 +201,7 @@ function eav_exp_obj obj ostream =
 		(
 			t1 = t1_m
 		)
-		
+
 		if t2_m > t2 then
 		(
 			t2 = t2_m
@@ -223,24 +223,24 @@ function eav_exp_obj obj ostream =
 		format "\n  No key range set. Exit function\n"
 		return(false)
 	)
-	
+
 	format "\n  final range for export: (% to %)\n" t1 t2
 
 	---- Output
 	format "\n\"morphTargets\": [" to:ostream
-	
+
 	for i = t1 to t2 do
 	(
 		format "\n{\"name\": \"FRAME000\", \"vertices\": [" to:ostream
 		format "%]}" (eav_attime obj i) to:ostream
-		
+
 		if i < t2 then
 		(
 			format "," to:ostream
 		)
 	)
 	format " ],\n\n" to:ostream
-	
+
 	format "\n\n\"morphColors\": [],\n\n\n" to:ostream
 )
 
@@ -248,7 +248,7 @@ function exp_anim_verts_sel ostream =
 (
 	Clearlistener()
 	format "\n---- Export verts:\n"
-	
+
 	for obj in selection do
 	(
 		if superclassof obj != geometryclass then continue
@@ -306,9 +306,9 @@ rollout ThreeJSExporter "ThreeJSExporter"
 		checkbox autoflipFace "Try fixing flipped faces" checked:false enabled:true
 
 		label dummy3 "--------------------------------------------------------" align:#left
-		
+
 		checkbox cb_exp_mt "Export Morph Targets" checked:true enabled:true
-		
+
 		label dummy4 "--------------------------------------------------------" align:#left
 		button btn_export "Export selected objects"
 	)
@@ -353,19 +353,19 @@ rollout ThreeJSExporter "ThreeJSExporter"
 	(
 		Clearlistener()
 		format "\n---- dump_morph_targets():\n"
-		
+
 		if not cb_exp_mt.state then
 		(
 			format "\nNot checked\n"
 			return()
 		)
-		
+
 		exp_anim_verts_sel ostream
 
 		format "\n----\n"
 	)
-	
-	
+
+
 	-------------------------------------------------------------------------------------
 	-- Dump colors
 	function DumpColors src useColors =
@@ -1055,11 +1055,11 @@ rollout ThreeJSExporter "ThreeJSExporter"
 
 		-- Dump merged data from all selected geometries
 		DumpVertices mergedVertices
-		
+
 		----	2014.06.25	16:14
 		dump_morph_targets()
 		----
-		
+
 		DumpNormals mergedNormals
 		DumpColors mergedColors useColors
 		DumpUvs mergedUvs

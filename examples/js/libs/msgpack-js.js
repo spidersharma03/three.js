@@ -54,7 +54,7 @@ function utf8Write(view, offset, string) {
       continue;
     }
 
-    // Three bytes of UTF-8.  
+    // Three bytes of UTF-8.
     if (codePoint < 0x10000) {
       view.setUint8(offset++, codePoint >>> 12 & 0x0f | 0xe0);
       view.setUint8(offset++, codePoint >>> 6  & 0x3f | 0x80);
@@ -87,7 +87,7 @@ function utf8Read(view, offset, length) {
     // Two byte character
     if ((byte & 0xe0) === 0xc0) {
       string += String.fromCharCode(
-        ((byte & 0x0f) << 6) | 
+        ((byte & 0x0f) << 6) |
         (view.getUint8(++i) & 0x3f)
       );
       continue;
@@ -375,7 +375,7 @@ function encode(value, view, offset) {
       return 5 + length;
     }
   }
-  
+
   if (type === "number") {
     // Floating Point
     if ((value << 0) !== value) {
@@ -436,13 +436,13 @@ function encode(value, view, offset) {
     }
     throw new Error("Number too small -0x" + (-value).toString(16).substr(1));
   }
-  
+
   // undefined
   if (type === "undefined") {
     view.setUint8(offset, 0xc4);
     return 1;
   }
-  
+
   // null
   if (value === null) {
     view.setUint8(offset, 0xc0);
@@ -454,7 +454,7 @@ function encode(value, view, offset) {
     view.setUint8(offset, value ? 0xc3 : 0xc2);
     return 1;
   }
-  
+
   // Container Types
   if (type === "object") {
     var length, size = 0;
@@ -496,7 +496,7 @@ function encode(value, view, offset) {
         size += encode(value[key], view, offset + size);
       }
     }
-    
+
     return size;
   }
   throw new Error("Unknown type " + type);
@@ -518,7 +518,7 @@ function sizeof(value) {
       return 5 + length;
     }
   }
-  
+
   if (value instanceof ArrayBuffer) {
     var length = value.byteLength;
     if (length < 0x10000) {
@@ -528,7 +528,7 @@ function sizeof(value) {
       return 5 + length;
     }
   }
-  
+
   if (type === "number") {
     // Floating Point
     // double
@@ -560,10 +560,10 @@ function sizeof(value) {
     if (value >= -0x8000000000000000) return 9;
     throw new Error("Number too small -0x" + value.toString(16).substr(1));
   }
-  
+
   // Boolean, null, undefined
   if (type === "boolean" || type === "undefined" || value === null) return 1;
-  
+
   // Container Types
   if (type === "object") {
     var length, size = 0;

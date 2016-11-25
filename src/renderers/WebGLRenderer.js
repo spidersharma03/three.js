@@ -30,6 +30,7 @@ import { WebGLClipping } from './webgl/WebGLClipping';
 import { Frustum } from '../math/Frustum';
 import { Vector4 } from '../math/Vector4';
 import { Color } from '../math/Color';
+import { Scene } from '../scenes/Scene';
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -170,7 +171,7 @@ function WebGLRenderer( parameters ) {
 		_projScreenMatrix = new Matrix4(),
 
 		_vector3 = new Vector3(),
-		_matrix4 = new Matrix4(), 
+		_matrix4 = new Matrix4(),
 		_matrix42 = new Matrix4(),
 
 		// light arrays cache
@@ -1102,9 +1103,9 @@ function WebGLRenderer( parameters ) {
 	this.renderPass = function ( passMaterial, renderTarget, forceClear ) {
 
 		if( passScene === null ) {
-			passCamera = new THREE.OrthographicCamera( -1, 1, 1, -1, 0, 1 );
-			passQuad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
-			passScene = new THREE.Scene();
+			passCamera = new OrthographicCamera( -1, 1, 1, -1, 0, 1 );
+			passQuad = new Mesh( new PlaneBufferGeometry( 2, 2 ), null );
+			passScene = new Scene();
 			passScene.add( passQuad );
 		}
 
@@ -1998,7 +1999,7 @@ function WebGLRenderer( parameters ) {
 			for( var i = 0, il = supportedMapNames.length; i < il; i ++ ) {
 				var mapName = supportedMapNames[i];
 				var mapSlotName = supportedMapSlotNames[i];
-		
+
 				var map = material[ mapSlotName ];
 
 				material.usedSlots.push( {
@@ -2017,7 +2018,7 @@ function WebGLRenderer( parameters ) {
 
 			var mapName = supportedMapNames[i];
 			var mapSlotName = supportedMapSlotNames[i];
-		
+
 			var map = material[ mapSlotName ];
 			if( map ) {
 				usedSlots.mapUniform.value = map.texture;

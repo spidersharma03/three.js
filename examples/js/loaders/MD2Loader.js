@@ -219,7 +219,7 @@ THREE.MD2Loader.prototype = {
 
 					var character = data.getUint8( offset + j, true );
 					if( character === 0 ) break;
-					
+
 					string[ j ] = character;
 
 				}

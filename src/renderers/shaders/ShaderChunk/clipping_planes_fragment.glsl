@@ -6,7 +6,7 @@
 		if ( dot( vViewPosition, plane.xyz ) > plane.w ) discard;
 
 	}
-		
+
 	#if UNION_CLIPPING_PLANES < NUM_CLIPPING_PLANES
 
 		bool clipped = true;
@@ -16,7 +16,7 @@
 		}
 
 		if ( clipped ) discard;
-	
+
 	#endif
 
 #endif

@@ -151,7 +151,7 @@ test( "getInverse", function() {
 	b.getInverse( a, false );
 	ok( matrixEquals3( a, identity ), "Passed!" );
 
-	try { 
+	try {
 		b.getInverse( c, true );
 		ok( false, "Passed!" ); // should never get here.
 	}
@@ -195,9 +195,9 @@ test( "transpose", function() {
 
 	b = new THREE.Matrix3().set( 0, 1, 2, 3, 4, 5, 6, 7, 8 );
 	var c = b.clone().transpose();
-	ok( ! matrixEquals3( b, c ), "Passed!" ); 
+	ok( ! matrixEquals3( b, c ), "Passed!" );
 	c.transpose();
-	ok( matrixEquals3( b, c ), "Passed!" ); 
+	ok( matrixEquals3( b, c ), "Passed!" );
 });
 
 test( "clone", function() {
