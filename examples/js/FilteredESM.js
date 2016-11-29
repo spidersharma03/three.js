@@ -16,17 +16,18 @@ function FilteredESM( scene, camera, light ) {
   var d = 20;
   this.lightCamera = new THREE.OrthographicCamera( -d, d, d, -d, nearPlane, farPlane );
 
-  var shadowMapWidth  = 512;
-  var shadowMapHeight = 512;
+  var shadowMapWidth  = 1024;
+  var shadowMapHeight = 1024;
   var params = { format: THREE.RGBAFormat, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
-  this.shadowDepthMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
-  this.shadowDepthMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
-  this.shadowDepthMap.generateMipmaps = false;
-  this.shadowDepthMapTemp.generateMipmaps = false;
+
+  this.numShadowMapsPerFrame = 5;
+  this.shadowMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
+  this.shadowMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
 
   var params = { format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowBuffer     = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, params);
   this.shadowBufferTemp = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, params);
+
 
   this.depthMaterial      = this.getShadowDepthWriteMaterial();
   this.depthMaterial.uniforms["nearFarPlanes"].value = new THREE.Vector2(nearPlane, farPlane);
@@ -39,7 +40,7 @@ function FilteredESM( scene, camera, light ) {
 
   this.accumulatePassMaterial = this.getAccumulatePassMaterial();
   this.accumulatePassMaterial.uniforms["windowSize"].value = new THREE.Vector2(window.innerWidth, window.innerHeight);
-  this.accumulatePassMaterial.uniforms["shadowMap"].value = this.shadowDepthMap;
+  this.accumulatePassMaterial.uniforms["shadowMap"].value = this.shadowMap;
   this.accumulatePassMaterial.uniforms["nearFarPlanes"].value = new THREE.Vector2(nearPlane, farPlane);
 
   this.finalPassMaterial = this.getFinalPassMaterial();
@@ -63,14 +64,23 @@ FilteredESM.prototype = {
   getShadowBuffer: function() {
    return this.frameCount %2 === 0 ? this.shadowBufferTemp : this.shadowBuffer;
   },
-  
-  sampleLightDirection: function( light, sampleNumber ) {
+
+  sampleLightDirection: function( light ) {
       var radius = 50;
       var theta = Math.random() * Math.PI;
       var phi = Math.random() * Math.PI * 2;
       var x = radius * Math.sin(theta) * Math.cos(phi);
       var y = radius * Math.cos(theta);
       var z = radius * Math.sin(theta) * Math.sin(phi);
+
+      // var y = Math.random();
+      // var r = Math.sqrt(Math.max(0, 1 - y*y)) * radius;
+      // var phi = 2 * Math.PI * Math.random();
+      // var x = r * Math.cos(phi);
+      // var z = r * Math.sin(phi);
+      // y  = 2 * y - 1;
+      // y *= radius;
+
       var position = new THREE.Vector3(x, y, z);
       var lightWorldMatrix = light.matrixWorld;
       position.applyMatrix4(lightWorldMatrix);
@@ -136,49 +146,51 @@ FilteredESM.prototype = {
 
     // this.frameCount = this.frameCount >= this.lightPositionSamples.length ? this.lightPositionSamples.length : this.frameCount;
 
-    this.perturbProjectionMatrix(this.frameCount);
-    this.frameCount++;
     // 1. Render depth to shadow map
-    this.renderShadowDepthMap( renderer, this.light, this.shadowDepthMap );
+    for( var i = 0; i< this.numShadowMapsPerFrame; i++) {
+      this.perturbProjectionMatrix(this.frameCount);
+      this.frameCount++;
 
-    // 2. Filter
-    // this.filterShadowDepthMap( renderer );
+      this.renderShadowDepthMap( renderer, this.light, this.shadowMap );
 
-    // Final Pass
-    renderer.setClearColor( 0xaaaaaa );
+      // 2. Filter
+      this.filterShadowDepthMap( renderer );
 
-    this.lightCamera.matrixWorldInverse.getInverse( this.lightCamera.matrixWorld );
-    // compute shadow matrix
-    var shadowMatrix = this.light.shadow.matrix;
-    shadowMatrix.set(
-      0.5, 0.0, 0.0, 0.5,
-      0.0, 0.5, 0.0, 0.5,
-      0.0, 0.0, 0.5, 0.5,
-      0.0, 0.0, 0.0, 1.0
-    );
-    shadowMatrix.multiply( this.lightCamera.projectionMatrix );
-    shadowMatrix.multiply( this.lightCamera.matrixWorldInverse );
-    var matrix = this.accumulatePassMaterial.uniforms["shadowMatrix"].value;
-    matrix.copy(shadowMatrix);
+      // Final Pass
+      renderer.setClearColor( 0xaaaaaa );
 
-    this.accumulatePassMaterial.uniforms["currentFrameCount"].value = this.frameCount;
-    var currentShadowReadTarget = (this.frameCount % 2 == 0) ? this.shadowBuffer : this.shadowBufferTemp;
-    this.accumulatePassMaterial.uniforms["shadowBuffer"].value = currentShadowReadTarget;
+      this.lightCamera.matrixWorldInverse.getInverse( this.lightCamera.matrixWorld );
+      // compute shadow matrix
+      var shadowMatrix = this.light.shadow.matrix;
+      shadowMatrix.set(
+        0.5, 0.0, 0.0, 0.5,
+        0.0, 0.5, 0.0, 0.5,
+        0.0, 0.0, 0.5, 0.5,
+        0.0, 0.0, 0.0, 1.0
+      );
+      shadowMatrix.multiply( this.lightCamera.projectionMatrix );
+      shadowMatrix.multiply( this.lightCamera.matrixWorldInverse );
+      var matrix = this.accumulatePassMaterial.uniforms["shadowMatrix"].value;
+      matrix.copy(shadowMatrix);
 
-    this.accumulatePassMaterial.uniforms["lightPosition"].value = this.lightOrientation;
-    this.scene.overrideMaterial = this.accumulatePassMaterial;
+      this.accumulatePassMaterial.uniforms["currentFrameCount"].value = this.frameCount;
+      var currentShadowReadTarget = (this.frameCount % 2 == 0) ? this.shadowBuffer : this.shadowBufferTemp;
+      this.accumulatePassMaterial.uniforms["shadowBuffer"].value = currentShadowReadTarget;
 
-    var currentShadowWriteTarget = (this.frameCount % 2 == 0) ? this.shadowBufferTemp : this.shadowBuffer;
+      this.accumulatePassMaterial.uniforms["lightPosition"].value = this.lightOrientation;
+      this.scene.overrideMaterial = this.accumulatePassMaterial;
 
-    renderer.render( this.scene, this.camera, currentShadowWriteTarget, true);
-    this.scene.overrideMaterial = null;
+      var currentShadowWriteTarget = (this.frameCount % 2 == 0) ? this.shadowBufferTemp : this.shadowBuffer;
 
-    this.finalPassMaterial.uniforms["shadowBuffer"].value = this.shadowBuffer;
-    this.finalPassMaterial.uniforms["lightPosition"].value = this.lightOrientation;
-    this.scene.overrideMaterial = this.finalPassMaterial;
-    renderer.render( this.scene, this.camera, null, true );
-    this.scene.overrideMaterial = null;
+      renderer.render( this.scene, this.camera, currentShadowWriteTarget, true);
+      this.scene.overrideMaterial = null;
 
+      this.finalPassMaterial.uniforms["shadowBuffer"].value = this.shadowBuffer;
+      this.finalPassMaterial.uniforms["lightPosition"].value = this.lightOrientation;
+      this.scene.overrideMaterial = this.finalPassMaterial;
+      renderer.render( this.scene, this.camera, null, true );
+      this.scene.overrideMaterial = null;
+    }
   },
   // Render shadow map of a light
   renderShadowDepthMap: function( renderer, light, shadowDepthMap ) {
@@ -195,14 +207,14 @@ FilteredESM.prototype = {
   },
 
   filterShadowDepthMap: function( renderer ) {
-    // return;
+    return;
     this.sceneOrtho.overrideMaterial = this.shadowFilterMaterial;
     this.shadowFilterMaterial.uniforms["direction"].value = this.VERTICAL_DIRECTION;
-    this.shadowFilterMaterial.uniforms["shadowMap"].value = this.shadowDepthMap;
-    renderer.render( this.sceneOrtho, this.orthoCamera, this.shadowDepthMapTemp, true);
+    this.shadowFilterMaterial.uniforms["shadowMap"].value = this.shadowMap;
+    renderer.render( this.sceneOrtho, this.orthoCamera, this.shadowMapTemp, true);
     this.shadowFilterMaterial.uniforms["direction"].value = this.HORIZONTAL_DIRECTION;
-    this.shadowFilterMaterial.uniforms["shadowMap"].value = this.shadowDepthMapTemp;
-    renderer.render( this.sceneOrtho, this.orthoCamera, this.shadowDepthMap, true);
+    this.shadowFilterMaterial.uniforms["shadowMap"].value = this.shadowMapTemp;
+    renderer.render( this.sceneOrtho, this.orthoCamera, this.shadowMap, true);
     this.sceneOrtho.overrideMaterial = null;
   },
 
@@ -370,7 +382,7 @@ FilteredESM.prototype = {
           float shadowValue = step( lightDist, shadowDepth );\
           shadowValue = min(exp( -c*(lightDist - shadowDepth) ), 1.0);\
           float prevShadow = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
-          if(currentFrameCount > maxSamples*10000.0){\
+          if(currentFrameCount > maxSamples*100000.0){\
             shadowValue = prevShadow;\
           }\
           float newShadowValue = (currentFrameCount - 1.0) * prevShadow +  shadowValue * NdotL;\

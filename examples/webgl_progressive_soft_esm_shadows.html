@@ -73,7 +73,7 @@
 			var matBox = new THREE.MeshPhongMaterial( { color: 0x4080ff } );
 			// matBox.wireframe = true;
 
-			var geoFloor = new THREE.PlaneGeometry( 200, 200 );
+			var geoFloor = new THREE.PlaneGeometry( 30, 30 );
 			var geoBox = new THREE.SphereGeometry( 20, 30, 30 );
 
 			var mshFloor = new THREE.Mesh( geoFloor, matFloor );
@@ -216,7 +216,7 @@
 				// renderer.gammaInput = true;
 				// renderer.gammaOutput = true;
 
-				camera.position.set( 25, 40, -20 );
+				camera.position.set( 15, 10, 10 );
 
 				spotLight.position.set( -0, 40, 0 );
 
@@ -262,7 +262,7 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
 				// controls.addEventListener( 'change', render );
-				controls.minDistance = 10;
+				controls.minDistance = 1;
 				controls.maxDistance = 500;
 				// controls.maxPolarAngle = Math.PI / 2;
 				//controls.enablePan = false;
