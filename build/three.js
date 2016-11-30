@@ -10637,8 +10637,8 @@
 
 		this.userData = {};
 
-		this.onBeforeRender = function(){};
-		this.onAfterRender = function(){};
+		this.onBeforeRender = function () {};
+		this.onAfterRender = function () {};
 
 	}
 
@@ -10852,7 +10852,7 @@
 
 			}
 
-			if ( (object && object.isObject3D) ) {
+			if ( ( object && object.isObject3D ) ) {
 
 				if ( object.parent !== null ) {
 
@@ -11246,6 +11246,7 @@
 			this.matrixAutoUpdate = source.matrixAutoUpdate;
 			this.matrixWorldNeedsUpdate = source.matrixWorldNeedsUpdate;
 
+			this.layers.mask = source.layers.mask;
 			this.visible = source.visible;
 
 			this.castShadow = source.castShadow;
