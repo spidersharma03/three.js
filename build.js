@@ -9,6 +9,7 @@ var includes = [
 	"examples/js/shaders/GlossyMirrorShader.js",
 	"examples/js/shaders/SAOShader.js",
 	"examples/js/shaders/BlurShader.js",
+	"examples/js/shaders/LuminosityHighPassShader.js",
 	"examples/js/postprocessing/EffectComposer.js",
 	"examples/js/postprocessing/RenderPass.js",
 	"examples/js/postprocessing/MaskPass.js",
@@ -18,7 +19,10 @@ var includes = [
 	"examples/js/postprocessing/ClearPass.js",
 	"examples/js/postprocessing/TexturePass.js",
 	"examples/js/postprocessing/CubeTexturePass.js",
-	"examples/js/GlossyMirror.js"
+	"examples/js/postprocessing/DofPass.js",
+	"examples/js/postprocessing/UnrealBloomPass.js",
+	"examples/js/GlossyMirror.js",
+	"examples/js/controls/OrbitControls.js"
 ];
 
 //fs.writeFileSync( "../Clara.io/threehub/vendor/three.js", fs.readFileSync( "build/three.js", 'utf8' ), 'utf8' );
