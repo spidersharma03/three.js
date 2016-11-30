@@ -30,11 +30,6 @@ export default {
 			dest: 'build/three.js'
 		},
 		{
-			format: 'cjs',
-			moduleName: 'THREE',
-			dest: 'build/three.cjs.js'
-		},
-		{
 			format: 'es',
 			dest: 'build/three.modules.js'
 		}

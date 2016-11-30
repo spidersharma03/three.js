@@ -47,7 +47,7 @@
 		<script src="js/postprocessing/RenderPass.js"></script>
     <script src="js/postprocessing/SAOPass.js"></script>
     <script src="js/postprocessing/ShaderPass.js"></script>
-		<script src="js/postprocessing/ManualMSAARenderPass.js"></script>
+		<script src="js/postprocessing/SSAARenderPass.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -64,15 +64,15 @@
 			var container, stats;
 			var camera, scene, renderer, controls;
 
-			var composer, msaaRenderPass, saoPass, copyPass;
+			var composer, ssaaRenderPass, saoPass, copyPass;
 
 			var group;
 			var params = {
 				scale: 1.0,
 				distance: 7.0,
 				renderToScreen: true,
-				msaaEnabled: false,
-				msaaLevel: 4,
+				ssaaEnabled: false,
+				ssaaLevel: 4,
 				saoEnabled: true,
 				saoIntensity: 1,
 				saoSphereRadius: 0.5,
@@ -86,8 +86,8 @@
 			gui.add( params, "scale", 0.01, 10 );
 			gui.add( params, "distance", 1, 100 );
 			gui.add( params, "renderToScreen" );
-			gui.add( params, "msaaEnabled" );
-			gui.add( params, "msaaLevel", 0, 4 );
+			gui.add( params, "ssaaEnabled" );
+			gui.add( params, "ssaaLevel", 0, 4 );
 			gui.add( params, "saoEnabled" );
 			gui.add( params, "saoIntensity", 0, 1 );
 			gui.add( params, "saoSphereRadius", 0.01, 5 );
@@ -231,8 +231,8 @@
 				renderPass = new THREE.RenderPass( scene, camera );
 				composer.addPass( renderPass );
 
-				msaaRenderPass = new THREE.ManualMSAARenderPass( scene, camera );
-				composer.addPass( msaaRenderPass );
+				ssaaRenderPass = new THREE.SSAARenderPass( scene, camera );
+				composer.addPass( ssaaRenderPass );
 
 				saoPass = new THREE.SAOPass( scene, camera );
 				saoPass.downSamplingRatio = 1;
@@ -282,15 +282,15 @@
 				if( params.manualCompositing ) params.renderToScreen = false;
 
 				renderPass.renderToScreen = params.renderToScreen;
-				msaaRenderPass.renderToScreen = params.renderToScreen;
+				ssaaRenderPass.renderToScreen = params.renderToScreen;
 
 				saoPass.renderToScreen = params.renderToScreen;
 				copyPass.enabled = ! params.renderToScreen;
 
-				renderPass.enabled = ! params.msaaEnabled;
-				msaaRenderPass.enabled = params.msaaEnabled;
+				renderPass.enabled = ! params.ssaaEnabled;
+				ssaaRenderPass.enabled = params.ssaaEnabled;
 
-				msaaRenderPass.sampleLevel = Math.round( params.msaaLevel );
+				ssaaRenderPass.sampleLevel = Math.round( params.ssaaLevel );
 
 				saoPass.enabled = params.saoEnabled;
 				saoPass.intensity = params.saoIntensity;

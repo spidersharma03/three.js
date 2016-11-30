@@ -1,16 +1,16 @@
 /**
 *
-* Manual Multi-Sample Anti-Aliasing Render Pass
+* Supersample Anti-Aliasing Render Pass
 *
 * @author bhouston / http://clara.io/
 *
-* This manual approach to MSAA re-renders the scene ones for each sample with camera jitter and accumulates the results.
+* This manual approach to SSAA re-renders the scene ones for each sample with camera jitter and accumulates the results.
 *
-* References: https://en.wikipedia.org/wiki/Multisample_anti-aliasing
+* References: https://en.wikipedia.org/wiki/Supersampling
 *
 */
 
-THREE.ManualMSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) {
+THREE.SSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) {
 
 	THREE.Pass.call( this );
 
@@ -26,7 +26,7 @@ THREE.ManualMSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) 
 	this.clearColor = ( clearColor !== undefined ) ? clearColor : 0x000000;
 	this.clearAlpha = ( clearAlpha !== undefined ) ? clearAlpha : 0;
 
-	if ( THREE.CopyShader === undefined ) console.error( "THREE.ManualMSAARenderPass relies on THREE.CopyShader" );
+	if ( THREE.CopyShader === undefined ) console.error( "THREE.SSAARenderPass relies on THREE.CopyShader" );
 
 	this.overMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
 	this.overMaterial.uniforms = THREE.UniformsUtils.clone( this.overMaterial.uniforms );
@@ -43,10 +43,11 @@ THREE.ManualMSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) 
 	this.addMaterial.transparent = true;
 	this.addMaterial.depthTest = false;
 	this.addMaterial.depthWrite = false;
-
 };
 
-THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
+THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
+
+	constructor: THREE.SSAARenderPass,
 
 	dispose: function() {
 
@@ -80,7 +81,7 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 
 		}
 
-		var jitterOffsets = THREE.ManualMSAARenderPass.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
+		var jitterOffsets = THREE.SSAARenderPass.JitterVectors[ Math.max( 0, Math.min( this.sampleLevel, 5 ) ) ];
 
 		var autoClear = renderer.autoClear;
 		renderer.autoClear = false;
@@ -139,7 +140,7 @@ THREE.ManualMSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.
 // before being used, thus these integers need to be scaled by 1/16.
 //
 // Sample patterns reference: https://msdn.microsoft.com/en-us/library/windows/desktop/ff476218%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
-THREE.ManualMSAARenderPass.JitterVectors = [
+THREE.SSAARenderPass.JitterVectors = [
 	[
 		[ 0, 0 ]
 	],

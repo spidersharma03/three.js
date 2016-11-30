@@ -1929,6 +1929,10 @@ function WebGLRenderer( parameters ) {
 
 				refreshUniformsLambert( m_uniforms, material );
 
+			} else if ( material.isMeshToonMaterial ) {
+
+				refreshUniformsToon( m_uniforms, material );
+
 			} else if ( material.isMeshPhongMaterial ) {
 
 				refreshUniformsPhong( m_uniforms, material );
@@ -2236,6 +2240,18 @@ function WebGLRenderer( parameters ) {
 			uniforms.displacementMap.value = material.displacementMap;
 			uniforms.displacementScale.value = material.displacementScale;
 			uniforms.displacementBias.value = material.displacementBias;
+
+		}
+
+	}
+
+	function refreshUniformsToon( uniforms, material ) {
+
+		refreshUniformsPhong( uniforms, material );
+
+		if ( material.gradientMap ) {
+
+			uniforms.gradientMap.value = material.gradientMap;
 
 		}
 

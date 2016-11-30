@@ -33,6 +33,7 @@ import falloffalphamap_fragment from './ShaderChunk/falloffalphamap_fragment.gls
 import falloffmap_fragment from './ShaderChunk/falloffmap_fragment.glsl';
 import fog_fragment from './ShaderChunk/fog_fragment.glsl';
 import fog_pars_fragment from './ShaderChunk/fog_pars_fragment.glsl';
+import gradientmap_pars_fragment from './ShaderChunk/gradientmap_pars_fragment.glsl';
 import lightmap_fragment from './ShaderChunk/lightmap_fragment.glsl';
 import lightmap_pars_fragment from './ShaderChunk/lightmap_pars_fragment.glsl';
 import lights_lambert_vertex from './ShaderChunk/lights_lambert_vertex.glsl';
@@ -148,6 +149,7 @@ export var ShaderChunk = {
 	falloffmap_fragment: falloffmap_fragment,
 	fog_fragment: fog_fragment,
 	fog_pars_fragment: fog_pars_fragment,
+	gradientmap_pars_fragment: gradientmap_pars_fragment,
 	lightmap_fragment: lightmap_fragment,
 	lightmap_pars_fragment: lightmap_pars_fragment,
 	lights_lambert_vertex: lights_lambert_vertex,
