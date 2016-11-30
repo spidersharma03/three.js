@@ -685,6 +685,16 @@ Vector3.prototype = {
 
 	},
 
+	setFromCylindrical: function( c ) {
+
+		this.x = c.radius * Math.sin( c.theta );
+		this.y = c.y;
+		this.z = c.radius * Math.cos( c.theta );
+
+		return this;
+
+	},
+
 	setFromMatrixPosition: function ( m ) {
 
 		return this.setFromMatrixColumn( m, 3 );

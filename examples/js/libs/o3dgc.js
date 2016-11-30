@@ -441,14 +441,14 @@ var o3dgc = (function () {
     local.O3DGC_AC_BM_MAX_COUNT = (1 << local.O3DGC_AC_BM_LENGTH_SHIFT) >>> 0;  // for adaptive models
     local.O3DGC_AC_DM_LENGTH_SHIFT = 15; // Maximum values for general models length bits discarded before mult.
     local.O3DGC_AC_DM_MAX_COUNT = (1 << local.O3DGC_AC_DM_LENGTH_SHIFT) >>> 0;  // for adaptive models
-    // StaticBitModel class 
+    // StaticBitModel class
     module.StaticBitModel = function () {
         this.m_bit0Prob = (1 << (local.O3DGC_AC_BM_LENGTH_SHIFT - 1)) >>> 0; // p0 = 0.5
     };
     module.StaticBitModel.prototype.SetProbability = function (p) {
         this.m_bit0Prob = Math.floor(p * ((1 << local.O3DGC_AC_BM_LENGTH_SHIFT) >>> 0));
     };
-    // AdaptiveBitModel class 
+    // AdaptiveBitModel class
     module.AdaptiveBitModel = function () {
         // initialization to equiprobable model
         this.m_updateCycle = 4;
@@ -483,7 +483,7 @@ var o3dgc = (function () {
         }
         this.m_bitsUntilUpdate = this.m_updateCycle;
     };
-    // AdaptiveDataModel class 
+    // AdaptiveDataModel class
     module.AdaptiveDataModel = function () {
         this.m_buffer = {};
         this.m_distribution = {};
@@ -768,7 +768,7 @@ var o3dgc = (function () {
         return uiValue;
     };
 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -    
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // FIFO class
     module.FIFO = function () {
         this.m_data = {};
@@ -1133,7 +1133,7 @@ var o3dgc = (function () {
     module.AdjacencyInfo = function () {
         this.m_neighborsSize = 0;    // actual allocated size for m_neighbors
         this.m_numNeighborsSize = 0; // actual allocated size for m_numNeighbors
-        this.m_numElements = 0;      // number of elements 
+        this.m_numElements = 0;      // number of elements
         this.m_neighbors = {};
         this.m_numNeighbors = {};
     };
