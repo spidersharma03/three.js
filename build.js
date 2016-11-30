@@ -14,7 +14,7 @@ var includes = [
 	"examples/js/postprocessing/MaskPass.js",
 	"examples/js/postprocessing/ShaderPass.js",
 	"examples/js/postprocessing/SAOPass.js",
-	"examples/js/postprocessing/ManualMSAARenderPass.js",
+	"examples/js/postprocessing/SSAARenderPass.js",
 	"examples/js/postprocessing/ClearPass.js",
 	"examples/js/postprocessing/TexturePass.js",
 	"examples/js/postprocessing/CubeTexturePass.js",

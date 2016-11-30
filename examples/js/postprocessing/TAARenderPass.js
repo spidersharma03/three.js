@@ -14,29 +14,30 @@
 
 THREE.TAARenderPass = function ( scene, camera, params ) {
 
-	if ( THREE.ManualMSAARenderPass === undefined ) {
+	if ( THREE.SSAARenderPass === undefined ) {
 
-		console.error( "THREE.TAARenderPass relies on THREE.ManualMSAARenderPass" );
+		console.error( "THREE.TAARenderPass relies on THREE.SSAARenderPass" );
 
 	}
-	THREE.ManualMSAARenderPass.call( this, scene, camera, params );
+
+	THREE.SSAARenderPass.call( this, scene, camera, params );
 
 	this.sampleLevel = 0;
 	this.accumulate = false;
 
 };
 
-THREE.TAARenderPass.JitterVectors = THREE.ManualMSAARenderPass.JitterVectors;
+THREE.TAARenderPass.JitterVectors = THREE.SSAARenderPass.JitterVectors;
 
-THREE.TAARenderPass.prototype = Object.create( THREE.ManualMSAARenderPass.prototype );
+THREE.TAARenderPass.prototype = Object.assign( Object.create( THREE.SSAARenderPass.prototype ), {
 
-Object.assign( THREE.TAARenderPass.prototype, {
+constructor: THREE.TAARenderPass,
 
 	render: function ( renderer, writeBuffer, readBuffer, delta ) {
 
 		if( ! this.accumulate ) {
 
-				THREE.ManualMSAARenderPass.prototype.render.call( this, renderer, writeBuffer, readBuffer, delta );
+				THREE.SSAARenderPass.prototype.render.call( this, renderer, writeBuffer, readBuffer, delta );
 
 				this.accumulateIndex = -1;
 				return;
@@ -59,7 +60,7 @@ Object.assign( THREE.TAARenderPass.prototype, {
 
 		if( this.accumulate && this.accumulateIndex === -1 ) {
 
-				THREE.ManualMSAARenderPass.prototype.render.call( this, renderer, this.holdRenderTarget, readBuffer, delta );
+				THREE.SSAARenderPass.prototype.render.call( this, renderer, this.holdRenderTarget, readBuffer, delta );
 
 				this.accumulateIndex = 0;
 
