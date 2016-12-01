@@ -52,7 +52,7 @@ THREE.UnrealBloomPass = function ( resolution, strength, radius, threshold ) {
 	this.highPassUniforms = Object.assign( {}, highPassShader.uniforms );
 
 	this.highPassUniforms[ "luminosityThreshold" ].value = threshold;
-	this.highPassUniforms[ "smoothWidth" ].value = 0.01;
+	this.highPassUniforms[ "smoothWidth" ].value = 0.05;
 
 	this.materialHighPassFilter = new THREE.ShaderMaterial( {
 		uniforms: this.highPassUniforms,
