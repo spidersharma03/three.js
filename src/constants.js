@@ -154,3 +154,5 @@ export var RGBM16Encoding = 3005;
 export var RGBDEncoding = 3006;
 export var BasicDepthPacking = 3200;
 export var RGBADepthPacking = 3201;
+export var OrderIndependentTransperancy = 3300;
+export var PaintersTransperancy = 3301;

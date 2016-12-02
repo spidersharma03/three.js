@@ -1,4 +1,4 @@
-import { REVISION, MaxEquation, MinEquation, RGB_ETC1_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT5_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT1_Format, RGB_S3TC_DXT1_Format, SrcAlphaSaturateFactor, OneMinusDstColorFactor, DstColorFactor, OneMinusDstAlphaFactor, DstAlphaFactor, OneMinusSrcAlphaFactor, SrcAlphaFactor, OneMinusSrcColorFactor, SrcColorFactor, OneFactor, ZeroFactor, ReverseSubtractEquation, SubtractEquation, AddEquation, DepthFormat, DepthStencilFormat, LuminanceAlphaFormat, LuminanceFormat, RGBAFormat, RGBFormat, AlphaFormat, HalfFloatType, FloatType, UnsignedIntType, IntType, UnsignedShortType, ShortType, ByteType, UnsignedInt248Type, UnsignedShort565Type, UnsignedShort5551Type, UnsignedShort4444Type, UnsignedByteType, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestFilter, MirroredRepeatWrapping, ClampToEdgeWrapping, RepeatWrapping, FrontFaceDirectionCW, NoBlending, BackSide, DoubleSide, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, NoColors, FlatShading, LinearToneMapping } from '../constants';
+import { REVISION, MaxEquation, MinEquation, RGB_ETC1_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT5_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT1_Format, RGB_S3TC_DXT1_Format, SrcAlphaSaturateFactor, OneMinusDstColorFactor, DstColorFactor, OneMinusDstAlphaFactor, DstAlphaFactor, OneMinusSrcAlphaFactor, SrcAlphaFactor, OneMinusSrcColorFactor, SrcColorFactor, OneFactor, ZeroFactor, ReverseSubtractEquation, SubtractEquation, AddEquation, DepthFormat, DepthStencilFormat, LuminanceAlphaFormat, LuminanceFormat, RGBAFormat, RGBFormat, AlphaFormat, HalfFloatType, FloatType, UnsignedIntType, IntType, UnsignedShortType, ShortType, ByteType, UnsignedInt248Type, UnsignedShort565Type, UnsignedShort5551Type, UnsignedShort4444Type, UnsignedByteType, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestFilter, MirroredRepeatWrapping, ClampToEdgeWrapping, RepeatWrapping, FrontFaceDirectionCW, NoBlending, BackSide, DoubleSide, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, NoColors, FlatShading, LinearToneMapping, OrderIndependentTransperancy, PaintersTransperancy, CustomBlending } from '../constants';
 import { Matrix4 } from '../math/Matrix4';
 import { WebGLUniforms } from './webgl/WebGLUniforms';
 import { ShaderLib } from './shaders/ShaderLib';
@@ -29,6 +29,7 @@ import { WebGLClipping } from './webgl/WebGLClipping';
 import { Frustum } from '../math/Frustum';
 import { Vector4 } from '../math/Vector4';
 import { Color } from '../math/Color';
+import { WebGLOrderIndependentTransparency } from 'webgl/WebGLOrderIndependentTransparency';
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -81,7 +82,8 @@ function WebGLRenderer( parameters ) {
 	// scene graph
 
 	this.sortObjects = true;
-
+	this.transparency = PaintersTransperancy;
+	this.oitManager = new WebGLOrderIndependentTransparency();
 	// user-defined clipping
 
 	this.clippingPlanes = [];
@@ -162,7 +164,7 @@ function WebGLRenderer( parameters ) {
 		_projScreenMatrix = new Matrix4(),
 
 		_vector3 = new Vector3(),
-		_matrix4 = new Matrix4(), 
+		_matrix4 = new Matrix4(),
 		_matrix42 = new Matrix4(),
 
 		// light arrays cache
@@ -1223,8 +1225,26 @@ function WebGLRenderer( parameters ) {
 			renderObjects( opaqueObjects, scene, camera );
 
 			// transparent pass (back-to-front order)
+			if( this.transparency === PaintersTransperancy ) {
 
-			renderObjects( transparentObjects, scene, camera );
+				renderObjects( transparentObjects, scene, camera );
+
+			} else { // Order Independent Transparency
+
+				state.setBlending( CustomBlending, AddEquation, OneFactor, OneFactor, AddEquation, OneFactor, OneFactor, true ) {
+				this.setClearColor( 0x000000, 0);
+				this.setRenderTarget(this.oitManager.accumulateRT);
+				renderObjects( transparentObjects, scene, camera );
+
+				state.setBlending( CustomBlending, AddEquation, ZeroFactor, OneMinusSrcAlphaFactor, AddEquation, ZeroFactor, OneMinusSrcAlphaFactor, true ) {
+				this.setRenderTarget(this.oitManager.revealageRT);
+				this.setClearColor( 0xffffff, 1);
+				renderObjects( transparentObjects, scene, camera );
+
+				state.setBlending( CustomBlending, AddEquation, OneMinusSrcAlphaFactor, SrcAlphaFactor, AddEquation, OneMinusSrcAlphaFactor, SrcAlphaFactor, true );
+				this.setRenderTarget(null);
+				this.oitManager.mergePass();
+			}
 
 		}
 
