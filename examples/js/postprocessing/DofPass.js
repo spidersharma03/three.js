@@ -8,7 +8,7 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 
 	var resolution = ( resolution !== undefined ) ? resolution : new THREE.Vector2(256, 256);
 	// render targets
-  this.downSampleRes = new THREE.Vector2(Math.round(resolution.x/2), Math.round(resolution.y/2));
+	this.downSampleRes = new THREE.Vector2(Math.round(resolution.x/2), Math.round(resolution.y/2));
 
 	var pars = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, type: THREE.HalfFloatType, format: THREE.RGBAFormat };
 
@@ -82,8 +82,6 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 	this.renderCamera = renderCamera;
 };
 
-THREE.DofPass.prototype = Object.create( THREE.Pass.prototype );
-
 THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
 
 	constructor: THREE.DofPass,
@@ -125,7 +123,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		// Render Scene into depth buffer. This is temporary and should not be done here.
 		this.renderScene.overrideMaterial = this.depthMaterial;
 		renderer.setClearColor(0xffffff, 1);
-	  renderer.render( this.renderScene, this.renderCamera, this.depthRenderTarget );
+		renderer.render( this.renderScene, this.renderCamera, this.depthRenderTarget );
 		this.renderScene.overrideMaterial = null;
 
 		// 1. Downsample the Original texture, and store coc in the alpha channel
@@ -211,12 +209,12 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				const float MAXIMUM_BLUR_SIZE = 8.0;\
 				\
 				float computeCoc() {\
-				    vec4 packDepth = texture2D(depthTexture, vUv).rgba;\
-				    if(packDepth.x == 1.0) return max(NearFarBlurScale.x, NearFarBlurScale.y);\
+					vec4 packDepth = texture2D(depthTexture, vUv).rgba;\
+					if(packDepth.x == 1.0) return max(NearFarBlurScale.x, NearFarBlurScale.y);\
 						float depth = unpackRGBAToDepth(packDepth);\
 						depth = -perspectiveDepthToViewZ(depth, cameraNearFar.x, cameraNearFar.y);\
 						float coc = (depth - focalDepth)/depth;\
-				    return (coc > 0.0 ? coc * NearFarBlurScale.y : coc * NearFarBlurScale.x);\
+					return (coc > 0.0 ? coc * NearFarBlurScale.y : coc * NearFarBlurScale.x);\
 				}\
 				\
 				void main() {\n\
@@ -255,43 +253,43 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				const float MAXIMUM_BLUR_SIZE = 8.0;\
 				\
 				float expandNear(const in vec2 offset, const in bool isBackground) {\
-				    float coc = 0.0;\
-				    vec2 sampleOffsets = MAXIMUM_BLUR_SIZE * offset / 5.0;\
-				    float coc0 = texture2D(colorTexture, vUv).a;\
-				    float coc1 = texture2D(colorTexture, vUv - 5.0 * sampleOffsets).a;\
-				    float coc2 = texture2D(colorTexture, vUv - 4.0 * sampleOffsets).a;\
-				    float coc3 = texture2D(colorTexture, vUv - 3.0 * sampleOffsets).a;\
-				    float coc4 = texture2D(colorTexture, vUv - 2.0 * sampleOffsets).a;\
-				    float coc5 = texture2D(colorTexture, vUv - 1.0 * sampleOffsets).a;\
-				    float coc6 = texture2D(colorTexture, vUv + 1.0 * sampleOffsets).a;\
-				    float coc7 = texture2D(colorTexture, vUv + 2.0 * sampleOffsets).a;\
-				    float coc8 = texture2D(colorTexture, vUv + 3.0 * sampleOffsets).a;\
-				    float coc9 = texture2D(colorTexture, vUv + 4.0 * sampleOffsets).a;\
-				    float coc10 = texture2D(colorTexture, vUv + 5.0 * sampleOffsets).a;\
+					float coc = 0.0;\
+					vec2 sampleOffsets = MAXIMUM_BLUR_SIZE * offset / 5.0;\
+					float coc0 = texture2D(colorTexture, vUv).a;\
+					float coc1 = texture2D(colorTexture, vUv - 5.0 * sampleOffsets).a;\
+					float coc2 = texture2D(colorTexture, vUv - 4.0 * sampleOffsets).a;\
+					float coc3 = texture2D(colorTexture, vUv - 3.0 * sampleOffsets).a;\
+					float coc4 = texture2D(colorTexture, vUv - 2.0 * sampleOffsets).a;\
+					float coc5 = texture2D(colorTexture, vUv - 1.0 * sampleOffsets).a;\
+					float coc6 = texture2D(colorTexture, vUv + 1.0 * sampleOffsets).a;\
+					float coc7 = texture2D(colorTexture, vUv + 2.0 * sampleOffsets).a;\
+					float coc8 = texture2D(colorTexture, vUv + 3.0 * sampleOffsets).a;\
+					float coc9 = texture2D(colorTexture, vUv + 4.0 * sampleOffsets).a;\
+					float coc10 = texture2D(colorTexture, vUv + 5.0 * sampleOffsets).a;\
 						\
-				    if(isBackground){\
-				        coc = abs(coc0) * 0.095474 + \
-				        (abs(coc1) + abs(coc10)) * 0.084264 + \
-				        (abs(coc2) + abs(coc9)) * 0.088139 + \
-				        (abs(coc3) + abs(coc8)) * 0.091276 + \
-				        (abs(coc4) + abs(coc7)) * 0.093585 + \
-				        (abs(coc5) + abs(coc6)) * 0.094998;\
-				    } else {\
-				        coc = min(coc0, 0.0);\
-				        coc = min(coc1 * 0.3, coc);\
-				        coc = min(coc2 * 0.5, coc);\
-				        coc = min(coc3 * 0.75, coc);\
-				        coc = min(coc4 * 0.8, coc);\
-				        coc = min(coc5 * 0.95, coc);\
-				        coc = min(coc6 * 0.95, coc);\
-				        coc = min(coc7 * 0.8, coc);\
-				        coc = min(coc8 * 0.75, coc);\
-				        coc = min(coc9 * 0.5, coc);\
-				        coc = min(coc10 * 0.3, coc);\
-				        if(abs(coc0) > abs(coc))\
-				            coc = coc0;\
-				    }\
-				    return coc;\
+					if(isBackground){\
+						coc = abs(coc0) * 0.095474 + \
+						(abs(coc1) + abs(coc10)) * 0.084264 + \
+						(abs(coc2) + abs(coc9)) * 0.088139 + \
+						(abs(coc3) + abs(coc8)) * 0.091276 + \
+						(abs(coc4) + abs(coc7)) * 0.093585 + \
+						(abs(coc5) + abs(coc6)) * 0.094998;\
+					} else {\
+						coc = min(coc0, 0.0);\
+						coc = min(coc1 * 0.3, coc);\
+						coc = min(coc2 * 0.5, coc);\
+						coc = min(coc3 * 0.75, coc);\
+						coc = min(coc4 * 0.8, coc);\
+						coc = min(coc5 * 0.95, coc);\
+						coc = min(coc6 * 0.95, coc);\
+						coc = min(coc7 * 0.8, coc);\
+						coc = min(coc8 * 0.75, coc);\
+						coc = min(coc9 * 0.5, coc);\
+						coc = min(coc10 * 0.3, coc);\
+						if(abs(coc0) > abs(coc))\
+							coc = coc0;\
+					}\
+					return coc;\
 				}\
 				\
 				void main() {\n\
@@ -328,52 +326,52 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				const float MAXIMUM_BLUR_SIZE = 8.0;\
 				\
 				vec4 CircularBlur() {\
-				    \
-				    const int NUM_SAMPLES = 16;\
-				    vec2 poisson_disk_samples[NUM_SAMPLES];\
-				    poisson_disk_samples[0] = vec2(-0.399691779231, 0.728591545584);\
-				    poisson_disk_samples[1] = vec2(-0.48622557676, -0.84016533712);\
-				    poisson_disk_samples[2] = vec2(0.770309468987, -0.24906070432);\
-				    poisson_disk_samples[3] = vec2(0.556596796154, 0.820359876432);\
-				    poisson_disk_samples[4] = vec2(-0.933902004071, 0.0600539051593);\
-				    poisson_disk_samples[5] = vec2(0.330144964342, 0.207477293384);\
-				    poisson_disk_samples[6] = vec2(0.289013230975, -0.686749271417);\
-				    poisson_disk_samples[7] = vec2(-0.0832470893559, -0.187351643125);\
-				    poisson_disk_samples[8] = vec2(-0.296314525615, 0.254474834305);\
-				    poisson_disk_samples[9] = vec2(-0.850977666059, 0.484642744689);\
-				    poisson_disk_samples[10] = vec2(0.829287915319, 0.2345063545);\
-				    poisson_disk_samples[11] = vec2(-0.773042143899, -0.543741521254);\
-				    poisson_disk_samples[12] = vec2(0.0561133030864, 0.928419742597);\
-				    poisson_disk_samples[13] = vec2(-0.205799249508, -0.562072714492);\
-				    poisson_disk_samples[14] = vec2(-0.526991665882, -0.193690188118);\
-				    poisson_disk_samples[15] = vec2(-0.051789270667, -0.935374050821);\
+					\
+					const int NUM_SAMPLES = 16;\
+					vec2 poisson_disk_samples[NUM_SAMPLES];\
+					poisson_disk_samples[0] = vec2(-0.399691779231, 0.728591545584);\
+					poisson_disk_samples[1] = vec2(-0.48622557676, -0.84016533712);\
+					poisson_disk_samples[2] = vec2(0.770309468987, -0.24906070432);\
+					poisson_disk_samples[3] = vec2(0.556596796154, 0.820359876432);\
+					poisson_disk_samples[4] = vec2(-0.933902004071, 0.0600539051593);\
+					poisson_disk_samples[5] = vec2(0.330144964342, 0.207477293384);\
+					poisson_disk_samples[6] = vec2(0.289013230975, -0.686749271417);\
+					poisson_disk_samples[7] = vec2(-0.0832470893559, -0.187351643125);\
+					poisson_disk_samples[8] = vec2(-0.296314525615, 0.254474834305);\
+					poisson_disk_samples[9] = vec2(-0.850977666059, 0.484642744689);\
+					poisson_disk_samples[10] = vec2(0.829287915319, 0.2345063545);\
+					poisson_disk_samples[11] = vec2(-0.773042143899, -0.543741521254);\
+					poisson_disk_samples[12] = vec2(0.0561133030864, 0.928419742597);\
+					poisson_disk_samples[13] = vec2(-0.205799249508, -0.562072714492);\
+					poisson_disk_samples[14] = vec2(-0.526991665882, -0.193690188118);\
+					poisson_disk_samples[15] = vec2(-0.051789270667, -0.935374050821);\
 						\
-				    vec4 color = texture2D(colorTexture, vUv);\
+					vec4 color = texture2D(colorTexture, vUv);\
 						\
-				    float blurDist = MAXIMUM_BLUR_SIZE * color.a;\
+					float blurDist = MAXIMUM_BLUR_SIZE * color.a;\
 						\
-				    float rnd = PI2 * rand( vUv );\
-				    float costheta = cos(rnd);\
-				    float sintheta = sin(rnd);\
-				    vec4 rotationMatrix = vec4(costheta, -sintheta, sintheta, costheta);\
+					float rnd = PI2 * rand( vUv );\
+					float costheta = cos(rnd);\
+					float sintheta = sin(rnd);\
+					vec4 rotationMatrix = vec4(costheta, -sintheta, sintheta, costheta);\
 						\
-				    vec3 colorSum = vec3(0.0);\
-				    float weightSum = 0.0;\
+					vec3 colorSum = vec3(0.0);\
+					float weightSum = 0.0;\
 						\
-				    for (int i = 0; i < NUM_SAMPLES; i++) {\
-				        vec2 ofs = poisson_disk_samples[i];\
-				        ofs = vec2(dot(ofs, rotationMatrix.xy), dot(ofs, rotationMatrix.zw) );\
-				        vec2 texcoord = vUv + blurDist * ofs / texSize.xy;\
-				        vec4 sample = texture2D(colorTexture, texcoord);\
-				        float cocWeight = abs(sample.a);\
-				        cocWeight *= cocWeight * cocWeight;\
-				        colorSum += sample.rgb * cocWeight;\
-				        weightSum += cocWeight;\
-				    }\
+					for (int i = 0; i < NUM_SAMPLES; i++) {\
+						vec2 ofs = poisson_disk_samples[i];\
+						ofs = vec2(dot(ofs, rotationMatrix.xy), dot(ofs, rotationMatrix.zw) );\
+						vec2 texcoord = vUv + blurDist * ofs / texSize.xy;\
+						vec4 sample = texture2D(colorTexture, texcoord);\
+						float cocWeight = abs(sample.a);\
+						cocWeight *= cocWeight * cocWeight;\
+						colorSum += sample.rgb * cocWeight;\
+						weightSum += cocWeight;\
+					}\
 						\
-				    colorSum /= weightSum;\
+					colorSum /= weightSum;\
 						\
-				    return vec4(colorSum, 1.0);\
+					return vec4(colorSum, 1.0);\
 				}\
 				\
 				void main() {\n\
@@ -483,12 +481,12 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				uniform float focalDepth;\
 				\
 				float computeCoc() {\
-				    vec4 packedDepth = texture2D(depthTexture, vUv);\
-				    if(packedDepth.x == 1.0) return max(NearFarBlurScale.x, NearFarBlurScale.y);\
+					vec4 packedDepth = texture2D(depthTexture, vUv);\
+					if(packedDepth.x == 1.0) return max(NearFarBlurScale.x, NearFarBlurScale.y);\
 						float depth = unpackRGBAToDepth(packedDepth);\
 						depth = -perspectiveDepthToViewZ(depth, cameraNearFar.x, cameraNearFar.y);\
 						float coc = (depth - focalDepth)/depth;\
-				    return (coc > 0.0 ? coc * NearFarBlurScale.y : coc * NearFarBlurScale.x);\
+					return (coc > 0.0 ? coc * NearFarBlurScale.y : coc * NearFarBlurScale.x);\
 				}\
 				\
 				void main() {\n\
