@@ -14,6 +14,7 @@ void main() {
 	#include <uv2_vertex>
 	#include <color_vertex>
 	#include <skinbase_vertex>
+	#include <oit_pars_vertex>
 
 	#ifdef USE_ENVMAP
 
@@ -28,6 +29,7 @@ void main() {
 	#include <morphtarget_vertex>
 	#include <skinning_vertex>
 	#include <project_vertex>
+	#include <oit_vertex>
 	#include <logdepthbuf_vertex>
 
 	#include <worldpos_vertex>

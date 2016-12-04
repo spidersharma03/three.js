@@ -3,7 +3,7 @@
  */
 
 import { WebGLProgram } from './WebGLProgram';
-import { BackSide, DoubleSide, FlatShading, CubeUVRefractionMapping, CubeUVReflectionMapping, GammaEncoding, LinearEncoding } from '../../constants';
+import { BackSide, DoubleSide, FlatShading, CubeUVRefractionMapping, CubeUVReflectionMapping, GammaEncoding, LinearEncoding, OrderIndependentTransperancy } from '../../constants';
 
 function WebGLPrograms( renderer, capabilities ) {
 
@@ -199,8 +199,8 @@ function WebGLPrograms( renderer, capabilities ) {
 			doubleSided: material.side === DoubleSide,
 			flipSided: material.side === BackSide,
 
-			depthPacking: ( material.depthPacking !== undefined ) ? material.depthPacking : false
-
+			depthPacking: ( material.depthPacking !== undefined ) ? material.depthPacking : false,
+			oit: ( renderer.transparency === OrderIndependentTransperancy )
 		};
 
 		return parameters;

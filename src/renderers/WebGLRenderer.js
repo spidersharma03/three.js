@@ -29,7 +29,7 @@ import { WebGLClipping } from './webgl/WebGLClipping';
 import { Frustum } from '../math/Frustum';
 import { Vector4 } from '../math/Vector4';
 import { Color } from '../math/Color';
-import { WebGLOrderIndependentTransparency } from 'webgl/WebGLOrderIndependentTransparency';
+import { WebGLOrderIndependentTransparency } from './webgl/WebGLOrderIndependentTransparency';
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -82,8 +82,6 @@ function WebGLRenderer( parameters ) {
 	// scene graph
 
 	this.sortObjects = true;
-	this.transparency = PaintersTransperancy;
-	this.oitManager = new WebGLOrderIndependentTransparency();
 	// user-defined clipping
 
 	this.clippingPlanes = [];
@@ -268,6 +266,9 @@ function WebGLRenderer( parameters ) {
 
 	var extensions = new WebGLExtensions( _gl );
 
+	this.transparency = PaintersTransperancy;
+	this.oitManager = new WebGLOrderIndependentTransparency( _gl );
+
 	extensions.get( 'WEBGL_depth_texture' );
 	extensions.get( 'OES_texture_float' );
 	extensions.get( 'OES_texture_float_linear' );
@@ -442,6 +443,7 @@ function WebGLRenderer( parameters ) {
 		}
 
 		this.setViewport( 0, 0, width, height );
+		this.oitManager.setSize( width, height );
 
 	};
 
@@ -1231,19 +1233,20 @@ function WebGLRenderer( parameters ) {
 
 			} else { // Order Independent Transparency
 
-				state.setBlending( CustomBlending, AddEquation, OneFactor, OneFactor, AddEquation, OneFactor, OneFactor, true ) {
-				this.setClearColor( 0x000000, 0);
-				this.setRenderTarget(this.oitManager.accumulateRT);
-				renderObjects( transparentObjects, scene, camera );
-
-				state.setBlending( CustomBlending, AddEquation, ZeroFactor, OneMinusSrcAlphaFactor, AddEquation, ZeroFactor, OneMinusSrcAlphaFactor, true ) {
-				this.setRenderTarget(this.oitManager.revealageRT);
-				this.setClearColor( 0xffffff, 1);
-				renderObjects( transparentObjects, scene, camera );
-
-				state.setBlending( CustomBlending, AddEquation, OneMinusSrcAlphaFactor, SrcAlphaFactor, AddEquation, OneMinusSrcAlphaFactor, SrcAlphaFactor, true );
-				this.setRenderTarget(null);
-				this.oitManager.mergePass();
+				this.oitManager.renderTransparentObjects( transparentObjects, scene, camera, this );
+				// this.setClearColor( 0x000000, 0);
+				// this.setRenderTarget(this.oitManager.accumulateRT);
+				// this.oitManager.changeBlendState( transparentObjects, this.oitManager.PASS_TYPE_ACCUM );
+				// renderObjects( transparentObjects, scene, camera );
+				//
+				// this.setClearColor( 0xffffff, 1);
+				// this.setRenderTarget(this.oitManager.revealageRT);
+				// this.oitManager.changeBlendState( transparentObjects, this.oitManager.PASS_TYPE_REVEALAGE );
+				// renderObjects( transparentObjects, scene, camera );
+				// this.oitManager.restoreBlendState( transparentObjects );
+				//
+				// this.setRenderTarget(null);
+				// this.oitManager.mergePass();
 			}
 
 		}

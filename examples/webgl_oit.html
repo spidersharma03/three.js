@@ -137,6 +137,7 @@
 	    // });
 
 			init();
+
 			animate();
 
 			function init() {
@@ -160,7 +161,40 @@
 				camera.position.x = 0;
 
 				scene = new THREE.Scene();
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				controls.enableDamping = true;
+				controls.dampingFactor = 0.25;
 
+				initScene2();
+				stats = new Stats();
+				container.appendChild( stats.dom );
+
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				renderer.gammaOutput = true;
+				// renderer.gammaInput = true;
+				renderer.gammaFactor = 2.2;
+			}
+
+			function initScene2() {
+				var planeGeometry = new THREE.PlaneBufferGeometry(2,2);
+				var material1 = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
+				var material2 = new THREE.MeshBasicMaterial({color: 0xffff00, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
+				var material3 = new THREE.MeshBasicMaterial({color: 0x0000ff, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
+				var planeMesh1 = new THREE.Mesh( planeGeometry, material1 );
+				var planeMesh2 = new THREE.Mesh( planeGeometry, material2 );
+				var planeMesh3 = new THREE.Mesh( planeGeometry, material3 );
+				planeMesh1.position.z = -0.5;
+				planeMesh2.position.z = 0;
+				planeMesh2.position.x = 0.5;
+				planeMesh3.position.z = 0.5;
+				planeMesh3.position.x = 1;
+				scene.add(planeMesh1);
+				scene.add(planeMesh2);
+				scene.add(planeMesh3);
+			}
+
+			function initScene1() {
 				var manager = new THREE.LoadingManager();
 				manager.onProgress = function ( item, loaded, total ) {
 					console.log( item, loaded, total );
@@ -189,9 +223,6 @@
 				} );
 				group.add(obj3d);
 
-				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.enableDamping = true;
-				controls.dampingFactor = 0.25;
 
 				scene.add( group );
 
@@ -269,13 +300,6 @@
 				group.add( torus );
 				torus.receiveShadow = true;
 				torus.castShadow = true;
-
-				stats = new Stats();
-				container.appendChild( stats.dom );
-
-
-				window.addEventListener( 'resize', onWindowResize, false );
-
 			}
 
 			function onWindowResize() {
@@ -300,8 +324,8 @@
 				if(params.rotate)
 					group.rotation.y = timer * 0.0001;
 				renderer.autoClear = true;
-				renderer.setClearColor( 0xfff0f0 );
-				renderer.setClearAlpha( 0.0 );
+				renderer.setClearColor( 0xbfbfbf );
+				// renderer.setClearAlpha( 0.0 );
         renderer.render(scene, camera);
 				controls.update();
 				stats.end();

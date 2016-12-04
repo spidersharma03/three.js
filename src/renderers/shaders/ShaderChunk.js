@@ -80,6 +80,9 @@ import uv2_pars_fragment from './ShaderChunk/uv2_pars_fragment.glsl';
 import uv2_pars_vertex from './ShaderChunk/uv2_pars_vertex.glsl';
 import uv2_vertex from './ShaderChunk/uv2_vertex.glsl';
 import worldpos_vertex from './ShaderChunk/worldpos_vertex.glsl';
+import oit_fragment from './ShaderChunk/oit_fragment.glsl';
+import oit_vertex from './ShaderChunk/oit_vertex.glsl';
+import oit_pars_vertex from './ShaderChunk/oit_pars_vertex.glsl';
 
 import cube_frag from './ShaderLib/cube_frag.glsl';
 import cube_vert from './ShaderLib/cube_vert.glsl';
@@ -189,6 +192,9 @@ export var ShaderChunk = {
 	uv2_pars_vertex: uv2_pars_vertex,
 	uv2_vertex: uv2_vertex,
 	worldpos_vertex: worldpos_vertex,
+	oit_fragment: oit_fragment,
+	oit_vertex: oit_vertex,
+	oit_pars_vertex: oit_pars_vertex,
 
 	cube_frag: cube_frag,
 	cube_vert: cube_vert,

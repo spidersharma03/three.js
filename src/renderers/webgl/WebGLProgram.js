@@ -482,6 +482,7 @@ function WebGLProgram( renderer, code, material, parameters ) {
 			parameters.outputEncoding ? getTexelEncodingFunction( "linearToOutputTexel", parameters.outputEncoding ) : '',
 
 			parameters.depthPacking ? "#define DEPTH_PACKING " + material.depthPacking : '',
+			parameters.oit ? '#define USE_OIT' : '',
 
 			'\n'
 
