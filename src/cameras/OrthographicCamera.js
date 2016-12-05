@@ -54,6 +54,29 @@ THREE.OrthographicCamera.prototype = Object.assign( Object.create( THREE.Camera.
 
 	},
 
+
+	setViewOffset: function( fullWidth, fullHeight, x, y, width, height ) {
+
+		this.view = {
+			fullWidth: fullWidth,
+			fullHeight: fullHeight,
+			offsetX: x,
+			offsetY: y,
+			width: width,
+			height: height
+		};
+
+		this.updateProjectionMatrix();
+
+	},
+
+	clearViewOffset: function() {
+
+		this.view = null;
+		this.updateProjectionMatrix();
+
+	},
+
 	toJSON: function ( meta ) {
 
 		var data = THREE.Object3D.prototype.toJSON.call( this, meta );

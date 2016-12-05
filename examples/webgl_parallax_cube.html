@@ -60,11 +60,13 @@
     <script src="js/postprocessing/ShaderPass.js"></script>
 		<script src="js/postprocessing/ProgressiveShadowPass.js"></script>
 		<script src="js/postprocessing/FilteredESM.js"></script>
+		<script src="js/postprocessing/SuperSamplePass.js"></script>
 
 		<script>
 
 		var stats = new Stats();
 		var saoPass;
+		var superSamplePass = new THREE.SuperSamplePass();
 		var progressiveShadowPass;
 		var filteredESM;
 
@@ -239,15 +241,16 @@
 				renderPass = new THREE.RenderPass( scene, camera );
 				var bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
 				bloomPass.clear = false;
-				fxaa = new THREE.ShaderPass( THREE.FXAAShader );
+				fxaa = new THREE.ShaderPass( THREE.CopyShader );
 				smaaPass = new THREE.SMAAPass( window.innerWidth, window.innerHeight );
-				fxaa.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
+				// fxaa.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 
 				fxaa.renderToScreen = true;
 				smaaPass.renderToScreen = true;
 				composer = new THREE.EffectComposer( renderer );
 				composer.addPass( renderPass );
 				// composer.addPass( bloomPass );
+				// composer.addPass( superSamplePass );
 				composer.addPass( fxaa );
 			}
 
@@ -785,7 +788,7 @@
 				// renderer.render(scene, camera);
 				composer.render();
 
-				if ( updateCount < 2 && allLoaded ) {
+				if ( updateCount < 3 && allLoaded ) {
 					probes = [];
 					// boxMesh1.visible = false;
 					for( var i=0; i<numProbes; i++ ) {
