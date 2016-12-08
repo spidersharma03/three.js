@@ -126,11 +126,12 @@ THREE.GlossyMirror = function ( options ) {
 	var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
 
 	this.mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+	this.mirrorRenderTarget.texture.name = "GlossyMirror.mirror";
 
 	this.material = new THREE.ShaderMaterial( THREE.GlossyMirrorShader );
 	this.material.defines = Object.assign( {}, this.material.defines );
 	this.material.uniforms = THREE.UniformsUtils.clone( this.material.uniforms );
-	this.material.uniforms.tReflection.value = this.mirrorRenderTarget;
+	this.material.uniforms.tReflection.value = this.mirrorRenderTarget.texture;
 	this.material.uniforms.reflectionTextureMatrix.value = this.reflectionTextureMatrix;
 
 	if ( ! THREE.Math.isPowerOfTwo( width ) || ! THREE.Math.isPowerOfTwo( height ) ) {
@@ -151,6 +152,8 @@ THREE.GlossyMirror = function ( options ) {
 
 	this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
  					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearesFilter, format: THREE.RGBAFormat } );
+	this.depthRenderTarget.texture.name = "GlossyMirror.depth";
+
 	this.material.uniforms.tReflectionDepth.value = this.depthRenderTarget.texture;
 
 
@@ -158,7 +161,7 @@ THREE.GlossyMirror = function ( options ) {
 
 	this.mirrorHelper = new THREE.MirrorHelper(this);
 
-	this.material.uniforms.tReflection.value = this.mirrorRenderTarget;
+	this.material.uniforms.tReflection.value = this.mirrorRenderTarget.texture;
 	this.material.uniforms.tReflection1.value = this.mirrorHelper.mirrorTextureMipMaps[0].texture;
 	this.material.uniforms.tReflection2.value = this.mirrorHelper.mirrorTextureMipMaps[1].texture;
 	this.material.uniforms.tReflection3.value = this.mirrorHelper.mirrorTextureMipMaps[2].texture;

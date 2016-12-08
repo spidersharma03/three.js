@@ -2599,7 +2599,7 @@ function WebGLRenderer( parameters ) {
 
 				if ( ! warned ) {
 
-					console.warn( "THREE.WebGLRenderer.setTexture2D: don't use render targets as textures. Use their .texture property instead." );
+					console.warn( "THREE.WebGLRenderer.setTexture2D: don't use render targets as textures. Use their .texture property instead.", texture );
 					warned = true;
 
 				}
@@ -2644,7 +2644,7 @@ function WebGLRenderer( parameters ) {
 
 				if ( ! warned ) {
 
-					console.warn( "THREE.WebGLRenderer.setTextureCube: don't use cube render targets as textures. Use their .texture property instead." );
+					console.warn( "THREE.WebGLRenderer.setTextureCube: don't use cube render targets as textures. Use their .texture property instead.", texture );
 					warned = true;
 
 				}

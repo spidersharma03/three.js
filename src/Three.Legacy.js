@@ -1302,7 +1302,7 @@ export var UniformsUtils = {
 
 	merge: function ( uniforms ) {
 
-		console.warn( 'THREE.UniformsUtils.merge() has been deprecated. Use Object.assign() instead.' );
+		//console.warn( 'THREE.UniformsUtils.merge() has been deprecated. Use Object.assign() instead.' );
 
 		var merged = {};
 
@@ -1324,7 +1324,7 @@ export var UniformsUtils = {
 
 	clone: function ( uniforms_src ) {
 
-		console.warn( 'THREE.UniformsUtils.clone() has been deprecated.' );
+		//console.warn( 'THREE.UniformsUtils.clone() has been deprecated.' );
 
 		var uniforms_dst = {};
 
