@@ -51,7 +51,7 @@ function FilteredESM( scene, camera, light ) {
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
-  this.arealightSize = 40;
+  this.arealightSize = 20;
 }
 
 FilteredESM.prototype = {
@@ -65,16 +65,17 @@ FilteredESM.prototype = {
 
   sampleLight: function( light, sampleNumber ) {
     var lightWorldMatrix = light.matrixWorld;
+    sampleNumber = sampleNumber % (this.lightPositionSamples.length);
     if( sampleNumber < this.lightPositionSamples.length ) {
       var sample = this.lightPositionSamples[sampleNumber];
-      this.currentLightSample.x = sample.x * this.arealightSize;
+      this.currentLightSample.x = (0.5 * sample.x - 0.5) * this.arealightSize;
       this.currentLightSample.y = 0.0;
-      this.currentLightSample.z = sample.y * this.arealightSize;
+      this.currentLightSample.z = (0.5*sample.y - 0.5) * this.arealightSize;
     } else {
-      var sample = this.lightPositionSamples[0];
-      this.currentLightSample.x = sample.x * this.arealightSize;
-      this.currentLightSample.y = 0.0;
-      this.currentLightSample.z = sample.y * this.arealightSize;
+      // var sample = this.lightPositionSamples[0];
+      // this.currentLightSample.x = sample.x * this.arealightSize;
+      // this.currentLightSample.y = 0.0;
+      // this.currentLightSample.z = sample.y * this.arealightSize;
     }
     this.currentLightSample.applyMatrix4(lightWorldMatrix);
     this.lightOrientation.set(0, -1, 0);

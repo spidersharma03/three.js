@@ -164,6 +164,9 @@
 			var allLoaded = false;
 			var roughnessMap;
 
+			var poissonSampler = new PoissonDiskGenerator(30, -1, false, false);
+		  var supersamplePositions = this.poissonSampler.generatePoints();
+
 			this.sceneOrtho = new THREE.Scene();
 		  this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -0.001, 1000);
 		  var geometry = new THREE.PlaneGeometry( 2, 2, 1, 1 );
@@ -193,7 +196,7 @@
 				// Uncharted2ToneMapping: 3, // John Hable
 				// CineonToneMapping: 4, // optimized filmic operator by Jim Hejl and Richard Burgess-Dawson
 
-				// renderer.toneMapping = THREE.CineonToneMapping;
+				renderer.toneMapping = THREE.Uncharted2ToneMapping;
 				renderer.toneMappingExposure = 1;
 				renderer.toneMappingWhitePoint = 1;
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -218,7 +221,7 @@
 				loadModels();
 				// camera
 				camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
-				camera.position.set( 0, 75, 120 );
+				camera.position.set( 0, 75, 70 );
 				saoPass = new THREE.SAOPass( scene, camera );
 				progressiveShadowPass = new ProgressiveShadowPass(scene, camera);
 
@@ -242,6 +245,7 @@
 				var bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
 				bloomPass.clear = false;
 				fxaa = new THREE.ShaderPass( THREE.CopyShader );
+				// fxaa.needsSwap = true;
 				smaaPass = new THREE.SMAAPass( window.innerWidth, window.innerHeight );
 				// fxaa.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 
@@ -250,8 +254,8 @@
 				composer = new THREE.EffectComposer( renderer );
 				composer.addPass( renderPass );
 				// composer.addPass( bloomPass );
-				// composer.addPass( superSamplePass );
-				composer.addPass( fxaa );
+				composer.addPass( superSamplePass );
+				// composer.addPass( fxaa );
 			}
 
 			var isMouseDown = false;
@@ -266,6 +270,9 @@
 				saoPass.currentFrameCount = 1;
 				progressiveShadowPass.frameCount = 0;
 				filteredESM.frameCount = 0;
+				superSamplePass.frameCount = 0;
+				temp = 0;
+				frameCount = 0;
 			}
 			function onMouseMove() {
 				if( isMouseDown ) {
@@ -273,6 +280,8 @@
 					saoPass.currentFrameCount = 1;
 					progressiveShadowPass.frameCount = 0;
 					filteredESM.frameCount = 0;
+					superSamplePass.frameCount = 0;
+					temp = 0;
 				}
 			}
 
@@ -679,7 +688,7 @@
 				// scene.add( graniteMesh2 );
 
 			  graniteMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:graniteTexture, bumpMap: graniteTexture, bumpScale:0.01, roughness:0.05, metalness:0.0  } );
-				shMaterial = new THREE.MeshStandardMaterial( { color: 0x881111, metalness:0,map:cupboardTexture, bumpMap: null, bumpScale:0.0, roughness:0.02, metalness:0.0  } );
+				shMaterial = new THREE.MeshStandardMaterial( { color: 0x888888, metalness:0,map:cupboardTexture, bumpMap: null, bumpScale:0.0, roughness:0.02, metalness:0.0  } );
 				handleMaterial = new THREE.MeshStandardMaterial( { color: 0xffffff, map:null, bumpMap: null, bumpScale:0.0, roughness:0.1, metalness: 1.0  } );
 				skirtMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: graniteTexture, bumpScale:0.30, roughness:0.95, metalness: 0.0  } );
 				hobBlackMaterial = new THREE.MeshStandardMaterial( { color: 0x000000, map:null, bumpMap: null, bumpScale:0.0, roughness:0.05, metalness: 0.0  } );
@@ -730,7 +739,7 @@
 				spotLight.angle = Math.PI/2.5;
 				spotLight.penumbra = 0.04;
 				// spotLight.decay = 1;
-				spotLight.position.set( -0, roomHeight/1, -0 );
+				spotLight.position.set( 0, roomHeight/1, 0 );
 				spotLight.target.position.set( 0, 0, 0 );
 				spotLight.castShadow = true;
 				spotLight.shadow.bias = -0.001;
@@ -768,12 +777,36 @@
 				scene.add( cubeCamera );
 
 			}
+			var frameCount = 0;
+			var temp = 0;
+
+			function perturbProjectionMatrix ( sampleNumber ) {
+		    var projectionMatrix = camera.projectionMatrix;
+		    var sample;
+		    var N = sampleNumber;
+		    N = sampleNumber % (supersamplePositions.length);
+		    sample = supersamplePositions[N];
+
+		    var w = window.innerWidth; var h = window.innerHeight;
+		    // sample.x = 0.5*Math.random() - 0.5;
+		    // sample.y = 0.5*Math.random() - 0.5;
+				var scale = 0.5;
+				var x = (2*sample.x-1) * scale;
+				var y = (2*sample.y-1) * scale;
+				var theta = Math.random() * 2 * Math.PI;
+				var temp = x * Math.cos(theta) + Math.sin(theta) * y;
+				y = x * -Math.sin(theta) + Math.cos(theta) * y;
+				x = temp;
+		    camera.setViewOffset(w, h, x, y, w, h);
+		  }
 
 			function render() {
 
+				// if( temp > 100)
+				// 	return;
+				// temp++;
 				// if(!allLoaded)
 					// return;
-
 				saoPass.render( renderer );
 				// progressiveShadowPass.render( renderer );
 				filteredESM.render( renderer );
@@ -784,7 +817,8 @@
 				// renderer.render(this.sceneOrtho, this.orthoCamera);
 
 				// return;
-
+				perturbProjectionMatrix(frameCount);
+				frameCount++;
 				// renderer.render(scene, camera);
 				composer.render();
 
@@ -1012,6 +1046,7 @@
 
 					updateCount++;
 				}
+				// camera.clearViewOffset();
 
 			}
 

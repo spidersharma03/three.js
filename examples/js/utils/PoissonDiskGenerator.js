@@ -193,16 +193,16 @@ PoissonDiskGenerator.prototype = {
 
   createDataTexture: function( SamplePoints ) {
     SamplePoints = this.shuffle(SamplePoints);
-    var floatArray = new Uint16Array(SamplePoints.length * 2);
+    var floatArray = new Float32Array(SamplePoints.length * 2);
     for( var i=0; i<2*(SamplePoints.length); i+=2) {
       floatArray[i]   = SamplePoints[i/2].x - 0.5;
       floatArray[i+1] = SamplePoints[i/2].y - 0.5;
-			floatArray[i]   = THREE.toHalf(SamplePoints[i/2].x - 0.5);
-      floatArray[i+1] = THREE.toHalf(SamplePoints[i/2].y - 0.5);
+			// floatArray[i]   = THREE.toHalf(SamplePoints[i/2].x - 0.5);
+      // floatArray[i+1] = THREE.toHalf(SamplePoints[i/2].y - 0.5);
     }
     var dataTexture = new THREE.DataTexture(floatArray, SamplePoints.length, 1);
     dataTexture.format = THREE.LuminanceAlphaFormat;
-    dataTexture.type = THREE.HalfFloatType;
+    dataTexture.type = THREE.FloatType;
     dataTexture.minFilter = THREE.NearestFilter;
     dataTexture.magFilter = THREE.NearestFilter;
     dataTexture.generateMipmaps = false;
