@@ -358,6 +358,7 @@ function WebGLProgram( renderer, code, material, parameters ) {
 
 			parameters.logarithmicDepthBuffer ? '#define USE_LOGDEPTHBUF' : '',
 			parameters.logarithmicDepthBuffer && renderer.extensions.get( 'EXT_frag_depth' ) ? '#define USE_LOGDEPTHBUF_EXT' : '',
+			parameters.oit ? '#define USE_OIT' : '',
 
 			'uniform mat4 modelMatrix;',
 			'uniform mat4 modelViewMatrix;',

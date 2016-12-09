@@ -7,6 +7,7 @@
 #include <skinning_pars_vertex>
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
+#include <oit_pars_vertex>
 
 void main() {
 
@@ -14,7 +15,6 @@ void main() {
 	#include <uv2_vertex>
 	#include <color_vertex>
 	#include <skinbase_vertex>
-	#include <oit_pars_vertex>
 
 	#ifdef USE_ENVMAP
 

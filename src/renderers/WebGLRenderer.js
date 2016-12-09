@@ -266,8 +266,9 @@ function WebGLRenderer( parameters ) {
 
 	var extensions = new WebGLExtensions( _gl );
 
-	this.transparency = PaintersTransperancy;
+	this.transparency = OrderIndependentTransperancy;
 	this.oitManager = new WebGLOrderIndependentTransparency( _gl );
+	this.oitMode = 2;
 
 	extensions.get( 'WEBGL_depth_texture' );
 	extensions.get( 'OES_texture_float' );
@@ -1134,6 +1135,7 @@ function WebGLRenderer( parameters ) {
 		if ( _this.sortObjects === true ) {
 
 			opaqueObjects.sort( painterSortStable );
+			if( this.transparency === PaintersTransperancy)
 			transparentObjects.sort( reversePainterSortStable );
 
 		}
@@ -1233,20 +1235,8 @@ function WebGLRenderer( parameters ) {
 
 			} else { // Order Independent Transparency
 
-				this.oitManager.renderTransparentObjects( transparentObjects, scene, camera, this );
-				// this.setClearColor( 0x000000, 0);
-				// this.setRenderTarget(this.oitManager.accumulateRT);
-				// this.oitManager.changeBlendState( transparentObjects, this.oitManager.PASS_TYPE_ACCUM );
-				// renderObjects( transparentObjects, scene, camera );
-				//
-				// this.setClearColor( 0xffffff, 1);
-				// this.setRenderTarget(this.oitManager.revealageRT);
-				// this.oitManager.changeBlendState( transparentObjects, this.oitManager.PASS_TYPE_REVEALAGE );
-				// renderObjects( transparentObjects, scene, camera );
-				// this.oitManager.restoreBlendState( transparentObjects );
-				//
-				// this.setRenderTarget(null);
-				// this.oitManager.mergePass();
+				this.oitManager.renderTransparentObjects( transparentObjects, scene, camera, renderObjects, this );
+
 			}
 
 		}
@@ -1827,6 +1817,7 @@ function WebGLRenderer( parameters ) {
 			p_uniforms.set( _gl, _this, 'toneMappingWhitePoint' );
 
 		}
+		p_uniforms.set( _gl, _this, 'oitMode' );
 
 		// skinning uniforms must be set even if material didn't change
 		// auto-setting of texture unit for bone texture must go before other textures

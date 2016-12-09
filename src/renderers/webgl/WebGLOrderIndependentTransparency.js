@@ -6,7 +6,7 @@ import { Vector2 } from '../../math/Vector2'
 import { ShaderMaterial } from '../../materials/ShaderMaterial'
 import { PlaneBufferGeometry } from '../../geometries/PlaneBufferGeometry'
 import { Mesh } from '../../objects/Mesh'
-import { FloatType, HalfFloatType, CustomBlending, AddEquation, OneFactor, ZeroFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor } from '../../constants'
+import { FloatType, HalfFloatType, CustomBlending, AddEquation, SubtractEquation, OneFactor, ZeroFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, PaintersTransperancy, OrderIndependentTransperancy } from '../../constants'
 
 function WebGLOrderIndependentTransparency( gl ) {
   var extensions = new WebGLExtensions( gl );
@@ -30,28 +30,48 @@ function WebGLOrderIndependentTransparency( gl ) {
   this.orthoCamera = new OrthographicCamera(-1, 1, 1, -1, -0.01, 100);
 
   var quad = new PlaneBufferGeometry(2, 2);
-  var material = mergePassMaterial();
-  material.blending = CustomBlending;
-  material.blendEquation = AddEquation;
-  material.blendSrc = OneMinusSrcAlphaFactor;
-  material.blendDst = SrcAlphaFactor;
-  material.blendEquationAlpha = AddEquation;
-  material.blendSrcAlpha = OneMinusSrcAlphaFactor;
-  material.blendDstAlpha = SrcAlphaFactor;
-  material.premultipliedAlpha = true;
+  this.material = this.mergePassMaterial();
+  this.material.blending = CustomBlending;
+  this.material.blendEquation = AddEquation;
+  this.material.blendSrc = OneMinusSrcAlphaFactor;
+  this.material.blendDst = SrcAlphaFactor;
+  this.material.blendEquationAlpha = AddEquation;
+  this.material.blendSrcAlpha = OneMinusSrcAlphaFactor;
+  this.material.blendDstAlpha = SrcAlphaFactor;
+  this.material.transparent = true;
+  this.material.premultipliedAlpha = false;
 
-  material.uniforms["accumulationTexture"] = this.accumulateRT.value;
-  material.uniforms["revealageTexture"] = this.revealageRT.value;
+  this.material.uniforms["accumulationTexture"].value = this.accumulateRT.texture;
+  this.material.uniforms["revealageTexture"].value = this.revealageRT.texture;
 
-  var quadMesh = new Mesh(this.quad, material);
+  var quadMesh = new Mesh( quad, this.material);
   this.scene.add( quadMesh );
 
-  function mergePassMaterial() {
+  this.blendFactorsMap = [];
+  this.PASS_TYPE_ACCUM = 0;
+  this.PASS_TYPE_REVEALAGE = 1;
+  this.BlendStates = [];
+  this.BlendStates[this.PASS_TYPE_ACCUM] = { blending:CustomBlending, blendEquation:AddEquation,
+    blendSrc:OneFactor, blendDst:OneFactor, blendEquationAlpha:AddEquation,
+    blendSrcAlpha:OneFactor, blendDstAlpha:OneFactor, premultipliedAlpha:false };
+  this.BlendStates[this.PASS_TYPE_REVEALAGE] = { blending:CustomBlending, blendEquation:AddEquation,
+    blendSrc:ZeroFactor, blendDst:OneMinusSrcAlphaFactor, blendEquationAlpha:AddEquation,
+    blendSrcAlpha:ZeroFactor, blendDstAlpha:OneMinusSrcAlphaFactor, premultipliedAlpha:false };
+}
+
+WebGLOrderIndependentTransparency.prototype = {
+  constructor: WebGLOrderIndependentTransparency,
+
+  setSize: function(width, height) {
+    this.accumulateRT.setSize( width, height );
+    this.revealageRT.setSize( width, height );
+  },
+
+  mergePassMaterial: function() {
     return new ShaderMaterial( {
       uniforms : {
         "accumulationTexture" : { value : null },
-        "revealageTexture" : { value : null },
-        "mapSize"          : { value : new Vector2() }
+        "revealageTexture" : { value : null }
       },
 
       vertexShader: "varying vec2 vUv;\n\
@@ -63,63 +83,50 @@ function WebGLOrderIndependentTransparency( gl ) {
       fragmentShader: "varying vec2 vUv;\
       uniform sampler2D accumulationTexture;\
       uniform sampler2D revealageTexture;\
-      uniform vec2 mapSize;\
       void main() { \
         vec4 accumulationColor = texture2D( accumulationTexture, vUv );\
-        float revealage = texture2D( revealageTexture, vUv ).r;\
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0 );\
+        vec4 revealage = texture2D( revealageTexture, vUv );\
+        gl_FragColor = pow(vec4(accumulationColor.rgb / max(accumulationColor.a, 1e-5), revealage.r), vec4(0.45));\
       }\
       "
-
     });
-  }
-  this.blendFactorsMap = [];
-  this.PASS_TYPE_ACCUM = 0;
-  this.PASS_TYPE_REVEALAGE = 1;
-  this.PASS_TYPE_COMBINE = 2;
-  this.BlendStates = [];
-  this.BlendStates[this.PASS_TYPE_ACCUM] = { blending:CustomBlending, blendEquation:AddEquation,
-    blendSrc:OneFactor, blendDst:OneFactor, blendEquationAlpha:AddEquation,
-    blendSrcAlpha:OneFactor, blendDstAlpha:OneFactor, premultipliedAlpha:true };
-  this.BlendStates[this.PASS_TYPE_REVEALAGE] = { blending:CustomBlending, blendEquation:AddEquation,
-    blendSrc:ZeroFactor, blendDst:OneMinusSrcAlphaFactor, blendEquationAlpha:AddEquation,
-    blendSrcAlpha:ZeroFactor, blendDstAlpha:OneMinusSrcAlphaFactor, premultipliedAlpha:true };
-  this.BlendStates[this.PASS_TYPE_COMBINE] = { blending:CustomBlending, blendEquation:AddEquation,
-    blendSrc:OneMinusSrcAlphaFactor, blendDst:SrcAlphaFactor, blendEquationAlpha:AddEquation,
-    blendSrcAlpha:OneMinusSrcAlphaFactor, blendDstAlpha:SrcAlphaFactor, premultipliedAlpha:true };
-}
-
-WebGLOrderIndependentTransparency.prototype = {
-  constructor: WebGLOrderIndependentTransparency,
-
-  setSize: function(width, height) {
-    this.accumulateRT.setSize( width, height );
-    this.revealageRT.setSize( width, height );
   },
 
   mergePass: function( renderer ) {
     renderer.render( this.scene, this.orthoCamera );
   },
 
-  renderTransparentObjects: function( transparentObjects, scene, camera, renderer ) {
-    renderer.setClearColor( 0x000000, 0);
+  renderTransparentObjects: function( transparentObjects, scene, camera, renderObjects, renderer ) {
+    // return;
     renderer.setRenderTarget(this.accumulateRT);
+    renderer.oitMode = 0;
     this.changeBlendState( transparentObjects, this.PASS_TYPE_ACCUM );
-    renderer.renderObjects( transparentObjects, scene, camera );
+    renderer.setClearColor( 0xff0000, 0);
+    renderer.clear(true, false, false);
+    renderObjects( transparentObjects, scene, camera );
 
-    renderer.setClearColor( 0xffffff, 1);
     renderer.setRenderTarget(this.revealageRT);
-    this.changeBlendState( transparentObjects, this.oitManager.PASS_TYPE_REVEALAGE );
-    renderer.renderObjects( transparentObjects, scene, camera );
-    this.oitManager.restoreBlendState( transparentObjects );
+    renderer.oitMode = 1;
+    this.changeBlendState( transparentObjects, this.PASS_TYPE_REVEALAGE );
+    renderer.setClearColor( 0xffffff, 1);
+    renderer.clear(true, false, false);
+    renderObjects( transparentObjects, scene, camera );
 
+    this.restoreBlendState( transparentObjects );
+
+    renderer.transparency = PaintersTransperancy; // Required, or else there is an infinite recursion
     renderer.setRenderTarget(null);
-    this.mergePass();
+    var autoClear = renderer.autoClear;
+    renderer.autoClear = false;
+    this.mergePass( renderer );
+    renderer.autoClear = autoClear;
+    renderer.transparency = OrderIndependentTransperancy;
+    renderer.oitMode = 2;
   },
 
   changeBlendState: function( transparentList, passType ) {
-    if( passType === undefined || ( (passType !== this.PASS_TYPE_ACCUM) ||  (passType !== this.PASS_TYPE_REVEALAGE) ) ) {
-      console.log("Invalid passType");
+    if( passType === undefined || ( (passType !== this.PASS_TYPE_ACCUM) &&  (passType !== this.PASS_TYPE_REVEALAGE) ) ) {
+      console.log("WebGLOrderIndependentTransparency::Invalid passType");
       return;
     }
 
@@ -132,7 +139,7 @@ WebGLOrderIndependentTransparency.prototype = {
       var blendState = { blending:material.blending, blendEquation:material.blendEquation,
         blendSrc:material.blendSrc, blendDst:material.blendDst, blendEquationAlpha:material.blendEquationAlpha,
         blendSrcAlpha:material.blendSrcAlpha, blendDstAlpha:material.blendDstAlpha, premultipliedAlpha:material.premultipliedAlpha,
-        needsUpdate:material.needsUpdate
+        needsUpdate:material.needsUpdate, depthWrite: material.depthWrite, depthTest: material.depthTest
       };
       this.blendFactorsMap[material] = blendState;
       material.blending = newBlendState.blending;
@@ -143,6 +150,9 @@ WebGLOrderIndependentTransparency.prototype = {
       material.blendSrcAlpha = newBlendState.blendSrcAlpha;
       material.blendDstAlpha = newBlendState.blendDstAlpha;
       material.premultipliedAlpha = newBlendState.premultipliedAlpha;
+      material.depthWrite = false;
+      material.depthTest  = true;
+
       material.needsUpdate = true;
     }
   },
@@ -162,6 +172,9 @@ WebGLOrderIndependentTransparency.prototype = {
       material.blendDstAlpha = originalBlendState.blendDstAlpha;
       material.premultipliedAlpha = originalBlendState.premultipliedAlpha;
       material.needsUpdate = originalBlendState.needsUpdate;
+      material.depthWrite = originalBlendState.depthWrite;
+      material.depthTest  = originalBlendState.depthTest;
+      material.needsUpdate = true;
     }
   }
 }
