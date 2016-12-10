@@ -619,6 +619,9 @@ function WebGLProgram( renderer, code, material, parameters ) {
 
 		runnable = false;
 
+		console.log( '**VERTEX**', vertexGlsl, "----------------------------------------------------------", gl.getExtension( 'WEBGL_debug_shaders' ).getTranslatedShaderSource( glVertexShader ) );
+		console.log( '**FRAGMENT**', fragmentGlsl, "----------------------------------------------------------", gl.getExtension( 'WEBGL_debug_shaders' ).getTranslatedShaderSource( glFragmentShader ) );
+
 		console.error( 'THREE.WebGLProgram: shader error: ', gl.getError(), 'gl.VALIDATE_STATUS', gl.getProgramParameter( program, gl.VALIDATE_STATUS ), 'gl.getProgramInfoLog', programLog, vertexLog, fragmentLog );
 
 	} else if ( programLog !== '' ) {
