@@ -181,9 +181,9 @@
 				var geometry = new THREE.SphereBufferGeometry( 1, 48, 24 );
 
 				var material = new THREE.MeshStandardMaterial();
-				material.roughness = 0.5 * Math.random() + 0.25;
-				material.metalness = 0;
-				material.color.setHSL( Math.random(), 1.0, 0.3 );
+				material.roughness = 0.75;
+				material.metalness = 1;
+				material.color.setHSL( 0.0, 1.0, 0.3 );
 
 				var mesh = new THREE.Mesh( geometry, material );
 				group.add( mesh );
