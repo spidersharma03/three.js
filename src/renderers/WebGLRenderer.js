@@ -1235,7 +1235,7 @@ function WebGLRenderer( parameters ) {
 
 			} else { // Order Independent Transparency
 
-				this.oitManager.renderTransparentObjects( transparentObjects, scene, camera, renderObjects, this );
+				this.oitManager.renderTransparentObjects( opaqueObjects, transparentObjects, scene, camera, renderObjects, this );
 
 			}
 

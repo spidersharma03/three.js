@@ -23,8 +23,14 @@ function WebGLOrderIndependentTransparency( gl ) {
       console.error("OIT Needs either Float or Half Float texture support");
     }
   }
+  this.opaqueRT     = new WebGLRenderTarget(0, 0, params);
   this.accumulateRT = new WebGLRenderTarget(0, 0, params);
-  this.revealageRT   = new WebGLRenderTarget(0, 0, params);
+  this.revealageRT  = new WebGLRenderTarget(0, 0, params);
+  this.depthTexture = new THREE.DepthTexture();
+
+  this.opaqueRT.depthTexture = this.depthTexture;
+  this.accumulateRT.depthTexture = this.depthTexture;
+  this.revealageRT.depthTexture = this.depthTexture;
 
   this.scene = new Scene();
   this.orthoCamera = new OrthographicCamera(-1, 1, 1, -1, -0.01, 100);
@@ -63,6 +69,7 @@ WebGLOrderIndependentTransparency.prototype = {
   constructor: WebGLOrderIndependentTransparency,
 
   setSize: function(width, height) {
+    this.opaqueRT.setSize( width, height );
     this.accumulateRT.setSize( width, height );
     this.revealageRT.setSize( width, height );
   },
@@ -96,8 +103,12 @@ WebGLOrderIndependentTransparency.prototype = {
     renderer.render( this.scene, this.orthoCamera );
   },
 
-  renderTransparentObjects: function( transparentObjects, scene, camera, renderObjects, renderer ) {
-    // return;
+  renderTransparentObjects: function( opaqueObjects, transparentObjects, scene, camera, renderObjects, renderer ) {
+    renderer.setRenderTarget(this.opaqueRT);
+    renderer.setClearColor( 0x000000, 0);
+    renderer.clear(true, true, false);
+    renderObjects( opaqueObjects, scene, camera );
+
     renderer.setRenderTarget(this.accumulateRT);
     renderer.oitMode = 0;
     this.changeBlendState( transparentObjects, this.PASS_TYPE_ACCUM );

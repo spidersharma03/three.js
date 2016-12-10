@@ -166,7 +166,7 @@
 				controls.enableDamping = true;
 				controls.dampingFactor = 0.25;
 
-				initScene2();
+				initScene1();
 				stats = new Stats();
 				container.appendChild( stats.dom );
 
@@ -178,12 +178,22 @@
 			}
 
 			function initScene2() {
+				var light = new THREE.DirectionalLight( 0xddffdd, 2);
+				light.position.z = 2;
+				light.position.y = 2;
+				light.position.x = 2;
+				scene.add( light );
+
+				var phongMaterial   = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, shininess:50, premultipliedAlpha: true});
+				var lambertMaterial = new THREE.MeshLambertMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
+
 				// var planeGeometry = new THREE.PlaneBufferGeometry(2,2);
-				var planeGeometry = new THREE.TorusGeometry(1, 0.3,20,20);
+				// var planeGeometry = new THREE.TorusGeometry(1, 0.3,20,20);
+				var planeGeometry = new THREE.BoxGeometry(1, 1, 1);
 				var material1 = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
-				var material2 = new THREE.MeshBasicMaterial({color: 0xffff00, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
+				var material2 = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
 				var material3 = new THREE.MeshBasicMaterial({color: 0x0000ff, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
-				var planeMesh1 = new THREE.Mesh( planeGeometry, material1 );
+				var planeMesh1 = new THREE.Mesh( planeGeometry, phongMaterial );
 				var planeMesh2 = new THREE.Mesh( planeGeometry, material2 );
 				var planeMesh3 = new THREE.Mesh( planeGeometry, material3 );
 				planeMesh1.position.z = -1.5;
@@ -204,7 +214,7 @@
 				var planeMesh4 = new THREE.Mesh( planeGeometry, material4 );
 				planeMesh4.rotation.x = Math.PI/2;
 				planeMesh4.position.y = -2;
-				// scene.add(planeMesh4);
+				scene.add(planeMesh4);
 
 				var manager = new THREE.LoadingManager();
 				manager.onProgress = function ( item, loaded, total ) {
@@ -219,7 +229,6 @@
 							child.geometry.center();
 							child.geometry.computeBoundingSphere();
 							scale = 0.2*child.geometry.boundingSphere.radius;
-							var phongMaterial = new THREE.MeshBasicMaterial( { side: THREE.DoubleSide, color: 0xaaffff, transparent: true, opacity: 0.75 } );
 							child.material = phongMaterial;
 							child.material.side = THREE.DoubleSide;
 							child.receiveShadow = true;
@@ -249,7 +258,7 @@
 							child.geometry.center();
 							child.geometry.computeBoundingSphere();
 							scale = 0.2*child.geometry.boundingSphere.radius;
-							var phongMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 5 } );
+							var phongMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 5, transparent:true,opacity:0.8, premultipliedAlpha:true } );
 							child.material = phongMaterial;
 							child.material.side = THREE.DoubleSide;
 							child.receiveShadow = true;
@@ -304,10 +313,11 @@
 				var geometry = new THREE.SphereBufferGeometry( 3, 48, 24 );
 				for ( var i = 0; i < 20; i ++ ) {
 
-					var material = new THREE.MeshLambertMaterial();
-					material.roughness = 1;//0.5 * Math.random() + 0.25;
-					material.metalness = 0;
+					var material = new THREE.MeshStandardMaterial({transparent:true, premultipliedAlpha:true});
+					material.roughness = 0.5 * Math.random() + 0.25;
+					material.metalness = 0.5;
 					material.color.setHSL( Math.random(), 1.0, 0.3 );
+					material.opacity = 0.5 + Math.random() * 0.25;
 
 					var mesh = new THREE.Mesh( geometry, material );
 					mesh.position.x = Math.random() * 4 - 2;

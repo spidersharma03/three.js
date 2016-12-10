@@ -20,6 +20,7 @@ varying vec3 vLightFront;
 #include <shadowmap_pars_vertex>
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
+#include <oit_pars_vertex>
 
 void main() {
 
@@ -37,6 +38,7 @@ void main() {
 	#include <morphtarget_vertex>
 	#include <skinning_vertex>
 	#include <project_vertex>
+	#include <oit_vertex>
 	#include <logdepthbuf_vertex>
 	#include <clipping_planes_vertex>
 

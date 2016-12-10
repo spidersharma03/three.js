@@ -29,6 +29,7 @@ varying vec3 vLightFront;
 #include <specularmap_pars_fragment>
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
+#include <oit_pars_fragment>
 
 void main() {
 
@@ -78,6 +79,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <tonemapping_fragment>
 	#include <encodings_fragment>
+	#include <oit_fragment>
 	#include <fog_fragment>
 
 }
