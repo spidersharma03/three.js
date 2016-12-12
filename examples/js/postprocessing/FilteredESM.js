@@ -51,7 +51,10 @@ function FilteredESM( scene, camera, light ) {
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
-  this.arealightSize = 20;
+  this.arealightSize = 40;
+
+  var poissonSamplerAA = new PoissonDiskGenerator(30, -1, false, false);
+	this.supersamplePositions = poissonSamplerAA.generatePoints();
 }
 
 FilteredESM.prototype = {
@@ -62,6 +65,26 @@ FilteredESM.prototype = {
    return this.shadowBuffer;
    return this.frameCount %2 === 0 ? this.shadowBufferTemp : this.shadowBuffer;
   },
+
+  perturbProjectionMatrix:function ( camera, sampleNumber ) {
+		var projectionMatrix = camera.projectionMatrix;
+		var sample;
+		var N = sampleNumber;
+		N = sampleNumber % (this.supersamplePositions.length);
+		sample = this.supersamplePositions[N];
+
+		var w = window.innerWidth; var h = window.innerHeight;
+		// sample.x = 0.5*Math.random() - 0.5;
+		// sample.y = 0.5*Math.random() - 0.5;
+		var scale = 0.5;
+		var x = (2*sample.x-1) * scale;
+		var y = (2*sample.y-1) * scale;
+		var theta = Math.random() * 2 * Math.PI;
+		var temp = x * Math.cos(theta) + Math.sin(theta) * y;
+		y = x * -Math.sin(theta) + Math.cos(theta) * y;
+		x = temp;
+		this.camera.setViewOffset(w, h, x, y, w, h);
+	},
 
   sampleLight: function( light, sampleNumber ) {
     var lightWorldMatrix = light.matrixWorld;
@@ -86,6 +109,8 @@ FilteredESM.prototype = {
   render: function( renderer ) {
 
     this.frameCount = this.frameCount >= this.lightPositionSamples.length ? this.lightPositionSamples.length : this.frameCount;
+    this.perturbProjectionMatrix(this.camera, this.frameCount);
+    this.perturbProjectionMatrix(this.lightCamera, this.frameCount);
 
     this.frameCount++;
     // 1. Render depth to shadow map
@@ -122,7 +147,10 @@ FilteredESM.prototype = {
 
     renderer.render( this.scene, this.camera, currentShadowWriteTarget, true);
     this.scene.overrideMaterial = null;
-
+    this.camera.view = null;
+    var w = window.innerWidth; var h = window.innerHeight;
+    this.camera.setViewOffset(w, h, 0, 0, w, h);
+    this.lightCamera.setViewOffset(w, h, 0, 0, w, h);
     // this.finalPassMaterial.uniforms["shadowBuffer"].value = this.shadowBuffer;
     // this.finalPassMaterial.uniforms["lightPosition"].value = this.light.position;
     // this.scene.overrideMaterial = this.finalPassMaterial;

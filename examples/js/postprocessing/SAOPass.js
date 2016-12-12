@@ -45,6 +45,9 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.frameCount = 1;
 	this.frameCountIncrement = 7;
 	this.currentFrameCount = 1;
+
+	var poissonSamplerAA = new PoissonDiskGenerator(30, -1, false, false);
+	this.supersamplePositions = poissonSamplerAA.generatePoints();
 };
 
 THREE.SAOPass.prototype = {
@@ -90,10 +93,32 @@ THREE.SAOPass.prototype = {
 		this.saoMaterial.uniforms[ 'cameraInverseProjectionMatrix' ].value.getInverse( camera.projectionMatrix );
 	},
 
+  perturbProjectionMatrix:function ( sampleNumber ) {
+		var projectionMatrix = this.camera.projectionMatrix;
+		var sample;
+		var N = sampleNumber;
+		N = sampleNumber % (this.supersamplePositions.length);
+		sample = this.supersamplePositions[N];
+
+		var w = window.innerWidth; var h = window.innerHeight;
+		// sample.x = 0.5*Math.random() - 0.5;
+		// sample.y = 0.5*Math.random() - 0.5;
+		var scale = 0.5;
+		var x = (2*sample.x-1) * scale;
+		var y = (2*sample.y-1) * scale;
+		var theta = Math.random() * 2 * Math.PI;
+		var temp = x * Math.cos(theta) + Math.sin(theta) * y;
+		y = x * -Math.sin(theta) + Math.cos(theta) * y;
+		x = temp;
+		this.camera.setViewOffset(w, h, x, y, w, h);
+	},
+
 	render: function( renderer ) {
 		var width = window.innerWidth, height = window.innerHeight;
 
 		var depthTexture = null;
+
+		this.perturbProjectionMatrix(this.frameCount-1);
 
 		if ( ! this.saoRenderTarget ) {
 
@@ -146,6 +171,9 @@ THREE.SAOPass.prototype = {
 			renderer.setClearColor( oldClearColor, oldClearAlpha );
 
 		}
+		this.camera.view = null;
+		var w = window.innerWidth; var h = window.innerHeight;
+		this.camera.setViewOffset(w, h, 0, 0, w, h);
 
 		this.saoMaterial.defines[ 'DEPTH_PACKING' ] = depthPackingMode;
 		this.saoMaterial.defines[ 'DEPTH_MIPS' ] = this.depthMIPs ? 1 : 0;

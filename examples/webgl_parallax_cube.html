@@ -282,6 +282,7 @@
 					filteredESM.frameCount = 0;
 					superSamplePass.frameCount = 0;
 					temp = 0;
+					frameCount = 0;
 				}
 			}
 
@@ -805,8 +806,8 @@
 				// if( temp > 100)
 				// 	return;
 				// temp++;
-				// if(!allLoaded)
-					// return;
+				if(!allLoaded)
+					return;
 				saoPass.render( renderer );
 				// progressiveShadowPass.render( renderer );
 				filteredESM.render( renderer );
@@ -817,7 +818,9 @@
 				// renderer.render(this.sceneOrtho, this.orthoCamera);
 
 				// return;
-				perturbProjectionMatrix(frameCount);
+				if(frameCount >= 150)
+					perturbProjectionMatrix(frameCount-150);
+
 				frameCount++;
 				// renderer.render(scene, camera);
 				composer.render();

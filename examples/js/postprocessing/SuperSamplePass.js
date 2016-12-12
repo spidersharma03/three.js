@@ -23,8 +23,16 @@ THREE.SuperSamplePass = function() {
       void main() {\
         vec4 color1 = texture2D(sstextureRT1, vUv);\
         vec4 color2 = texture2D(sstextureRT2, vUv);\
-        vec4 color = color2 * ( frameCount - 1.0 ) + color1;\
-        gl_FragColor = vec4(vec3(color.rgb/frameCount),1.0);\
+        vec4 color;\
+        if(frameCount > 150.0) {\
+          float N = frameCount - 150.0;\
+          color = color2 * ( N - 1.0 ) + color1;\
+          color.rgb /= N;\
+        }\
+        else {\
+          color = color1;\
+        }\
+        gl_FragColor = vec4(color.rgb,1.0);\
       }\
       "
     });
