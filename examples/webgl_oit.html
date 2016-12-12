@@ -184,7 +184,7 @@
 				light.position.x = 2;
 				scene.add( light );
 
-				var phongMaterial   = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, shininess:50, premultipliedAlpha: true});
+				var phongMaterial   = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, shininess:50, premultipliedAlpha: false});
 				var lambertMaterial = new THREE.MeshLambertMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
 
 				// var planeGeometry = new THREE.PlaneBufferGeometry(2,2);
@@ -258,7 +258,7 @@
 							child.geometry.center();
 							child.geometry.computeBoundingSphere();
 							scale = 0.2*child.geometry.boundingSphere.radius;
-							var phongMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xffffff, shininess: 5, transparent:true,opacity:0.8, premultipliedAlpha:true } );
+							var phongMaterial = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0xaaffff, shininess: 5, transparent:false,opacity:0.9, premultipliedAlpha:true } );
 							child.material = phongMaterial;
 							child.material.side = THREE.DoubleSide;
 							child.receiveShadow = true;
@@ -315,9 +315,9 @@
 
 					var material = new THREE.MeshStandardMaterial({transparent:true, premultipliedAlpha:true});
 					material.roughness = 0.5 * Math.random() + 0.25;
-					material.metalness = 0.5;
+					material.metalness = 1.0;
 					material.color.setHSL( Math.random(), 1.0, 0.3 );
-					material.opacity = 0.5 + Math.random() * 0.25;
+					material.opacity = 1;//0.95 + Math.random() * 0.25;
 
 					var mesh = new THREE.Mesh( geometry, material );
 					mesh.position.x = Math.random() * 4 - 2;

@@ -78,7 +78,8 @@ WebGLOrderIndependentTransparency.prototype = {
     return new ShaderMaterial( {
       uniforms : {
         "accumulationTexture" : { value : null },
-        "revealageTexture" : { value : null }
+        "revealageTexture" : { value : null },
+        "opaqueTexture" : { value : null }
       },
 
       vertexShader: "varying vec2 vUv;\n\
@@ -88,12 +89,13 @@ WebGLOrderIndependentTransparency.prototype = {
       }",
 
       fragmentShader: "varying vec2 vUv;\
+      uniform sampler2D opaqueTexture;\
       uniform sampler2D accumulationTexture;\
       uniform sampler2D revealageTexture;\
       void main() { \
         vec4 accumulationColor = texture2D( accumulationTexture, vUv );\
         vec4 revealage = texture2D( revealageTexture, vUv );\
-        gl_FragColor = pow(vec4(accumulationColor.rgb / max(accumulationColor.a, 1e-5), revealage.r), vec4(0.45));\
+        gl_FragColor = pow(vec4(accumulationColor.rgb / max(accumulationColor.a, 1e-5), revealage.r), vec4(1.0));\
       }\
       "
     });
@@ -104,6 +106,9 @@ WebGLOrderIndependentTransparency.prototype = {
   },
 
   renderTransparentObjects: function( opaqueObjects, transparentObjects, scene, camera, renderObjects, renderer ) {
+    if( transparentObjects.length === 0 )
+      return;
+
     renderer.setRenderTarget(this.opaqueRT);
     renderer.setClearColor( 0x000000, 0);
     renderer.clear(true, true, false);
