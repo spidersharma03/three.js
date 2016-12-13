@@ -24,13 +24,15 @@ THREE.SuperSamplePass = function() {
         vec4 color1 = texture2D(sstextureRT1, vUv);\
         vec4 color2 = texture2D(sstextureRT2, vUv);\
         vec4 color;\
-        if(frameCount > 150.0) {\
-          float N = frameCount - 150.0;\
+        const float n1 = 16.0;\
+        const float n2 = 150.0;\
+        if( frameCount > n2 || frameCount < n1 ) {\
+          float N = frameCount < n1 ? frameCount : frameCount - n2;\
           color = color2 * ( N - 1.0 ) + color1;\
           color.rgb /= N;\
         }\
         else {\
-          color = color1;\
+          color = color2;\
         }\
         gl_FragColor = vec4(color.rgb,1.0);\
       }\
@@ -38,8 +40,7 @@ THREE.SuperSamplePass = function() {
     });
   }
   this.scene = new THREE.Scene();
-  this.orthoCamera1 = new THREE.OrthographicCamera(-1, 1, 1, -1, -0.01, 1000);
-  this.orthoCamera2 = new THREE.OrthographicCamera(-1, 1, 1, -1, -0.01, 1000);
+  this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -0.01, 1000);
   this.superSampleMaterial = getSuperSampleMaterial();
   var quad = new THREE.PlaneGeometry( 2, 2 );
   var quadMesh = new THREE.Mesh( quad, this.superSampleMaterial );
@@ -82,32 +83,7 @@ THREE.SuperSamplePass.prototype = Object.assign( Object.create( THREE.Pass.proto
 		// this.sstextureRT.setSize(resx, resy);
 	},
 
-  perturbProjectionMatrix: function( sampleNumber ) {
-    var projectionMatrix = this.orthoCamera1.projectionMatrix;
-    var sample;
-    var N = sampleNumber;
-    N = sampleNumber % (this.supersamplePositions.length);
-    sample = this.supersamplePositions[N];
-
-    var w = window.innerWidth; var h = window.innerHeight;
-    // sample.x = 0.5*Math.random() - 0.5;
-    // sample.y = 0.5*Math.random() - 0.5;
-    var scale = 0.01;
-    // this.orthoCamera1.setViewOffset(w, h, (2*sample.x-1) * scale, (2*sample.y-1) * scale, w, h);
-    // var matrix = this.orthoCamera1.projectionMatrix;
-    // var te = matrix.elements;
-
-		// te[ 0 ] = 2 * w;	te[ 4 ] = 0;	te[ 8 ] = 0;	te[ 12 ] = - x;
-		// te[ 1 ] = 0;	te[ 5 ] = 2 * h;	te[ 9 ] = 0;	te[ 13 ] = - y;
-		// te[ 2 ] = 0;	te[ 6 ] = 0;	te[ 10 ] = - 2 * p;	te[ 14 ] = - z;
-		// te[ 3 ] = 0;	te[ 7 ] = 0;	te[ 11 ] = 0;	te[ 15 ] = 1;
-    // te[8] += sample.x;
-    // te[9] += sample.y;
-    // this.camera.updateProjectionMatrix();
-  },
-
   render: function( renderer, writeBuffer, readBuffer, delta, maskActive ) {
-    // this.perturbProjectionMatrix( this.frameCount );
     this.frameCount++;
     this.oldClearColor.copy( renderer.getClearColor() );
 		this.oldClearAlpha = renderer.getClearAlpha();
@@ -120,20 +96,19 @@ THREE.SuperSamplePass.prototype = Object.assign( Object.create( THREE.Pass.proto
     this.superSampleMaterial.uniforms["frameCount"].value = this.frameCount;
 
     this.scene.overrideMaterial = this.superSampleMaterial;
-    renderer.render( this.scene, this.orthoCamera1, writeBuffer, true );
+    renderer.render( this.scene, this.orthoCamera, writeBuffer, true );
     this.scene.overrideMaterial = null;
 
     this.copyUniforms["tDiffuse"].value = writeBuffer;
     this.copyUniforms["opacity"].value = 1;
     this.scene.overrideMaterial = this.copyMaterial;
-    renderer.render( this.scene, this.orthoCamera2, this.sstextureRT, true );
+    renderer.render( this.scene, this.orthoCamera, this.sstextureRT, true );
     this.copyUniforms["tDiffuse"].value = this.sstextureRT;
-    renderer.render( this.scene, this.orthoCamera2 );
+    renderer.render( this.scene, this.orthoCamera );
     this.scene.overrideMaterial = null;
 
     renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
 		renderer.autoClear = oldAutoClear;
-    // if ( this.orthoCamera1.setViewOffset ) this.orthoCamera1.clearViewOffset();
   }
 
 });

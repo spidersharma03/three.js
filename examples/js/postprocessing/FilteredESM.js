@@ -47,6 +47,7 @@ function FilteredESM( scene, camera, light ) {
   this.frameCount = 0;
   this.poissonSampler = new PoissonDiskGenerator(1500, -1, false, false);
   this.lightPositionSamples = this.poissonSampler.generatePoints();
+  this.lightPositionSamples = this.poissonSampler.shuffle(this.lightPositionSamples);
   this.currentLightSample = new THREE.Vector3();
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();

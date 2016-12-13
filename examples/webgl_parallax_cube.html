@@ -164,7 +164,7 @@
 			var allLoaded = false;
 			var roughnessMap;
 
-			var poissonSampler = new PoissonDiskGenerator(30, -1, false, false);
+			var poissonSampler = new PoissonDiskGenerator(20, -1, false, false);
 		  var supersamplePositions = this.poissonSampler.generatePoints();
 
 			this.sceneOrtho = new THREE.Scene();
@@ -273,6 +273,7 @@
 				superSamplePass.frameCount = 0;
 				temp = 0;
 				frameCount = 0;
+				beginFrame = 0;
 			}
 			function onMouseMove() {
 				if( isMouseDown ) {
@@ -283,6 +284,7 @@
 					superSamplePass.frameCount = 0;
 					temp = 0;
 					frameCount = 0;
+					beginFrame = 0;
 				}
 			}
 
@@ -801,6 +803,8 @@
 		    camera.setViewOffset(w, h, x, y, w, h);
 		  }
 
+			var beginFrame = 0;
+
 			function render() {
 
 				// if( temp > 100)
@@ -818,9 +822,13 @@
 				// renderer.render(this.sceneOrtho, this.orthoCamera);
 
 				// return;
-				if(frameCount >= 150)
-					perturbProjectionMatrix(frameCount-150);
-
+				var n1 = 16;
+				var n2 = 150;
+				if(frameCount >= n2 || frameCount < n1 ) {
+					var N = frameCount < n1 ? frameCount : frameCount - n2;
+					perturbProjectionMatrix(N);
+				}
+				beginFrame++;
 				frameCount++;
 				// renderer.render(scene, camera);
 				composer.render();
