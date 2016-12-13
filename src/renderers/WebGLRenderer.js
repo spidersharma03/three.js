@@ -29,7 +29,7 @@ import { WebGLClipping } from './webgl/WebGLClipping';
 import { Frustum } from '../math/Frustum';
 import { Vector4 } from '../math/Vector4';
 import { Color } from '../math/Color';
-import { WebGLOrderIndependentTransparency } from './webgl/WebGLOrderIndependentTransparency';
+import { WebGLOITManager } from './webgl/WebGLOITManager';
 
 /**
  * @author supereggbert / http://www.paulbrunt.co.uk/
@@ -267,7 +267,7 @@ function WebGLRenderer( parameters ) {
 	var extensions = new WebGLExtensions( _gl );
 
 	this.transparency = OrderIndependentTransperancy;
-	this.oitManager = new WebGLOrderIndependentTransparency( _gl );
+	this.oitManager = new WebGLOITManager( _gl );
 	this.oitMode = 2;
 
 	extensions.get( 'WEBGL_depth_texture' );
@@ -1226,16 +1226,16 @@ function WebGLRenderer( parameters ) {
 			// opaque pass (front-to-back order)
 
 			state.setBlending( NoBlending );
-			renderObjects( opaqueObjects, scene, camera );
 
 			// transparent pass (back-to-front order)
 			if( this.transparency === PaintersTransperancy ) {
+				renderObjects( opaqueObjects, scene, camera );
 
 				renderObjects( transparentObjects, scene, camera );
 
 			} else { // Order Independent Transparency
 
-				this.oitManager.renderTransparentObjects( opaqueObjects, transparentObjects, scene, camera, renderObjects, this );
+				this.oitManager.render( opaqueObjects, transparentObjects, scene, camera, renderObjects, this );
 
 			}
 

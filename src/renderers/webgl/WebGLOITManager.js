@@ -6,26 +6,26 @@ import { Vector2 } from '../../math/Vector2'
 import { ShaderMaterial } from '../../materials/ShaderMaterial'
 import { PlaneBufferGeometry } from '../../geometries/PlaneBufferGeometry'
 import { Mesh } from '../../objects/Mesh'
-import { FloatType, HalfFloatType, CustomBlending, AddEquation, SubtractEquation, OneFactor, ZeroFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, PaintersTransperancy, OrderIndependentTransperancy } from '../../constants'
+import { FloatType, HalfFloatType, UnsignedByteType, CustomBlending, AddEquation, SubtractEquation, OneFactor, ZeroFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, PaintersTransperancy, OrderIndependentTransperancy } from '../../constants'
 
-function WebGLOrderIndependentTransparency( gl ) {
+function WebGLOITManager( gl ) {
   var extensions = new WebGLExtensions( gl );
   var params = { };
-  var floatFragmentTextures = !! extensions.get( 'OES_texture_half_float' );
-  if( floatFragmentTextures ) {
-    params.type = FloatType;
+  var halfFloatFragmentTextures = !! extensions.get( 'OES_texture_half_float' );
+  if( halfFloatFragmentTextures ) {
+    params.type = HalfFloatType;
   }
   else {
-    var halfFloatFragmentTextures = !! extensions.get( 'OES_texture_float' );
-    if( halfFloatFragmentTextures ) {
-      params.type = HalfFloatType;
+    var floatFragmentTextures = !! extensions.get( 'OES_texture_float' );
+    if( floatFragmentTextures ) {
+      params.type = FloatType;
     } else {
       console.error("OIT Needs either Float or Half Float texture support");
     }
   }
-  this.opaqueRT     = new WebGLRenderTarget(0, 0, params);
+  this.opaqueRT     = new WebGLRenderTarget(0, 0, {type: UnsignedByteType});
   this.accumulateRT = new WebGLRenderTarget(0, 0, params);
-  this.revealageRT  = new WebGLRenderTarget(0, 0, params);
+  this.revealageRT  = new WebGLRenderTarget(0, 0, {type: UnsignedByteType});
   this.depthTexture = new THREE.DepthTexture();
 
   this.opaqueRT.depthTexture = this.depthTexture;
@@ -36,45 +36,8 @@ function WebGLOrderIndependentTransparency( gl ) {
   this.orthoCamera = new OrthographicCamera(-1, 1, 1, -1, -0.01, 100);
 
   var quad = new PlaneBufferGeometry(2, 2);
-  this.material = this.mergePassMaterial();
-  this.material.blending = CustomBlending;
-  this.material.blendEquation = AddEquation;
-  this.material.blendSrc = OneMinusSrcAlphaFactor;
-  this.material.blendDst = SrcAlphaFactor;
-  this.material.blendEquationAlpha = AddEquation;
-  this.material.blendSrcAlpha = OneMinusSrcAlphaFactor;
-  this.material.blendDstAlpha = SrcAlphaFactor;
-  this.material.transparent = true;
-  this.material.premultipliedAlpha = false;
 
-  this.material.uniforms["accumulationTexture"].value = this.accumulateRT.texture;
-  this.material.uniforms["revealageTexture"].value = this.revealageRT.texture;
-
-  var quadMesh = new Mesh( quad, this.material);
-  this.scene.add( quadMesh );
-
-  this.blendFactorsMap = [];
-  this.PASS_TYPE_ACCUM = 0;
-  this.PASS_TYPE_REVEALAGE = 1;
-  this.BlendStates = [];
-  this.BlendStates[this.PASS_TYPE_ACCUM] = { blending:CustomBlending, blendEquation:AddEquation,
-    blendSrc:OneFactor, blendDst:OneFactor, blendEquationAlpha:AddEquation,
-    blendSrcAlpha:OneFactor, blendDstAlpha:OneFactor, premultipliedAlpha:false };
-  this.BlendStates[this.PASS_TYPE_REVEALAGE] = { blending:CustomBlending, blendEquation:AddEquation,
-    blendSrc:ZeroFactor, blendDst:OneMinusSrcAlphaFactor, blendEquationAlpha:AddEquation,
-    blendSrcAlpha:ZeroFactor, blendDstAlpha:OneMinusSrcAlphaFactor, premultipliedAlpha:false };
-}
-
-WebGLOrderIndependentTransparency.prototype = {
-  constructor: WebGLOrderIndependentTransparency,
-
-  setSize: function(width, height) {
-    this.opaqueRT.setSize( width, height );
-    this.accumulateRT.setSize( width, height );
-    this.revealageRT.setSize( width, height );
-  },
-
-  mergePassMaterial: function() {
+  function mergePassMaterial() {
     return new ShaderMaterial( {
       uniforms : {
         "accumulationTexture" : { value : null },
@@ -95,22 +58,56 @@ WebGLOrderIndependentTransparency.prototype = {
       void main() { \
         vec4 accumulationColor = texture2D( accumulationTexture, vUv );\
         vec4 revealage = texture2D( revealageTexture, vUv );\
-        gl_FragColor = pow(vec4(accumulationColor.rgb / max(accumulationColor.a, 1e-5), revealage.r), vec4(1.0));\
+        vec4 opaqueColor = texture2D( opaqueTexture, vUv );\
+        vec3 transparentColor = pow(vec3(accumulationColor.rgb / max(accumulationColor.a, 1e-5)), vec3(1.0));\
+        vec3 finalColor = opaqueColor.rgb * revealage.r + (1.0 - revealage.r) * transparentColor;\
+        gl_FragColor = vec4( finalColor, 1.0 );\
       }\
       "
     });
+  };
+
+  this.material = mergePassMaterial();
+
+  this.material.uniforms["accumulationTexture"].value = this.accumulateRT.texture;
+  this.material.uniforms["revealageTexture"].value = this.revealageRT.texture;
+  this.material.uniforms["opaqueTexture"].value = this.opaqueRT.texture;
+
+  var quadMesh = new Mesh( quad, this.material);
+  this.scene.add( quadMesh );
+
+  this.blendFactorsMap = [];
+  this.PASS_TYPE_ACCUM = 0;
+  this.PASS_TYPE_REVEALAGE = 1;
+  this.BlendStates = [];
+  this.BlendStates[this.PASS_TYPE_ACCUM] = { blending:CustomBlending, blendEquation:AddEquation,
+    blendSrc:OneFactor, blendDst:OneFactor, blendEquationAlpha:AddEquation,
+    blendSrcAlpha:OneFactor, blendDstAlpha:OneFactor, premultipliedAlpha:false };
+  this.BlendStates[this.PASS_TYPE_REVEALAGE] = { blending:CustomBlending, blendEquation:AddEquation,
+    blendSrc:ZeroFactor, blendDst:OneMinusSrcAlphaFactor, blendEquationAlpha:AddEquation,
+    blendSrcAlpha:ZeroFactor, blendDstAlpha:OneMinusSrcAlphaFactor, premultipliedAlpha:false };
+}
+
+WebGLOITManager.prototype = {
+  constructor: WebGLOITManager,
+
+  setSize: function(width, height) {
+    this.opaqueRT.setSize( width, height );
+    this.accumulateRT.setSize( width, height );
+    this.revealageRT.setSize( width, height );
   },
 
   mergePass: function( renderer ) {
     renderer.render( this.scene, this.orthoCamera );
   },
 
-  renderTransparentObjects: function( opaqueObjects, transparentObjects, scene, camera, renderObjects, renderer ) {
-    if( transparentObjects.length === 0 )
+  render: function( opaqueObjects, transparentObjects, scene, camera, renderObjects, renderer ) {
+    if( transparentObjects.length === 0 ) {
+      renderObjects( opaqueObjects, scene, camera );
       return;
+    }
 
     renderer.setRenderTarget(this.opaqueRT);
-    renderer.setClearColor( 0x000000, 0);
     renderer.clear(true, true, false);
     renderObjects( opaqueObjects, scene, camera );
 
@@ -195,4 +192,4 @@ WebGLOrderIndependentTransparency.prototype = {
   }
 }
 
-export { WebGLOrderIndependentTransparency };
+export { WebGLOITManager };

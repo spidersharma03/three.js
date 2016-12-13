@@ -166,7 +166,7 @@
 				controls.enableDamping = true;
 				controls.dampingFactor = 0.25;
 
-				initScene1();
+				initScene2();
 				stats = new Stats();
 				container.appendChild( stats.dom );
 
@@ -187,19 +187,19 @@
 				var phongMaterial   = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, shininess:50, premultipliedAlpha: false});
 				var lambertMaterial = new THREE.MeshLambertMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
 
-				// var planeGeometry = new THREE.PlaneBufferGeometry(2,2);
+				var planeGeometry = new THREE.PlaneBufferGeometry(2,2);
 				// var planeGeometry = new THREE.TorusGeometry(1, 0.3,20,20);
-				var planeGeometry = new THREE.BoxGeometry(1, 1, 1);
-				var material1 = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
-				var material2 = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
-				var material3 = new THREE.MeshBasicMaterial({color: 0x0000ff, side: THREE.DoubleSide, opacity: 0.75, transparent: true, premultipliedAlpha: true});
-				var planeMesh1 = new THREE.Mesh( planeGeometry, phongMaterial );
+				// var planeGeometry = new THREE.BoxGeometry(1, 1, 1);
+				var material1 = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide, opacity: 0.25, transparent: true, premultipliedAlpha: false});
+				var material2 = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide, opacity: 0.25, transparent: true, premultipliedAlpha: false});
+				var material3 = new THREE.MeshBasicMaterial({color: 0x0000ff, side: THREE.DoubleSide, opacity: 0.25, transparent: true, premultipliedAlpha: false});
+				var planeMesh1 = new THREE.Mesh( planeGeometry, material1 );
 				var planeMesh2 = new THREE.Mesh( planeGeometry, material2 );
 				var planeMesh3 = new THREE.Mesh( planeGeometry, material3 );
-				planeMesh1.position.z = -1.5;
+				planeMesh1.position.z = 1.5;
 				planeMesh2.position.z = 0;
 				// planeMesh2.position.x = 0.5;
-				planeMesh3.position.z = 1.5;
+				planeMesh3.position.z = -1.5;
 
 				// planeMesh1.rotation.y = -1.5;
 				// planeMesh2.rotation.y = -1.5;
@@ -239,7 +239,7 @@
 					object.scale.x /= scale;
 					object.scale.y /= scale;
 					object.scale.z /= scale;
-					group.add( object );
+					// group.add( object );
 				} );
 				scene.add(group);
 			}
