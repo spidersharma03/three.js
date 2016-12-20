@@ -21,7 +21,7 @@ THREE.ClearPass.prototype = Object.assign( Object.create( THREE.Pass.prototype )
 
 		var oldClearColor, oldClearAlpha;
 
-		if ( this.clearColor ) {
+		if ( this.clearColor !== undefined ) {
 
 			oldClearColor = renderer.getClearColor().getHex();
 			oldClearAlpha = renderer.getClearAlpha();
