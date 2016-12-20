@@ -258,17 +258,17 @@ THREE.UnrealBloomPass.prototype = Object.assign( Object.create( THREE.Pass.proto
 					vec2 invSize = 1.0 / texSize;\
 					float fSigma = float(SIGMA);\
 					float weightSum = gaussianPdf(0.0, fSigma);\
-					vec3 diffuseSum = texture2D( colorTexture, vUv).rgb * weightSum;\
+					vec4 diffuseSum = texture2D( colorTexture, vUv) * weightSum;\
 					for( int i = 1; i < KERNEL_RADIUS; i ++ ) {\
 						float x = float(i);\
 						float w = gaussianPdf(x, fSigma);\
 						vec2 uvOffset = direction * invSize * x;\
-						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset).rgb;\
-						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset).rgb;\
+						vec4 sample1 = texture2D( colorTexture, vUv + uvOffset);\
+						vec4 sample2 = texture2D( colorTexture, vUv - uvOffset);\
 						diffuseSum += (sample1 + sample2) * w;\
 						weightSum += 2.0 * w;\
 					}\
-					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);\n\
+					gl_FragColor = diffuseSum/weightSum;\n\
 				}"
 		} );
 	},
