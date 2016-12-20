@@ -48,6 +48,8 @@
 		<script src="js/libs/dat.gui.min.js"></script>
 
 		<script src="js/postprocessing/EffectComposer.js"></script>
+		<script src="js/postprocessing/ClearPass.js"></script>
+		<script src="js/postprocessing/TexturePass.js"></script>
 		<script src="js/postprocessing/RenderPass.js"></script>
 		<script src="js/postprocessing/MaskPass.js"></script>
 		<script src="js/postprocessing/ShaderPass.js"></script>
@@ -70,8 +72,14 @@
 
 			var container, stats;
 			var params = {
+				clear: true,
+				clearColor: 'white',
+				clearAlpha: 1.0,
+
+				texture: true,
+				textureOpacity: 1.0,
+
 				projection: 'normal',
-				background: false,
 				exposure: 1.0,
 				bloomStrength: 1.5,
 				bloomThreshold: 0.85,
@@ -79,6 +87,7 @@
 			};
 			var camera, scene, renderer, controls, objects = [];
 			var effectFXAA, bloomPass, renderScene;
+			var clearPass, texturePass;
 			var hdrCubeMap;
 			var composer;
 			var standardMaterial;
@@ -163,22 +172,36 @@
 				renderer.shadowMap.enabled = true;
 				container.appendChild( renderer.domElement );
 
-				renderScene = new THREE.RenderPass(scene, camera);
+				composer = new THREE.EffectComposer(renderer);
+				
+				clearPass = new THREE.ClearPass( params.clearColor, params.clearAlpha );
+				composer.addPass( clearPass );
 
-				// renderScene.clear = true;
+				texturePass = new THREE.TexturePass();
+				composer.addPass( texturePass );
+
+				var textureLoader = new THREE.TextureLoader();
+				textureLoader.load( "textures/hardwood2_diffuse.jpg", function( map ) {
+					texturePass.map = map;
+				});
+	
+				renderScene = new THREE.RenderPass(scene, camera);
+				renderScene.clear = false;
+				composer.addPass(renderScene);
+
 				effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
 				effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
+				composer.addPass(effectFXAA);
+
+				bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
+				composer.addPass(bloomPass);
 
 				var copyShader = new THREE.ShaderPass(THREE.CopyShader);
 				copyShader.renderToScreen = true;
-
-				bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
-				composer = new THREE.EffectComposer(renderer);
-				composer.setSize(window.innerWidth, window.innerHeight);
-				composer.addPass(renderScene);
-				composer.addPass(effectFXAA);
-				composer.addPass(bloomPass);
 				composer.addPass(copyShader);
+
+				composer.setSize(window.innerWidth, window.innerHeight);
+
 				//renderer.toneMapping = THREE.ReinhardToneMapping;
 				renderer.gammaInput = true;
 				renderer.gammaOutput = true;
@@ -193,6 +216,13 @@
 				window.addEventListener( 'resize', onWindowResize, false );
 
 				var gui = new dat.GUI();
+
+				gui.add( params, "clear" );
+				gui.add( params, "clearColor", [ 'black', 'white', 'blue', 'green', 'red' ] );
+				gui.add( params, "clearAlpha", 0, 1 );
+
+				gui.add( params, "texture" );
+				gui.add( params, "textureOpacity", 0, 1 );
 
 				gui.add( params, 'exposure', 0.1, 2 );
 				gui.add( params, 'bloomThreshold', 0.0, 1.0 ).onChange( function(value) {
@@ -234,6 +264,23 @@
 			}
 
 			function render() {
+
+
+				var newColor = clearPass.clearColor;
+				switch( params.clearColor ) {
+					case 'blue': newColor = 0x0000ff; break;
+					case 'red': newColor = 0xff0000; break;
+					case 'green': newColor = 0x00ff00; break;
+					case 'white': newColor = 0xffffff; break;
+					case 'black': newColor = 0x000000; break;
+				}
+
+				clearPass.enabled = params.clear;
+				clearPass.clearColor = newColor;
+				clearPass.clearAlpha = params.clearAlpha;
+
+				texturePass.enabled = params.texture;
+				texturePass.opacity = params.textureOpacity;
 
 				if ( standardMaterial !== undefined ) {
 
