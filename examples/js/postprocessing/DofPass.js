@@ -41,7 +41,9 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
 	this.scene.add( this.quad );
 
-	this.focalDepth = 10.0;
+	this.focalDistance = 10.0;
+	this.cameraNear = 0.1;
+	this.cameraFar = 100;
 	this.NearFarBlurScale = new THREE.Vector2(0.1, 0.5);
 
 	this.downSamplingMaterial = this.getColorDownSamplingMaterial();
@@ -49,21 +51,19 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 	this.cocMaterial = this.getCoCMaterial();
 	this.cocMaterial.uniforms[ "NearFarBlurScale" ].value = this.NearFarBlurScale;
 	this.cocMaterial.uniforms[ "cameraNearFar" ].value = new THREE.Vector2(renderCamera.near, renderCamera.far);
-	this.cocMaterial.uniforms[ "focalDepth" ].value = this.focalDepth;
+	this.cocMaterial.uniforms[ "focalDistance" ].value = this.focalDistance;
 
 	this.dilateNearCocMaterial = this.getDilateNearCocMaterial();
 	this.dilateNearCocMaterial.uniforms[ "NearFarBlurScale" ].value = this.NearFarBlurScale;
-	this.dilateNearCocMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(this.downSampleRes.x, this.downSampleRes.y);
 
 	this.dofBlurType = 1;
 	this.dofBlurMaterial = (this.dofBlurType === 0) ? this.getDofBlurCircularMaterial() : this.getDofBlurSeperableMaterial();
-	this.dofBlurMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(this.downSampleRes.x, this.downSampleRes.y);
+
 
 	this.dofCombineMaterial = this.getDofCombineMaterial();
 	this.dofCombineMaterial.uniforms[ "NearFarBlurScale" ].value = this.NearFarBlurScale;
-	this.dofCombineMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(this.downSampleRes.x, this.downSampleRes.y);
 	this.dofCombineMaterial.uniforms[ "cameraNearFar" ].value = new THREE.Vector2(renderCamera.near, renderCamera.far);
-	this.dofCombineMaterial.uniforms[ "focalDepth" ].value = this.focalDepth;
+	this.dofCombineMaterial.uniforms[ "focalDistance" ].value = this.focalDistance;
 
 	if ( THREE.CopyShader === undefined )
 		console.error( "THREE.DofPass relies on THREE.CopyShader" );
@@ -93,8 +93,11 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 	constructor: THREE.DofPass,
 
 	setSize: function(width, height) {
-		var resx = Math.round(width/2);
-		var resy = Math.round(height/2);
+		this.downSampleRes = new THREE.Vector2(Math.round(width/2), Math.round(height/2));
+
+
+		var resx = this.downSampleRes.x;
+		var resy = this.downSampleRes.y;
 
 		this.renderTargetColorDownSample.setSize( resx, resy );
 		this.renderTargetCoCDownSample.setSize( resx, resy );
@@ -103,22 +106,27 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		this.renderTargetDofBlurTemp.setSize( resx, resy );
 		this.renderTargetDofCombine.setSize( width, height );
 		this.depthRenderTarget.setSize( width, height );
-		this.dofBlurMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(resx, resy);
 	},
 
 	changeBlurType: function(blurType) {
 		this.dofBlurType = blurType;
-		this.dofBlurMaterial = (this.dofBlurType === 0) ? this.getDofBlurCircularMaterial() : this.getDofBlurSeperableMaterial();
-		this.dofBlurMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(this.downSampleRes.x, this.downSampleRes.y);
-	},
-
-	setFocalDepth: function(focalDepth) {
-		this.focalDepth = focalDepth;
-		this.cocMaterial.uniforms[ "focalDepth" ].value = focalDepth;
-		this.dofCombineMaterial.uniforms[ "focalDepth" ].value = focalDepth;
-	},
+		this.dofBlurMaterial = (this.dofBlurType === 0) ? this.getDofBlurCircularMaterial() : this.getDofBlurSeperableMaterial();	},
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
+
+		
+		this.dilateNearCocMaterial.uniforms[ "texSize" ].value = this.downSampleRes;
+		this.dofBlurMaterial.uniforms[ "texSize" ].value = this.downSampleRes;
+		this.dofCombineMaterial.uniforms[ "texSize" ].value = this.downSampleRes;
+
+		this.cocMaterial.uniforms[ "focalDistance" ].value = this.focalDistance;
+		this.cocMaterial.uniforms[ "cameraNearFar" ].value.x = this.cameraNear;
+		this.cocMaterial.uniforms[ "cameraNearFar" ].value.y = this.cameraFar;
+
+		this.dofCombineMaterial.uniforms[ "focalDistance" ].value = this.focalDistance;
+		this.dofCombineMaterial.uniforms[ "cameraNearFar" ].value.x = this.cameraNear;
+		this.dofCombineMaterial.uniforms[ "cameraNearFar" ].value.y = this.cameraFar;
+
 
 		this.oldClearColor.copy( renderer.getClearColor() );
 		this.oldClearAlpha = renderer.getClearAlpha();
@@ -224,7 +232,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				"depthTexture": { value: null },
 				"NearFarBlurScale": { value: new THREE.Vector2( 0.5, 0.5 ) },
 				"cameraNearFar": { value: new THREE.Vector2( 0.1, 100 ) },
-				"focalDepth": { value: 1.0 }
+				"focalDistance": { value: 1.0 }
 			},
 
 			vertexShader:
@@ -241,7 +249,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				uniform sampler2D depthTexture;\n\
 				uniform vec2 NearFarBlurScale;\
 				uniform vec2 cameraNearFar;\
-				uniform float focalDepth;\
+				uniform float focalDistance;\
 				const float MAXIMUM_BLUR_SIZE = 8.0;\
 				\
 				float computeCoc() {\
@@ -249,7 +257,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 					if(packDepth.x == 1.0) return max(NearFarBlurScale.x, NearFarBlurScale.y);\
 						float depth = unpackRGBAToDepth(packDepth);\
 						depth = -perspectiveDepthToViewZ(depth, cameraNearFar.x, cameraNearFar.y);\
-						float coc = (depth - focalDepth)/depth;\
+						float coc = (depth - focalDistance)/depth;\
 					return (coc > 0.0 ? coc * NearFarBlurScale.y : coc * NearFarBlurScale.x);\
 				}\
 				\
@@ -496,7 +504,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				"NearFarBlurScale": { value: new THREE.Vector2( 0.5, 0.5 ) },
 				"texSize": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
 				"cameraNearFar": { value: new THREE.Vector2( 0.1, 100 ) },
-				"focalDepth" : {value: 20.0 }
+				"focalDistance" : {value: 20.0 }
 			},
 
 			vertexShader:
@@ -517,14 +525,14 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				uniform vec2 texSize;\
 				uniform vec2 NearFarBlurScale;\
 				uniform vec2 cameraNearFar;\
-				uniform float focalDepth;\
+				uniform float focalDistance;\
 				\
 				float computeCoc() {\
 					vec4 packedDepth = texture2D(depthTexture, vUv);\
 					if(packedDepth.x == 1.0) return max(NearFarBlurScale.x, NearFarBlurScale.y);\
 						float depth = unpackRGBAToDepth(packedDepth);\
 						depth = -perspectiveDepthToViewZ(depth, cameraNearFar.x, cameraNearFar.y);\
-						float coc = (depth - focalDepth)/depth;\
+						float coc = (depth - focalDistance)/depth;\
 					return (coc > 0.0 ? coc * NearFarBlurScale.y : coc * NearFarBlurScale.x);\
 				}\
 				\

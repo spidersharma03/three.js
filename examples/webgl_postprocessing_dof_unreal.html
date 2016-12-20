@@ -176,7 +176,7 @@
 				time += 0.04;
 				time = time > 1.0 ? 1.0 : time;
 				var currentFocalDistance = prevFocalDistance * ( 1.0 - time) + focalDistance * time;
-				dofPass.setFocalDepth(currentFocalDistance);
+				dofPass.focalDistance = currentFocalDistance;
 			}
 
 			function init() {
