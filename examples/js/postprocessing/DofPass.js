@@ -12,8 +12,12 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 
 	var pars = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, type: THREE.HalfFloatType, format: THREE.RGBAFormat };
 
-	this.renderTargetDownSample = new THREE.WebGLRenderTarget( this.downSampleRes.x, this.downSampleRes.y, pars );
-	this.renderTargetDownSample.texture.generateMipmaps = false;
+	this.renderTargetColorDownSample = new THREE.WebGLRenderTarget( this.downSampleRes.x, this.downSampleRes.y, pars );
+	this.renderTargetColorDownSample.texture.generateMipmaps = false;
+
+	this.renderTargetCoCDownSample = new THREE.WebGLRenderTarget( this.downSampleRes.x, this.downSampleRes.y, pars );
+	this.renderTargetCoCDownSample.texture.generateMipmaps = false;
+
 	this.renderTargetBlurTemp = new THREE.WebGLRenderTarget( this.downSampleRes.x, this.downSampleRes.y, pars );
 	this.renderTargetBlurTemp.texture.generateMipmaps = false;
 
@@ -40,12 +44,14 @@ THREE.DofPass = function (resolution, renderScene, renderCamera) {
 	this.focalDepth = 10.0;
 	this.NearFarBlurScale = new THREE.Vector2(0.1, 0.5);
 
-	this.downSamplingMaterial = this.getDownSamplingMaterial();
-	this.downSamplingMaterial.uniforms[ "NearFarBlurScale" ].value = this.NearFarBlurScale;
-	this.downSamplingMaterial.uniforms[ "cameraNearFar" ].value = new THREE.Vector2(renderCamera.near, renderCamera.far);
-	this.downSamplingMaterial.uniforms[ "focalDepth" ].value = this.focalDepth;
+	this.downSamplingMaterial = this.getColorDownSamplingMaterial();
 
-	this.dilateNearCocMaterial = this.getExpandNearCocMaterial();
+	this.cocMaterial = this.getCoCMaterial();
+	this.cocMaterial.uniforms[ "NearFarBlurScale" ].value = this.NearFarBlurScale;
+	this.cocMaterial.uniforms[ "cameraNearFar" ].value = new THREE.Vector2(renderCamera.near, renderCamera.far);
+	this.cocMaterial.uniforms[ "focalDepth" ].value = this.focalDepth;
+
+	this.dilateNearCocMaterial = this.getDilateNearCocMaterial();
 	this.dilateNearCocMaterial.uniforms[ "NearFarBlurScale" ].value = this.NearFarBlurScale;
 	this.dilateNearCocMaterial.uniforms[ "texSize" ].value = new THREE.Vector2(this.downSampleRes.x, this.downSampleRes.y);
 
@@ -90,7 +96,8 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		var resx = Math.round(width/2);
 		var resy = Math.round(height/2);
 
-		this.renderTargetDownSample.setSize( resx, resy );
+		this.renderTargetColorDownSample.setSize( resx, resy );
+		this.renderTargetCoCDownSample.setSize( resx, resy );
 		this.renderTargetBlurTemp.setSize( resx, resy );
 		this.renderTargetDofBlur.setSize( resx, resy );
 		this.renderTargetDofBlurTemp.setSize( resx, resy );
@@ -107,7 +114,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 
 	setFocalDepth: function(focalDepth) {
 		this.focalDepth = focalDepth;
-		this.downSamplingMaterial.uniforms[ "focalDepth" ].value = focalDepth;
+		this.cocMaterial.uniforms[ "focalDepth" ].value = focalDepth;
 		this.dofCombineMaterial.uniforms[ "focalDepth" ].value = focalDepth;
 	},
 
@@ -129,30 +136,34 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		// 1. Downsample the Original texture, and store coc in the alpha channel
 		this.quad.material = this.downSamplingMaterial;
 		this.downSamplingMaterial.uniforms[ "colorTexture" ].value = readBuffer.texture;
-		this.downSamplingMaterial.uniforms[ "depthTexture" ].value = this.depthRenderTarget.texture;
-		renderer.render( this.scene, this.camera, this.renderTargetDownSample );
+		renderer.render( this.scene, this.camera, this.renderTargetColorDownSample );
+
+		this.quad.material = this.cocMaterial;
+		this.cocMaterial.uniforms[ "depthTexture" ].value = this.depthRenderTarget.texture;
+		renderer.render( this.scene, this.camera, this.renderTargetCoCDownSample );
 
 		// 2. Dilate/Blur Near field coc
 		this.quad.material = this.dilateNearCocMaterial;
-		this.dilateNearCocMaterial.uniforms[ "colorTexture" ].value = this.renderTargetDownSample.texture;
+		this.dilateNearCocMaterial.uniforms[ "cocTexture" ].value = this.renderTargetCoCDownSample.texture;
 		this.dilateNearCocMaterial.uniforms[ "depthTexture" ].value = this.depthRenderTarget.texture;
 		this.dilateNearCocMaterial.uniforms[ "direction" ].value = new THREE.Vector2(1, 0);
 		renderer.render( this.scene, this.camera, this.renderTargetBlurTemp );
-		this.dilateNearCocMaterial.uniforms[ "colorTexture" ].value = this.renderTargetBlurTemp.texture;
+		this.dilateNearCocMaterial.uniforms[ "cocTexture" ].value = this.renderTargetBlurTemp.texture;
 		this.dilateNearCocMaterial.uniforms[ "direction" ].value = new THREE.Vector2(0, 1);
-		renderer.render( this.scene, this.camera, this.renderTargetDownSample );
+		renderer.render( this.scene, this.camera, this.renderTargetCoCDownSample );
 
 		// 3. Blur Dof
 		if( this.dofBlurType === 0 ){
 			this.quad.material = this.dofBlurMaterial;
+			this.dofBlurMaterial.uniforms[ "cocTexture" ].value = this.renderTargetCoCDownSample.texture;
 			this.dofBlurMaterial.uniforms[ "colorTexture" ].value = this.renderTargetDownSample.texture;
 			this.dofBlurMaterial.uniforms[ "depthTexture" ].value = this.depthRenderTarget.texture;
 			renderer.render( this.scene, this.camera, this.renderTargetDofBlurTemp );
 		}
 		else {
 			this.quad.material = this.dofBlurMaterial;
-			this.dofBlurMaterial.uniforms[ "cocTexture" ].value = this.renderTargetDownSample.texture;
-			this.dofBlurMaterial.uniforms[ "colorTexture" ].value = this.renderTargetDownSample.texture;
+			this.dofBlurMaterial.uniforms[ "cocTexture" ].value = this.renderTargetCoCDownSample.texture;
+			this.dofBlurMaterial.uniforms[ "colorTexture" ].value = this.renderTargetColorDownSample.texture;
 			this.dofBlurMaterial.uniforms[ "direction" ].value = new THREE.Vector2(1, 0);
 			renderer.render( this.scene, this.camera, this.renderTargetDofBlur );
 			this.dofBlurMaterial.uniforms[ "colorTexture" ].value = this.renderTargetDofBlur.texture;
@@ -161,10 +172,10 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		}
 		// 4. Dof Combine
 		this.quad.material = this.dofCombineMaterial;
+		this.dofCombineMaterial.uniforms[ "cocTexture" ].value = this.renderTargetCoCDownSample.texture;
 		this.dofCombineMaterial.uniforms[ "colorTexture" ].value = readBuffer.texture;
 		this.dofCombineMaterial.uniforms[ "depthTexture" ].value = this.depthRenderTarget.texture;
 		this.dofCombineMaterial.uniforms[ "blurTexture" ].value = this.renderTargetDofBlurTemp.texture;
-		this.dofCombineMaterial.uniforms[ "cocTexture" ].value = this.renderTargetDownSample.texture;
 		renderer.render( this.scene, this.camera, this.renderTargetDofCombine );
 
 		// Copy Pass
@@ -178,12 +189,38 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		renderer.autoClear = oldAutoClear;
 	},
 
-	getDownSamplingMaterial: function() {
+	getColorDownSamplingMaterial: function() {
 
 		return new THREE.ShaderMaterial( {
 
 			uniforms: {
 				"colorTexture": { value: null },
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"#include <common>\n\
+				#include <packing>\n\
+				varying vec2 vUv;\n\
+				uniform sampler2D colorTexture;\n\
+				\
+				void main() {\n\
+					gl_FragColor = texture2D(colorTexture, vUv);\n\
+				}"
+		} );
+	},
+
+	getCoCMaterial: function() {
+
+		return new THREE.ShaderMaterial( {
+
+			uniforms: {
 				"depthTexture": { value: null },
 				"NearFarBlurScale": { value: new THREE.Vector2( 0.5, 0.5 ) },
 				"cameraNearFar": { value: new THREE.Vector2( 0.1, 100 ) },
@@ -201,7 +238,6 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				"#include <common>\n\
 				#include <packing>\n\
 				varying vec2 vUv;\n\
-				uniform sampler2D colorTexture;\n\
 				uniform sampler2D depthTexture;\n\
 				uniform vec2 NearFarBlurScale;\
 				uniform vec2 cameraNearFar;\
@@ -218,17 +254,18 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				}\
 				\
 				void main() {\n\
-					gl_FragColor = vec4(texture2D(colorTexture, vUv).rgb, computeCoc());\n\
+					gl_FragColor = vec4(0.0, 0.0, 0.0, computeCoc());\n\
 				}"
 		} );
 	},
 
-	getExpandNearCocMaterial: function() {
+
+	getDilateNearCocMaterial: function() {
 
 		return new THREE.ShaderMaterial( {
 
 			uniforms: {
-				"colorTexture": { value: null },
+				"cocTexture": { value: null },
 				"depthTexture": { value: null },
 				"NearFarBlurScale": { value: new THREE.Vector2( 0.5, 0.5 ) },
 				"texSize": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
@@ -245,7 +282,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 			fragmentShader:
 				"#include <common>\n\
 				varying vec2 vUv;\n\
-				uniform sampler2D colorTexture;\n\
+				uniform sampler2D cocTexture;\n\
 				uniform sampler2D depthTexture;\n\
 				uniform vec2 direction;\
 				uniform vec2 texSize;\
@@ -255,17 +292,17 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				float expandNear(const in vec2 offset, const in bool isBackground) {\
 					float coc = 0.0;\
 					vec2 sampleOffsets = MAXIMUM_BLUR_SIZE * offset / 5.0;\
-					float coc0 = texture2D(colorTexture, vUv).a;\
-					float coc1 = texture2D(colorTexture, vUv - 5.0 * sampleOffsets).a;\
-					float coc2 = texture2D(colorTexture, vUv - 4.0 * sampleOffsets).a;\
-					float coc3 = texture2D(colorTexture, vUv - 3.0 * sampleOffsets).a;\
-					float coc4 = texture2D(colorTexture, vUv - 2.0 * sampleOffsets).a;\
-					float coc5 = texture2D(colorTexture, vUv - 1.0 * sampleOffsets).a;\
-					float coc6 = texture2D(colorTexture, vUv + 1.0 * sampleOffsets).a;\
-					float coc7 = texture2D(colorTexture, vUv + 2.0 * sampleOffsets).a;\
-					float coc8 = texture2D(colorTexture, vUv + 3.0 * sampleOffsets).a;\
-					float coc9 = texture2D(colorTexture, vUv + 4.0 * sampleOffsets).a;\
-					float coc10 = texture2D(colorTexture, vUv + 5.0 * sampleOffsets).a;\
+					float coc0 = texture2D(cocTexture, vUv).a;\
+					float coc1 = texture2D(cocTexture, vUv - 5.0 * sampleOffsets).a;\
+					float coc2 = texture2D(cocTexture, vUv - 4.0 * sampleOffsets).a;\
+					float coc3 = texture2D(cocTexture, vUv - 3.0 * sampleOffsets).a;\
+					float coc4 = texture2D(cocTexture, vUv - 2.0 * sampleOffsets).a;\
+					float coc5 = texture2D(cocTexture, vUv - 1.0 * sampleOffsets).a;\
+					float coc6 = texture2D(cocTexture, vUv + 1.0 * sampleOffsets).a;\
+					float coc7 = texture2D(cocTexture, vUv + 2.0 * sampleOffsets).a;\
+					float coc8 = texture2D(cocTexture, vUv + 3.0 * sampleOffsets).a;\
+					float coc9 = texture2D(cocTexture, vUv + 4.0 * sampleOffsets).a;\
+					float coc10 = texture2D(cocTexture, vUv + 5.0 * sampleOffsets).a;\
 						\
 					if(isBackground){\
 						coc = abs(coc0) * 0.095474 + \
@@ -295,7 +332,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				void main() {\n\
 					vec2 offset = direction/texSize;\
 					float coc = expandNear(offset, texture2D(depthTexture, vUv).x == 1.0);\
-					gl_FragColor = vec4(texture2D(colorTexture, vUv).rgb, coc);\n\
+					gl_FragColor = vec4(0.0, 0.0, 0.0, coc);\n\
 				}"
 		} );
 	},
@@ -306,6 +343,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 
 			uniforms: {
 				"colorTexture": { value: null },
+				"cocTexture": { value: null },
 				"depthTexture": { value: null },
 				"texSize": 				{ value: new THREE.Vector2( 0.5, 0.5 ) },
 			},
@@ -321,6 +359,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 				"#include <common>\n\
 				varying vec2 vUv;\n\
 				uniform sampler2D colorTexture;\n\
+				uniform sampler2D cocTexture;\n\
 				uniform sampler2D depthTexture;\n\
 				uniform vec2 texSize;\
 				const float MAXIMUM_BLUR_SIZE = 8.0;\
@@ -346,9 +385,9 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 					poisson_disk_samples[14] = vec2(-0.526991665882, -0.193690188118);\
 					poisson_disk_samples[15] = vec2(-0.051789270667, -0.935374050821);\
 						\
-					vec4 color = texture2D(colorTexture, vUv);\
+					vec4 cocr = texture2D(cocTexture, vUv);\
 						\
-					float blurDist = MAXIMUM_BLUR_SIZE * color.a;\
+					float blurDist = MAXIMUM_BLUR_SIZE * coc.a;\
 						\
 					float rnd = PI2 * rand( vUv );\
 					float costheta = cos(rnd);\
@@ -414,15 +453,15 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 					return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;\
 				}\
 				\
-				vec3 weightedBlur() { \
+				vec4 weightedBlur() { \
 					float cocIn = texture2D(cocTexture, vUv).a;\
 					float kernelRadius = MAXIMUM_BLUR_SIZE * cocIn;\
 					vec2 invSize = 1.0 / texSize;\
 					cocIn *= cocIn * cocIn;\
 					float centreSpaceWeight = normpdf(0.0, SIGMA) * abs(cocIn);\
 					float weightSum = centreSpaceWeight;\
-					vec3 centreSample = texture2D(colorTexture, vUv).rgb;\
-					vec3 diffuseSum = centreSample * weightSum;\
+					vec4 centreSample = texture2D(colorTexture, vUv);\
+					vec4 diffuseSum = centreSample * weightSum;\
 					vec2 delta = invSize * kernelRadius/float(NUM_SAMPLES);\
 					for( int i = 1; i <= NUM_SAMPLES; i ++ ) {\
 							float spaceWeight = normpdf(float(i), SIGMA);\
@@ -433,14 +472,14 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 							float rightCocWeight = abs(texture2D( cocTexture, vUv + texcoord).a);\
 							leftCocWeight *= leftCocWeight * leftCocWeight;\
 							rightCocWeight *= rightCocWeight * rightCocWeight;\
-							diffuseSum += ( (leftSample.rgb * leftCocWeight) + (rightSample.rgb * rightCocWeight) ) * spaceWeight;\
+							diffuseSum += ( (leftSample * leftCocWeight) + (rightSample * rightCocWeight) ) * spaceWeight;\
 							weightSum += (spaceWeight * (leftCocWeight + rightCocWeight));\
 					}\
 				  return diffuseSum/weightSum;\
 				}\
 				\
 				void main() {\n\
-					gl_FragColor = vec4(weightedBlur(), 1.0);\n\
+					gl_FragColor = weightedBlur();\n\
 				}"
 		} );
 	},
@@ -498,8 +537,8 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 					blur /= 5.0;\
 					float coc = abs(min(texture2D(cocTexture, vUv).a, computeCoc()));\
 					coc = clamp(coc * coc * 8.0, 0.0, 1.0);\
-					vec3 color = mix(texture2D(colorTexture, vUv).rgb, blur.rgb, vec3(coc));\
-					gl_FragColor = vec4(color, 1.0);\n\
+					vec4 color = mix(texture2D(colorTexture, vUv), blur, vec4(coc));\
+					gl_FragColor = color;\n\
 				}"
 		} );
 	}
