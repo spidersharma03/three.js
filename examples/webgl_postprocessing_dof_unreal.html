@@ -7,7 +7,7 @@
 		<style>
 			body {
 				margin: 0px;
-				background-color: #000000;
+				background-color: #ff0000;
 				overflow: hidden;
 			}
 		</style>
@@ -188,7 +188,7 @@
 				scene = new THREE.Scene();
 				initScene();
 
-				renderer = new THREE.WebGLRenderer();
+				renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
 				renderer.shadowMap.enabled = true;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -214,9 +214,9 @@
 				renderScene.clear = false;
 				composer.addPass(renderScene);
 
-				effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+				/*effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
 				effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth), 1 / (window.innerHeight));
-				composer.addPass(effectFXAA);
+				composer.addPass(effectFXAA);*/
 
 				dofPass = new THREE.DofPass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
 				composer.addPass(dofPass);

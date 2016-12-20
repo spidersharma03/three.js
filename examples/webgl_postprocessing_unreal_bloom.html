@@ -6,7 +6,7 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
-				background-color: #000000;
+				background-color: #880000;
 				margin: 0px;
 				overflow: hidden;
 				font-family:Monospace;
@@ -106,7 +106,7 @@
 
 				scene = new THREE.Scene();
 
-				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
 				renderer.setClearColor( new THREE.Color( 0x111111 ) );
 				renderer.toneMapping = THREE.LinearToneMapping;
 
@@ -189,9 +189,9 @@
 				renderScene.clear = false;
 				composer.addPass(renderScene);
 
-				effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+				/*effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
 				effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
-				composer.addPass(effectFXAA);
+				composer.addPass(effectFXAA);*/
 
 				bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);//1.0, 9, 0.5, 512);
 				composer.addPass(bloomPass);

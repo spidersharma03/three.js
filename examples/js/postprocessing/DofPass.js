@@ -191,7 +191,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 		this.copyUniforms[ "tDiffuse" ].value = this.renderTargetDofCombine.texture;
 
 		if ( maskActive ) renderer.context.enable( renderer.context.STENCIL_TEST );
-		renderer.render( this.scene, this.camera, readBuffer, this.clear );
+		renderer.render( this.scene, this.camera, readBuffer );
 
 		renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
 		renderer.autoClear = oldAutoClear;

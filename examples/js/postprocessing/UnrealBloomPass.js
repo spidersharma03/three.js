@@ -216,7 +216,7 @@ THREE.UnrealBloomPass.prototype = Object.assign( Object.create( THREE.Pass.proto
 
 		if ( maskActive ) renderer.context.enable( renderer.context.STENCIL_TEST );
 
-		renderer.render( this.scene, this.camera, readBuffer, false );
+		renderer.render( this.scene, this.camera, readBuffer );
 
 		renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
 		renderer.autoClear = oldAutoClear;
