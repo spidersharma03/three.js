@@ -30097,7 +30097,7 @@ Object.assign( ImageLoader.prototype, {
 
 		image.addEventListener( 'load', function () {
 
-			THREE.Cache.add( url, this );
+			Cache.add( url, this );
 
 			if ( onLoad ) onLoad( this );
 
