@@ -18,9 +18,6 @@ uniform float opacity;
 
 #endif
 
-
-uniform float envMapIntensity; // temporary
-
 varying vec3 vViewPosition;
 
 #ifndef FLAT_SHADED

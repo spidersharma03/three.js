@@ -43,8 +43,7 @@
 		<script src="../build/three.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 
-
-		<script src="js/loaders/BinaryLoader.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
 
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -54,7 +53,7 @@
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-			var stats, loader;
+			var stats;
 
 			var camera, scene, renderer, controls;
 
@@ -146,12 +145,9 @@
 				// textures
 
 				var textureLoader = new THREE.TextureLoader();
-
-				var normalMap = textureLoader.load( "textures/normal/ninja/normal.jpg" );
-
-				var aoMap = textureLoader.load( "textures/normal/ninja/ao.jpg" );
-
-				var displacementMap = textureLoader.load( "textures/normal/ninja/displacement.jpg" );
+				var normalMap = textureLoader.load( "models/obj/ninja/normal.jpg" );
+				var aoMap = textureLoader.load( "models/obj/ninja/ao.jpg" );
+				var displacementMap = textureLoader.load( "models/obj/ninja/displacement.jpg" );
 
 				// material
 
@@ -169,6 +165,8 @@
 
 					normalMap: normalMap,
 					normalScale: new THREE.Vector2( 1, - 1 ),
+
+					//shading: THREE.FlatShading,
 
 					side: THREE.DoubleSide
 				} );
@@ -194,16 +192,27 @@
 				} );
 
 				materialNormal = new THREE.MeshNormalMaterial( {
+
+					displacementMap: displacementMap,
+					displacementScale: SCALE,
+					displacementBias: BIAS,
+
+					normalMap: normalMap,
+					normalScale: new THREE.Vector2( 1, - 1 ),
+
+					//shading: THREE.FlatShading,
+
 					side: THREE.DoubleSide
 				} );
 
 				//
 
-				loader = new THREE.BinaryLoader();
+				var loader = new THREE.OBJLoader();
+				loader.load( "models/obj/ninja/ninjaHead_Low.obj", function ( group ) {
 
-				loader.load( "obj/ninja/NinjaLo_bin.js", function( geometry ) {
-
-					geometry.faceVertexUvs[ 1 ] = geometry.faceVertexUvs[ 0 ]; // 2nd set of UVs required for aoMap
+					geometry = group.children[ 0 ].geometry;
+					geometry.attributes.uv2 = geometry.attributes.uv;
+					geometry.center();
 
 					mesh = new THREE.Mesh( geometry, materialNormal );
 					mesh.scale.multiplyScalar( 25 );
@@ -272,12 +281,19 @@
 
 					}
 
-					switch ( params.side ) {
 
-						case 'front': material.side = THREE.FrontSide; break;
-						case 'back': material.side = THREE.BackSide; break;
-						case 'double': material.side = THREE.DoubleSide; break;
-	
+					if ( params.side !== material.side ) {
+
+						switch ( params.side ) {
+
+							case 'front': material.side = THREE.FrontSide; break;
+							case 'back': material.side = THREE.BackSide; break;
+							case 'double': material.side = THREE.DoubleSide; break;
+
+						}
+
+						material.needsUpdate = true;
+
 					}
 
 					mesh.material = material;

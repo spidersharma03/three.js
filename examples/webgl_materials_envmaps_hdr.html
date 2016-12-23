@@ -39,8 +39,6 @@
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
 
-		<script src="js/Half.js"></script>
-		<script src="js/Encodings.js"></script>
 		<script src="js/pmrem/PMREMGenerator.js"></script>
 		<script src="js/pmrem/PMREMCubeUVPacker.js"></script>
 		<script src="js/libs/dat.gui.min.js"></script>
@@ -291,11 +289,11 @@
 						case 'front': side = THREE.FrontSide; break;
 						case 'back': side = THREE.BackSide; break;
 						case 'double': side = THREE.DoubleSide; break;
-	
+
 					}
 
 					if( standardMaterial.side !== side ) {
-						
+
 						standardMaterial.side = side;
 						standardMaterial.needsUpdate = true;
 

@@ -7,7 +7,7 @@ import { Vector3 } from '../math/Vector3';
  * @author bhouston / http://clara.io
  */
 
-function DirectionalLightShadow( light ) {
+function DirectionalLightShadow( ) {
 
 	var frustrumWidth = 300;
 	this.spreadAngle = 0.0;

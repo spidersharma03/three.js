@@ -1,4 +1,3 @@
-uniform float envMapIntensity;
 uniform float tFlip;
 uniform float opacity;
 uniform float roughness;
@@ -32,15 +31,16 @@ void main() {
 		#endif
 
 		envMapColor.rgb = envMapTexelToLinear( envMapColor ).rgb;
+		envMapColor.rgb *= envMapIntensity;
 
 	#elif defined( ENVMAP_TYPE_CUBE_UV )
 
 		envMapColor = textureCubeUV( queryReflectVec, roughness );
+		envMapColor.rgb *= envMapIntensity;
 
 	#endif
 
 	gl_FragColor = envMapColor;
-	gl_FragColor.rgb *= envMapIntensity;
 	gl_FragColor.a = opacity;
 
 	#include <tonemapping_fragment>

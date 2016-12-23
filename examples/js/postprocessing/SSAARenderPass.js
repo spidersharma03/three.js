@@ -43,6 +43,13 @@ THREE.SSAARenderPass = function ( scene, camera, clearColor, clearAlpha ) {
 	this.addMaterial.transparent = true;
 	this.addMaterial.depthTest = false;
 	this.addMaterial.depthWrite = false;
+
+	this.camera2 = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	this.scene2	= new THREE.Scene();
+	this.quad2 = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), this.copyMaterial );
+	this.quad2.frustumCulled = false; // Avoid getting clipped
+	this.scene2.add( this.quad2 );
+
 };
 
 THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
@@ -92,6 +99,7 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 		var roundingRange = 1 / 32;
 
 		this.addMaterial.uniforms[ "tDiffuse" ].value = this.sampleRenderTarget.texture;
+
 
 		var width = readBuffer.width, height = readBuffer.height;
 
