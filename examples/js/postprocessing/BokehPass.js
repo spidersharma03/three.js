@@ -43,7 +43,7 @@ THREE.BokehPass = function ( scene, camera, params ) {
 	}
 
 	var bokehShader = THREE.BokehShader;
-	var bokehUniforms = Object.assign( {}, bokehShader.uniforms );
+	var bokehUniforms = THREE.UniformsUtils.clone( bokehShader.uniforms );
 
 	bokehUniforms[ "tDepth" ].value = this.renderTargetDepth.texture;
 
@@ -60,6 +60,13 @@ THREE.BokehPass = function ( scene, camera, params ) {
 
 	this.uniforms = bokehUniforms;
 	this.needsSwap = false;
+
+	this.camera2 = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	this.scene2  = new THREE.Scene();
+
+	this.quad2 = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
+	this.quad2.frustumCulled = false; // Avoid getting clipped
+	this.scene2.add( this.quad2 );
 
 };
 

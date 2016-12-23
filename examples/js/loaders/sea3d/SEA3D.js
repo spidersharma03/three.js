@@ -9,7 +9,7 @@ var SEA3D = { VERSION: 18100 };
 
 SEA3D.getVersion = function () {
 
-	// Max = 16777215 - VVSSBB  | V = Version | S = Subversion | B = Buildversion
+	// Max = 16777215 - VV.S.S.BB  | V = Version | S = Subversion | B = Buildversion
 	var v = SEA3D.VERSION.toString(), l = v.length;
 	return v.substring( 0, l - 4 ) + "." + v.substring( l - 4, l - 3 ) + "." + v.substring( l - 3, l - 2 ) + "." + parseFloat( v.substring( l - 2, l ) ).toString();
 
@@ -99,6 +99,7 @@ SEA3D.Stream.sizeOf = function ( kind ) {
 };
 
 SEA3D.Stream.prototype = {
+
 	constructor: SEA3D.Stream,
 
 	set buffer( val ) {
@@ -278,7 +279,15 @@ SEA3D.Stream.prototype.readUTF8 = function ( len ) {
 
 	var buffer = this.readBytes( len );
 
-	return window.TextDecoder ? new TextDecoder().decode( buffer ) : String.fromCharCode.apply( undefined, new Uint16Array( new Uint8Array( buffer ) ) );
+	if ( window.TextDecoder ) {
+
+		return new TextDecoder().decode( buffer );
+
+	} else {
+
+		return decodeURIComponent( escape( String.fromCharCode.apply( null, new Uint8Array( buffer ) ) ) );
+
+	}
 
 };
 
@@ -2121,8 +2130,10 @@ SEA3D.Material = function ( name, data, sea3d ) {
 	if ( this.attrib & 128 )
 		this.animations = data.readAnimationList( sea3d );
 
-	this.depthMask = ( this.attrib & 256 ) == 0;
+	this.depthWrite = ( this.attrib & 256 ) == 0;
 	this.depthTest = ( this.attrib & 512 ) == 0;
+
+	this.premultipliedAlpha = ( this.attrib & 1024 ) != 0;
 
 	var count = data.readUByte();
 

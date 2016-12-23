@@ -77,6 +77,7 @@ var files = {
 		"webgl_lines_splines",
 		"webgl_loader_3mf",
 		"webgl_loader_amf",
+		"webgl_loader_assimp",
 		"webgl_loader_assimp2json",
 		"webgl_loader_awd",
 		"webgl_loader_babylon",
@@ -109,6 +110,7 @@ var files = {
 		"webgl_loader_sea3d_hierarchy",
 		"webgl_loader_sea3d_keyframe",
 		"webgl_loader_sea3d_morph",
+		"webgl_loader_sea3d_physics",
 		"webgl_loader_sea3d_skinning",
 		"webgl_loader_sea3d_sound",
 		"webgl_loader_scene",
@@ -352,6 +354,7 @@ var files = {
 	],
 	"software": [
 		"software_geometry_earth",
+		"software_lines_splines",
 		"software_sandbox"
 	],
 	"svg": [

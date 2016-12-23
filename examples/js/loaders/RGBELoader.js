@@ -11,8 +11,8 @@ THREE.HDRLoader = THREE.RGBELoader = function ( manager ) {
 
 };
 
-// extend THREE.BinaryTextureLoader
-THREE.RGBELoader.prototype = Object.create( THREE.BinaryTextureLoader.prototype );
+// extend THREE.DataTextureLoader
+THREE.RGBELoader.prototype = Object.create( THREE.DataTextureLoader.prototype );
 
 // adapted from http://www.graphics.cornell.edu/~bjw/rgbe.html
 THREE.RGBELoader.prototype._parser = function( buffer ) {

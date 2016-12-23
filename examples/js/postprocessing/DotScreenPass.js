@@ -11,7 +11,7 @@ THREE.DotScreenPass = function ( center, angle, scale ) {
 
 	var shader = THREE.DotScreenShader;
 
-	this.uniforms = Object.assign( {}, shader.uniforms );
+	this.uniforms = THREE.UniformsUtils.clone( shader.uniforms );
 
 	if ( center !== undefined ) this.uniforms[ "center" ].value.copy( center );
 	if ( angle !== undefined ) this.uniforms[ "angle" ].value = angle;
@@ -24,6 +24,13 @@ THREE.DotScreenPass = function ( center, angle, scale ) {
 		fragmentShader: shader.fragmentShader
 
 	} );
+
+	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	this.scene  = new THREE.Scene();
+
+	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
+	this.quad.frustumCulled = false; // Avoid getting clipped
+	this.scene.add( this.quad );
 
 };
 

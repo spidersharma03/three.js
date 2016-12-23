@@ -81,7 +81,7 @@ THREE.SoftwareRenderer = function ( parameters ) {
 	this.setClearColor = function ( color, alpha ) {
 
 		clearColor.set( color );
-		cleanColorBuffer();
+		clearColorBuffer( clearColor );
 
 	};
 
@@ -131,7 +131,7 @@ THREE.SoftwareRenderer = function ( parameters ) {
 
 		}
 
-		cleanColorBuffer();
+		clearColorBuffer( clearColor );
 
 	};
 
@@ -156,10 +156,19 @@ THREE.SoftwareRenderer = function ( parameters ) {
 
 	};
 
-    // TODO: Check why autoClear can't be false.
+
 	this.render = function ( scene, camera ) {
 
-		if ( this.autoClear === true ) this.clear();
+		// TODO: Check why autoClear can't be false.
+		this.clear();
+
+		var background = scene.background;
+
+		if ( background && background.isColor ) {
+
+			clearColorBuffer( background );
+
+		}
 
 		var renderData = projector.projectScene( scene, camera, false, false );
 		var elements = renderData.elements;
@@ -362,23 +371,24 @@ THREE.SoftwareRenderer = function ( parameters ) {
 
 		}
 
-		cleanColorBuffer();
+		clearColorBuffer( clearColor );
+
 	}
 
-	function cleanColorBuffer() {
+	function clearColorBuffer( color ) {
 
 		var size = canvasWidth * canvasHeight * 4;
 
 		for ( var i = 0; i < size; i += 4 ) {
 
-			data[ i ] = clearColor.r * 255 | 0;
-			data[ i + 1 ] = clearColor.g * 255 | 0;
-			data[ i + 2 ] = clearColor.b * 255 | 0;
+			data[ i ] = color.r * 255 | 0;
+			data[ i + 1 ] = color.g * 255 | 0;
+			data[ i + 2 ] = color.b * 255 | 0;
 			data[ i + 3 ] = alpha ? 0 : 255;
 
 		}
 
-		context.fillStyle = alpha ? "rgba(0, 0, 0, 0)" : clearColor.getStyle();
+		context.fillStyle = alpha ? "rgba(0, 0, 0, 0)" : color.getStyle();
 		context.fillRect( 0, 0, canvasWidth, canvasHeight );
 
 	}
