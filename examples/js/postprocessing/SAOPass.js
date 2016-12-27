@@ -45,6 +45,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.depthMaterial.side = THREE.DoubleSide;
 
 	this.normalMaterial = new THREE.MeshNormalMaterial();
+	this.normalMaterial.side = this.depthMaterial.side; // both normal and depth materials bot need to render with the same sidedness
 
 	if ( THREE.SAOShader === undefined )	console.error( "THREE.SAOPass relies on THREE.SAOShader" );
 	if ( THREE.CopyShader === undefined )	console.error( "THREE.SAOPass relies on THREE.CopyShader" );
