@@ -195,7 +195,7 @@
 				document.body.appendChild( renderer.domElement );
 				stats = new Stats();
 				document.body.appendChild( stats.dom );
-		
+
 				composer = new THREE.EffectComposer(renderer);
 
 
@@ -209,7 +209,7 @@
 				textureLoader.load( "textures/hardwood2_diffuse.jpg", function( map ) {
 					texturePass.map = map;
 				});
-	
+
 				var renderScene = new THREE.RenderPass(scene, camera);
 				renderScene.clear = false;
 				composer.addPass(renderScene);
@@ -226,7 +226,7 @@
 				composer.addPass(copyShader);
 
 				composer.setSize(window.innerWidth, window.innerHeight);
-	
+
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 				//controls.addEventListener( 'change', render ); // add this only if there is no animation loop (requestAnimationFrame)
 				controls.enableDamping = true;

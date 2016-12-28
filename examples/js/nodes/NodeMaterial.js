@@ -84,7 +84,7 @@ THREE.NodeMaterial.prototype.build = function() {
 
 	this.extensions = {};
 
-	this.nodeData = {};	
+	this.nodeData = {};
 
 	this.vertexUniform = [];
 	this.fragmentUniform = [];

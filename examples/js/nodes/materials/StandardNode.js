@@ -108,7 +108,7 @@ THREE.StandardNode.prototype.build = function( builder ) {
 		};
 
 		var useClearCoat = !material.isDefined( 'STANDARD' );
-		
+
 		// parse all nodes to reuse generate codes
 
 		this.color.parse( builder, { slot : 'color' } );
@@ -116,13 +116,13 @@ THREE.StandardNode.prototype.build = function( builder ) {
 		this.metalness.parse( builder );
 
 		if ( this.alpha ) this.alpha.parse( builder );
-		
+
 		if ( this.normal ) this.normal.parse( builder );
 		if ( this.normalScale && this.normal ) this.normalScale.parse( builder );
-		
+
 		if (this.clearCoat) this.clearCoat.parse( builder );
 		if (this.clearCoatRoughness) this.clearCoatRoughness.parse( builder );
-		
+
 		if ( this.reflectivity ) this.reflectivity.parse( builder );
 
 		if ( this.light ) this.light.parse( builder, { cache : 'light' } );
@@ -141,13 +141,13 @@ THREE.StandardNode.prototype.build = function( builder ) {
 		var metalness = this.metalness.buildCode( builder, 'fv1' );
 
 		var alpha = this.alpha ? this.alpha.buildCode( builder, 'fv1' ) : undefined;
-		
+
 		var normal = this.normal ? this.normal.buildCode( builder, 'v3' ) : undefined;
 		var normalScale = this.normalScale && this.normal ? this.normalScale.buildCode( builder, 'v2' ) : undefined;
-		
+
 		var clearCoat = this.clearCoat ? this.clearCoat.buildCode( builder, 'fv1' ) : undefined;
 		var clearCoatRoughness = this.clearCoatRoughness ? this.clearCoatRoughness.buildCode( builder, 'fv1' ) : undefined;
-		
+
 		var reflectivity = this.reflectivity ? this.reflectivity.buildCode( builder, 'fv1' ) : undefined;
 
 		var light = this.light ? this.light.buildCode( builder, 'v3', { cache : 'light' } ) : undefined;
@@ -238,33 +238,33 @@ THREE.StandardNode.prototype.build = function( builder ) {
 			// accumulation
 			'material.specularRoughness = clamp( roughnessFactor, DEFAULT_SPECULAR_COEFFICIENT, 1.0 );' // disney's remapping of [ 0, 1 ] roughness to [ 0.001, 1 ]
 		);
-		
+
 		if (clearCoat) {
-			
+
 			output.push(
 				clearCoat.code,
 				'material.clearCoat = saturate( ' + clearCoat.result + ' );'
 			);
-			
+
 		} else if (useClearCoat) {
-			
+
 			output.push( 'material.clearCoat = 0.0;' );
-			
+
 		}
-		
+
 		if (clearCoatRoughness) {
-			
+
 			output.push(
 				clearCoatRoughness.code,
 				'material.clearCoatRoughness = clamp( ' + clearCoatRoughness.result + ', DEFAULT_SPECULAR_COEFFICIENT, 1.0 );'
 			);
-			
+
 		} else if (useClearCoat) {
-			
+
 			output.push( 'material.clearCoatRoughness = 0.0;' );
-			
+
 		}
-		
+
 		if ( reflectivity ) {
 
 			output.push(

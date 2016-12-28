@@ -3,7 +3,7 @@ varying vec3 vWorldPosition;
 #include <common>
 #include <clipping_planes_pars_vertex>
 
-#if NUM_CLIPPING_PLANES == 0 
+#if NUM_CLIPPING_PLANES == 0
  	varying vec3 vViewPosition;
 #endif
 

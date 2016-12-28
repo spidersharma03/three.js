@@ -101,10 +101,10 @@ THREE.PhongNode.prototype.build = function( builder ) {
 		this.shininess.parse( builder );
 
 		if ( this.alpha ) this.alpha.parse( builder );
-		
+
 		if ( this.normal ) this.normal.parse( builder );
 		if ( this.normalScale && this.normal ) this.normalScale.parse( builder );
-		
+
 		if ( this.light ) this.light.parse( builder, { cache : 'light' } );
 
 		if ( this.ao ) this.ao.parse( builder );
@@ -122,10 +122,10 @@ THREE.PhongNode.prototype.build = function( builder ) {
 		var shininess = this.shininess.buildCode( builder, 'fv1' );
 
 		var alpha = this.alpha ? this.alpha.buildCode( builder, 'fv1' ) : undefined;
-		
+
 		var normal = this.normal ? this.normal.buildCode( builder, 'v3' ) : undefined;
 		var normalScale = this.normalScale && this.normal ? this.normalScale.buildCode( builder, 'v2' ) : undefined;
-		
+
 		var light = this.light ? this.light.buildCode( builder, 'v3', { cache : 'light' } ) : undefined;
 
 		var ao = this.ao ? this.ao.buildCode( builder, 'fv1' ) : undefined;

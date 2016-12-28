@@ -171,7 +171,7 @@
 				container.appendChild( renderer.domElement );
 
 				composer = new THREE.EffectComposer(renderer);
-				
+
 				clearPass = new THREE.ClearPass( params.clearColor, params.clearAlpha );
 				composer.addPass( clearPass );
 
@@ -182,7 +182,7 @@
 				textureLoader.load( "textures/hardwood2_diffuse.jpg", function( map ) {
 					texturePass.map = map;
 				});
-	
+
 				renderScene = new THREE.RenderPass(scene, camera);
 				renderScene.clear = false;
 				composer.addPass(renderScene);

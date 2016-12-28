@@ -114,7 +114,7 @@ THREE.DofPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), 
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
-		
+
 		this.dilateNearCocMaterial.uniforms[ "texSize" ].value = this.downSampleRes;
 		this.dofBlurMaterial.uniforms[ "texSize" ].value = this.downSampleRes;
 		this.dofCombineMaterial.uniforms[ "texSize" ].value = this.downSampleRes;
