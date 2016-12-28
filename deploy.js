@@ -37,14 +37,14 @@ for( var i = 0; i < inputs.length; i ++ ) {
 		fs.readFile( inputDirectory + "/" + input, 'utf8', function( err, data ) {
 			if( err ) return console.log( "Error: ", err );
 			fs.writeFile( outputDirectory + "/" + input, data, "utf8", function( err ) {
-				if( err ) return console.log( "Error: ", err );		
+				if( err ) return console.log( "Error: ", err );
 				console.log( "Success: " + input );
 			})
 		} );
 	}();
 }
 
-fs.writeFile( outputDirectory + "/package.json", JSON.stringify( packageTemplate ), "utf8", function( err ) {
-	if( err ) return console.log( "Error: ", err );		
+fs.writeFile( outputDirectory + "/package.json", JSON.stringify( packageTemplate, null, '  ' ) + '\n', "utf8", function( err ) {
+	if( err ) return console.log( "Error: ", err );
 	console.log( "Success: " + "package.json" );
 });
