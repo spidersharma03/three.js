@@ -20,11 +20,11 @@ function FilteredESM( scene, camera, light ) {
   var shadowMapHeight = 1024;
   var params = { format: THREE.RGBAFormat, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
 
-  this.numShadowMapsPerFrame = 5;
+  this.numShadowMapsPerFrame = 1;
   this.shadowMap = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
   this.shadowMapTemp = new THREE.WebGLRenderTarget(shadowMapWidth, shadowMapHeight, params);
 
-  var params = { format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
+  var params = { format: THREE.RGBAFormat,type: THREE.FloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter};
   this.shadowBuffer     = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, params);
   this.shadowBufferTemp = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, params);
 
@@ -336,6 +336,7 @@ FilteredESM.prototype = {
 			uniforms: {
         "shadowMap" : { value: null },
         "shadowBuffer" : { value: null },
+        "skyMap" : { value: null },
         "windowSize"   : { value: null },
         "shadowMatrix": { value: new THREE.Matrix4() },
         "lightPosition": { value: new THREE.Vector3() },
@@ -367,6 +368,7 @@ FilteredESM.prototype = {
         uniform vec2 windowSize;\
         uniform sampler2D shadowMap;\
         uniform sampler2D shadowBuffer;\
+        uniform samplerCube skyMap;\
         uniform vec2 nearFarPlanes;\
         uniform float currentFrameCount;\
         uniform float maxSamples;\
@@ -376,19 +378,26 @@ FilteredESM.prototype = {
           vec2 shadowCoord2d = shadowCoord.xy;\
           float NdotL = max(dot( normalize(normalEyeSpace), normalize(-lightVector)), 0.0);\
           float bias = tan(acos(NdotL));\
+          vec3 lightColor = textureCube( skyMap, -lightVector).rgb;\
           bias = clamp(bias, 0.0, 0.01);\
           float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r;\
           const float c = 400000.75;\
           float shadowValue = step( lightDist, shadowDepth );\
           shadowValue = min(exp( -c*(lightDist - shadowDepth) ), 1.0);\
-          float prevShadow = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
+          vec4 prevValues = (texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
+          float prevShadow = prevValues.a;\
+          vec3 prevColor = prevValues.rgb;\
           if(currentFrameCount > maxSamples*100000.0){\
             shadowValue = prevShadow;\
+            lightColor = prevColor;\
           }\
+          lightColor *= shadowValue * NdotL;\
           float newShadowValue = (currentFrameCount - 1.0) * prevShadow +  shadowValue * NdotL;\
+          vec3  newColorValue = (currentFrameCount - 1.0) * prevColor + lightColor;\
           newShadowValue /= currentFrameCount;\
+          newColorValue /= currentFrameCount;\
           \
-          gl_FragColor = packDepthToRGBA(newShadowValue);\
+          gl_FragColor = vec4(newColorValue.r, newColorValue.g, newColorValue.b, newShadowValue);\
         }",
     } );
   },
@@ -421,8 +430,9 @@ FilteredESM.prototype = {
             uniform sampler2D shadowBuffer;\
             void main() {\
               float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
-              float shadowValue = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
-              gl_FragColor = 1.5*vec4(pow(shadowValue, 0.75));\
+              vec4 values = (texture2D( shadowBuffer, gl_FragCoord.xy/windowSize));\
+              float shadowValue = values.a;\
+              gl_FragColor = 1.0 * pow(values, vec4(0.45));\
             }",
         } );
   }
