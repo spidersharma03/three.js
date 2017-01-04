@@ -1,6 +1,9 @@
 #define PHYSICAL
 
-varying vec3 vViewPosition;
+#if ! defined( VARYING_VVIEWPOSITION )
+	varying vec3 vViewPosition;
+	#define VARYING_VVIEWPOSITION 1
+#endif
 
 #ifndef FLAT_SHADED
 

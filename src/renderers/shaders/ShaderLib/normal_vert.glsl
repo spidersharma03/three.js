@@ -2,7 +2,10 @@
 
 #if defined( FLAT_SHADED  ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP )
 
-	varying vec3 vViewPosition;
+	#if ! defined( VARYING_VVIEWPOSITION )
+   		varying vec3 vViewPosition;
+   		#define VARYING_VVIEWPOSITION 1
+   #endif
 
 #endif
 
@@ -17,7 +20,8 @@
 #include <morphtarget_pars_vertex>
 #include <skinning_pars_vertex>
 #include <logdepthbuf_pars_vertex>
-
+#include <clipping_planes_pars_vertex>
+	
 void main() {
 
 	#include <uv_vertex>
@@ -40,6 +44,7 @@ void main() {
 	#include <skinning_vertex>
 	#include <project_vertex>
 	#include <logdepthbuf_vertex>
+	#include <clipping_planes_vertex>
 
 #if defined( FLAT_SHADED  ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP )
 
