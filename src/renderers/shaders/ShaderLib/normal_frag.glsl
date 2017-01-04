@@ -4,7 +4,10 @@ uniform float opacity;
 
 #if defined( FLAT_SHADED  ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP )
 
-	varying vec3 vViewPosition;
+	#if ! defined( VARYING_VVIEWPOSITION )
+		varying vec3 vViewPosition;
+		#define VARYING_VVIEWPOSITION 1
+	#endif
 
 #endif
 

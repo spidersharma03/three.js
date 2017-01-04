@@ -71,6 +71,7 @@
 				scale: 1.0,
 				distance: 7.0,
 				renderToScreen: true,
+				clippingPlane: false,
 				ssaaEnabled: false,
 				ssaaLevel: 4,
 				saoEnabled: true,
@@ -86,6 +87,7 @@
 			gui.add( params, "scale", 0.01, 10 );
 			gui.add( params, "distance", 1, 100 );
 			gui.add( params, "renderToScreen" );
+			gui.add( params, "clippingPlane" );
 			gui.add( params, "ssaaEnabled" );
 			gui.add( params, "ssaaLevel", 0, 4 );
 			gui.add( params, "saoEnabled" );
@@ -106,9 +108,14 @@
 			var supportsDepthTextureExtension = false;
 			var isWebGL2 = false;
 
+
+			var globalPlane = new THREE.Plane( new THREE.Vector3( 0, - 1, 0 ), 0.0 );
+			var globalPlanes = [ globalPlane ];
+			var globalPlanesEmpty = [];
+
 			init();
 			animate();
-
+				
 			function init() {
 
 				container = document.createElement( 'div' );
@@ -122,6 +129,9 @@
 				renderer.setClearColor( 0xa0a0a0 );
 				renderer.setPixelRatio( 1 );
 				renderer.setSize( width, height );
+				renderer.clippingPlanes = globalPlanesEmpty; // GUI sets it to globalPlanes
+				renderer.localClippingEnabled = false;
+
 				document.body.appendChild( renderer.domElement );
 
 				if( renderer.extensions.get( 'WEBGL_depth_texture' ) ) {
@@ -281,6 +291,8 @@
 
 				if( params.manualCompositing ) params.renderToScreen = false;
 
+				renderer.clippingPlanes = params.clippingPlane ? globalPlanes : globalPlanesEmpty;
+		
 				renderPass.renderToScreen = params.renderToScreen;
 				ssaaRenderPass.renderToScreen = params.renderToScreen;
 
