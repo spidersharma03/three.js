@@ -34,7 +34,4 @@ void main() {
 
 	#include <logdepthbuf_fragment>
 
-//	#include <premultiplied_alpha_fragment>
-//	#include <encodings_fragment>
-
 }
