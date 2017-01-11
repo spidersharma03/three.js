@@ -53,7 +53,8 @@ THREE.SAOShader = {
 		"DIFFUSE_TEXTURE": 1,
 		"DEPTH_PACKING": 1,
 		"DEPTH_MIPS": 0,
-		"PERSPECTIVE_CAMERA": 1
+		"PERSPECTIVE_CAMERA": 1,
+		"MODE" : 1
 	},
 
 	extensions: {
@@ -208,12 +209,18 @@ THREE.SAOShader = {
 		"float minResolutionMultipliedByCameraFar;",
 		"float errorCorrectionFactor;",
 
-		"float getOcclusion( const in vec3 centerViewPosition, const in vec3 centerViewNormal, const in vec3 sampleViewPosition ) {",
+		"float getOcclusion( const in vec3 centerViewPosition, const in vec3 centerViewNormal, const in vec3 sampleViewPosition, float radius ) {",
 
 			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
 			"float viewDistance2 = dot( viewDelta, viewDelta );",
-
-			"float occlusion = max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * 0.001 ) / ( viewDistance2 + 0.001 ), 0.0 );// * smoothstep( pow2( occlusionSphereWorldRadius ), 0.0, viewDistance2 );",
+			"float radius2 = radius * radius;",
+			"const float bias = 0.001;",
+			"const float epsilon = 0.001;",
+			"#if MODE == 1",
+				"float occlusion = max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * bias ) / ( viewDistance2 + epsilon ), 0.0 ) * radius2;//smoothstep( radius2, 0.0, viewDistance2 );",
+			"#else",
+				"float occlusion = max(1.0 - viewDistance2 / radius2, 0.0) * max( ( dot( centerViewNormal, viewDelta ) + centerViewPosition.z * bias ) / ( viewDistance2 + epsilon ), 0.0 );//smoothstep( radius2, 0.0, viewDistance2 );",
+			"#endif",
 			"return pow(occlusion,1.0);",
 		"}",
 
@@ -274,10 +281,10 @@ THREE.SAOShader = {
 
 				"float sampleViewZ = getViewZ( sampleDepth );",
 				"vec3 sampleViewPosition = getViewPosition( sampleUv, sampleDepth, sampleViewZ );",
-				"float occlusion = getOcclusion( centerViewPosition, centerViewNormal, sampleViewPosition );",
+				"float occlusion = getOcclusion( centerViewPosition, centerViewNormal, sampleViewPosition, occlusionSphereWorldRadius );",
 				"occlusionSum += occlusion;",
 			"}",
-			"float occlusion = occlusionSum * intensity * 2.0 * occlusionSphereWorldRadius / ( float( NUM_SAMPLES ) );",
+			"float occlusion = occlusionSum / ( float( NUM_SAMPLES ) );",
 			"return vec4(occlusion);",
 			//"return occlusionSum * intensity * 5.0 / ( float( NUM_SAMPLES ) * pow( occlusionSphereWorldRadius, 6.0 ) );",
 
@@ -287,9 +294,9 @@ THREE.SAOShader = {
 		"void main() {",
 
 			"float centerDepth = getDepth( vUv );",
-			"if( centerDepth >= ( 1.0 - EPSILON ) ) {",
-				"discard;",
-			"}",
+			"//if( centerDepth >= ( 1.0 - EPSILON ) ) {",
+				"//discard;",
+			"//}",
 
 		/*	"float mipDepth = unpackRGBAToDepth( texture2D( tDepth3, vUv ) );",
 			"gl_FragColor.xyz = vec3( (centerDepth - mipDepth) * 50.0 + 0.5 );",
@@ -302,8 +309,13 @@ THREE.SAOShader = {
 			"vec4 ambientOcclusion = getAmbientOcclusion( viewPosition );",
 
 			//"gl_FragColor = getDefaultColor( vUv );",
-
-			"float aoValue = ambientOcclusion.a;",
+			"#if MODE == 1",
+				"float aoValue = max(1.0 - intensity * ambientOcclusion.a, 0.0);",
+				"aoValue = pow( aoValue, 1.0);",
+			"#else",
+				"float aoValue = max(1.0 - intensity * sqrt(ambientOcclusion.a), 0.0);",
+				"aoValue = pow( aoValue, 2.0);",
+			"#endif",
 			"float prevAoSum = texture2D(tAOPrevious, vUv).a;",
 			"if(currentFrameCount > poissonTextureWidth/float(NUM_SAMPLES)){",
 				"aoValue = prevAoSum;",
@@ -311,7 +323,6 @@ THREE.SAOShader = {
 			"float newAoValue = (currentFrameCount - 1.0) * prevAoSum + aoValue;",
 			"newAoValue /= currentFrameCount;",
 			"gl_FragColor = vec4( newAoValue);",
-			"float xOffset = gl_FragCoord.x/size.x;",
 		"}"
 
 	].join( "\n" )

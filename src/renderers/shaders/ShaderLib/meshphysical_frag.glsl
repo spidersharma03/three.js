@@ -70,7 +70,7 @@ void main() {
 	float aoValue = 1.0;
 	float shadowValue = 1.0;
 	#if defined( USE_ENVMAP )
-		aoValue = 1.0 - min(texture2D( envMapProbe2, gl_FragCoord.xy/vec2(1280.0, 647.0)).r, 1.0);
+		aoValue = max(texture2D( envMapProbe2, gl_FragCoord.xy/vec2(1280.0, 647.0)).r, 0.0);
 		shadowValue = unpackRGBAToDepth(texture2D( envMapProbe1, gl_FragCoord.xy/vec2(1280.0, 647.0)));
 	#endif
 	vec3 outgoingLight = reflectedLight.directDiffuse * shadowValue + reflectedLight.indirectDiffuse * aoValue + reflectedLight.directSpecular * shadowValue + reflectedLight.indirectSpecular * aoValue + totalEmissiveRadiance;

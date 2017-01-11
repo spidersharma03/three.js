@@ -20,9 +20,9 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.scene = scene;
 	this.camera = camera;
 
-	this.intensity = 1.0;
+	this.intensity = 1;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
-	this.occlusionSphereWorldRadius = 2.0;
+	this.occlusionSphereWorldRadius = 3.0;
 
 	var poissonDiskGenerator = new PoissonDiskGenerator(5500, -1, true, true);
 	this.samples = poissonDiskGenerator.generatePoints();

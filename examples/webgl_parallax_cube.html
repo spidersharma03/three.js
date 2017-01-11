@@ -366,22 +366,77 @@
 				rootNode.position.x = 44;
 				rootNode.position.z = 0.2;
 
-				var dae;
-				var daeLoader = new THREE.ColladaLoader();
-				daeLoader.options.convertUpAxis = true;
-				daeLoader.load( 'models/obj/Model_KitchenLShape/poliform_soho_sofa_s3.dae', function ( collada ) {
-					dae = collada.scene;
-					dae.traverse( function ( child ) {
-						if( child instanceof THREE.Mesh ) {
-							child.material = sofaMaterial;
-						}
-					} );
-					// rootNode.add(dae);
-					dae.scale.x = dae.scale.y = dae.scale.z = 10;
-					dae.updateMatrix();
-					// init();
-					// animate();
-				} );
+				// var dae;
+				// var daeLoader = new THREE.ColladaLoader();
+				// daeLoader.options.convertUpAxis = true;
+				// daeLoader.load( 'models/obj/Model_KitchenLShape/poliform_soho_sofa_s3.dae', function ( collada ) {
+				// 	dae = collada.scene;
+				// 	dae.traverse( function ( child ) {
+				// 		if( child instanceof THREE.Mesh ) {
+				// 			child.material = sofaMaterial;
+				// 		}
+				// 	} );
+				// 	// rootNode.add(dae);
+				// 	dae.scale.x = dae.scale.y = dae.scale.z = 10;
+				// 	dae.updateMatrix();
+				// 	// init();
+				// 	// animate();
+				// } );
+
+				modelLoader.load(
+					'models/obj/wr1.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								bowlSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 35;
+					  object.rotation.y = -Math.PI/2;
+						object.position.x += 10;
+						object.position.z -= 18;
+						// object.position.x = -25;
+					}
+				);
+				modelLoader.load(
+					'models/obj/wr2.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								bowlSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 35;
+					  object.rotation.y = -Math.PI/2;
+						object.position.x += 10;
+						object.position.z += 0;
+						// object.position.x = -25;
+					}
+				);
+				modelLoader.load(
+					'models/obj/wr3.obj',
+					function ( object ) {
+						rootNode.add( object );
+						object.traverse( function(mesh) {
+							if( mesh instanceof THREE.Mesh ) {
+								bowlSetMeshes.push(mesh);
+								mesh.castShadow = true;
+								mesh.receiveShadow = true;
+							}
+						} );
+						object.scale.x = object.scale.y = object.scale.z = 35;
+					  object.rotation.y = -Math.PI/2;
+						object.position.x += 10;
+						object.position.z += 18;
+						// object.position.x = -25;
+					}
+				);
 
 				modelLoader.load(
 					'models/obj/Model_KitchenLShape/Kitchen tools_01.obj',
