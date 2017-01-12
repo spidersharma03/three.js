@@ -42,6 +42,7 @@
 		<script src="js/controls/FlyControls.js"></script>
 		<script src="js/pmrem/PMREMGenerator.js"></script>
 		<script src="js/pmrem/PMREMCubeUVPacker.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
 		<script src="js/shaders/CopyShader.js"></script>
 		<script src="js/shaders/SAOShader.js"></script>
 		<script src="js/shaders/FXAAShader.js"></script>
@@ -123,6 +124,11 @@
 			var chimneyBlackMaterial, chimneyChromeMaterial;
 
 			var rootNode = new THREE.Object3D();
+			var params = {
+				Intensity: 1.0,
+				Radius: 3.0,
+				Contrast: 1.0
+			};
 
 			var cameraControls;
 			var specialMaterial = new THREE.ShaderMaterial( {
@@ -256,6 +262,21 @@
 				// composer.addPass( bloomPass );
 				composer.addPass( superSamplePass );
 				// composer.addPass( fxaa );
+
+				var gui = new dat.GUI();
+				gui.add( params, 'Intensity', 0, 50 ).onChange( function(value) {
+		        saoPass.intensity = Number(value);
+		    });
+				gui.add( params, 'Radius', 0, 50 ).onChange( function(value) {
+		        saoPass.occlusionSphereWorldRadius = Number(value);
+		    });
+				gui.add( params, 'Contrast', 0.1, 50 ).onChange( function(value) {
+		        saoPass.contrast = Number(value);
+		    });
+				// gui.add( params, 'bumpScale', - 1, 1 );
+				// gui.add( params, 'exposure', 0.1, 2 );
+				// gui.add( params, 'side', [ 'front', 'back', 'double' ] );
+				gui.open();
 			}
 
 			var isMouseDown = false;

@@ -80,6 +80,7 @@ THREE.SAOShader = {
 		"cameraInverseProjectionMatrix": { type: "m4", value: new THREE.Matrix4() },
 
 		"intensity":    { type: "f", value: 0.1 },
+		"contrast":    { type: "f", value: 1.0 },
 
 		"occlusionSphereWorldRadius": { type: "f", value: 100.0 },
 		"worldToScreenRatio": { type: "v2", value: new THREE.Vector2( 1, 1 ) },
@@ -137,6 +138,7 @@ THREE.SAOShader = {
 		"uniform mat4 cameraInverseProjectionMatrix;",
 
 		"uniform float intensity;",
+		"uniform float contrast;",
 		"uniform float occlusionSphereWorldRadius;",
 		"uniform vec2 size;",
 		"uniform vec2 worldToScreenRatio;",
@@ -224,22 +226,6 @@ THREE.SAOShader = {
 			"return pow(occlusion,1.0);",
 		"}",
 
-		/*
-		"float getOcclusion( const in vec3 centerViewPosition, const in vec3 centerViewNormal, const in vec3 sampleViewPosition ) {",
-
-			"vec3 viewDelta = sampleViewPosition - centerViewPosition;",
-			"float viewDistance2 = dot( viewDelta, viewDelta );",
-
-			"return max( pow3( pow2( occlusionSphereWorldRadius ) - viewDistance2 ), 0.0 ) *",
-				"max( ( dot( centerViewNormal, viewDelta ) - 0.01 * occlusionSphereWorldRadius ) / ( viewDistance2 + 0.0001 ), 0.0 );",
-
-		"}",*/
-
-		//"const float maximumScreenRadius = 10.0;",
-
-		"int getMipLevel( const in vec2 occlusionSphereScreenRadius ) {",
-    		"return int( clamp( floor( log2( length( occlusionSphereScreenRadius * size ) ) - 4.0 ), 0.0, 3.0 ) );",
-		"}",
 
 		// moving costly divides into consts
 		"const float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( MAX_SAMPLES );",
@@ -258,8 +244,6 @@ THREE.SAOShader = {
 			// jsfiddle that shows sample pattern: https://jsfiddle.net/a16ff1p7/
 			"float random = rand( vUv + randomSeed );",
 			"float angle = random * PI2 + ANGLE_STEP * (frameCount - 1.0);",
-			"float radiusStep = INV_NUM_SAMPLES/float(1.0);",
-			"float radius = radiusStep * ( 0.5 + random );",
 
 			"float occlusionSum = 0.0;",
 			"float cs = cos(angle); float sn = sin(angle);",
@@ -273,11 +257,10 @@ THREE.SAOShader = {
 				// round to nearest true sample to avoid misalignments between viewZ and normals, etc.
 				"vec2 sampleUv = vUv + sampleUvOffset;",
 
-				//"int depthMipLevel = getMipLevel( radius * occlusionSphereScreenRadius );",
 				"float sampleDepth = getDepthMIP( sampleUv, int( 4.0 * 0.0 ) );",
-				"if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
-					"continue;",
-				"}",
+				"//if( sampleDepth >= ( 1.0 - EPSILON ) ) {",
+					"//continue;",
+				"//}",
 
 				"float sampleViewZ = getViewZ( sampleDepth );",
 				"vec3 sampleViewPosition = getViewPosition( sampleUv, sampleDepth, sampleViewZ );",
@@ -311,10 +294,10 @@ THREE.SAOShader = {
 			//"gl_FragColor = getDefaultColor( vUv );",
 			"#if MODE == 1",
 				"float aoValue = max(1.0 - intensity * ambientOcclusion.a, 0.0);",
-				"aoValue = pow( aoValue, 1.0);",
+				"aoValue = pow( aoValue, contrast);",
 			"#else",
 				"float aoValue = max(1.0 - intensity * sqrt(ambientOcclusion.a), 0.0);",
-				"aoValue = pow( aoValue, 2.0);",
+				"aoValue = pow( aoValue, contrast);",
 			"#endif",
 			"float prevAoSum = texture2D(tAOPrevious, vUv).a;",
 			"if(currentFrameCount > poissonTextureWidth/float(NUM_SAMPLES)){",

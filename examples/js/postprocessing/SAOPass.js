@@ -21,6 +21,7 @@ THREE.SAOPass = function ( scene, camera ) {
 	this.camera = camera;
 
 	this.intensity = 1;
+	this.contrast = 1;
 	this.implicitNormals = false; // explicit normals requires or there are artifacts on mobile.
 	this.occlusionSphereWorldRadius = 3.0;
 
@@ -85,6 +86,7 @@ THREE.SAOPass.prototype = {
 
 		this.saoMaterial.uniforms['worldToScreenRatio'].value = sizeAt1M;
 		this.saoMaterial.uniforms['intensity'].value = this.intensity;
+		this.saoMaterial.uniforms['contrast'].value = this.contrast;
 		this.saoMaterial.uniforms['occlusionSphereWorldRadius'].value = this.occlusionSphereWorldRadius;
 
 		this.saoMaterial.uniforms[ 'cameraNear' ].value = camera.near;
