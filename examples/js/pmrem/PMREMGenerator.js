@@ -215,17 +215,17 @@ THREE.PMREMGenerator.prototype = {
 					uv.x = (uv.x - a)/bminusa * d - (uv.x - b)/bminusa * c;\n\
 					uv.y = (uv.y - a)/bminusa * d - (uv.y - b)/bminusa * c;\n\
 					if (faceIndex==0) {\n\
-						sampleDirection = vec3(1.0, -uv.y, -uv.x);\n\
+						sampleDirection = vec3(-1.0, -uv.y, -uv.x);\n\
 					} else if (faceIndex==1) {\n\
-						sampleDirection = vec3(-1.0, -uv.y, uv.x);\n\
+						sampleDirection = vec3(1.0, -uv.y, uv.x);\n\
 					} else if (faceIndex==2) {\n\
-						sampleDirection = vec3(uv.x, 1.0, uv.y);\n\
+						sampleDirection = vec3(-uv.x, 1.0, uv.y);\n\
 					} else if (faceIndex==3) {\n\
-						sampleDirection = vec3(uv.x, -1.0, -uv.y);\n\
+						sampleDirection = vec3(-uv.x, -1.0, -uv.y);\n\
 					} else if (faceIndex==4) {\n\
-						sampleDirection = vec3(uv.x, -uv.y, 1.0);\n\
+						sampleDirection = vec3(-uv.x, -uv.y, 1.0);\n\
 					} else {\n\
-						sampleDirection = vec3(-uv.x, -uv.y, -1.0);\n\
+						sampleDirection = vec3(uv.x, -uv.y, -1.0);\n\
 					}\n\
 					mat3 vecSpace = matrixFromVector(normalize(sampleDirection));\n\
 					vec3 rgbColor = vec3(0.0);\n\
