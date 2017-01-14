@@ -11,10 +11,11 @@
  *	by this class.
  */
 
-THREE.PMREMGenerator = function( sourceTexture ) {
+THREE.PMREMGenerator = function( sourceTexture, samplesPerLevel, resolution ) {
 
 	this.sourceTexture = sourceTexture;
-	this.resolution = 256; // NODE: 256 is currently hard coded in the glsl code for performance reasons
+	this.resolution = ( resolution !== undefined ) ? resolution : 256; // NODE: 256 is currently hard coded in the glsl code for performance reasons
+	this.samplesPerLevel = ( samplesPerLevel !== undefined ) ? samplesPerLevel : 16;
 
 	var monotonicEncoding = ( sourceTexture.encoding === THREE.LinearEncoding ) ||
 		( sourceTexture.encoding === THREE.GammaEncoding ) || ( sourceTexture.encoding === THREE.sRGBEncoding );
@@ -50,6 +51,7 @@ THREE.PMREMGenerator = function( sourceTexture ) {
 	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0.0, 1000 );
 
 	this.shader = this.getShader();
+	this.shader.defines['SAMPLES_PER_LEVEL'] = this.samplesPerLevel;
 	this.planeMesh = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2, 0 ), this.shader );
 	this.planeMesh.material.side = THREE.DoubleSide;
 	this.scene = new THREE.Scene();
@@ -97,6 +99,7 @@ THREE.PMREMGenerator.prototype = {
 
 			var r = i / ( this.numLods - 1 );
 			this.shader.uniforms[ 'roughness' ].value = r * 0.9; // see comment above, pragmatic choice
+			this.shader.uniforms[ 'queryScale' ].value.x = ( i == 0 ) ? -1 : 1;
 			var size = this.cubeLods[ i ].width;
 			this.shader.uniforms[ 'mapSize' ].value = size;
 			this.renderToCubeMapTarget( renderer, this.cubeLods[ i ] );
@@ -134,12 +137,17 @@ THREE.PMREMGenerator.prototype = {
 
 		return new THREE.ShaderMaterial( {
 
+			defines: {
+				"SAMPLES_PER_LEVEL": 20,
+			},
+
 			uniforms: {
 				"faceIndex": { value: 0 },
 				"roughness": { value: 0.5 },
 				"mapSize": { value: 0.5 },
 				"envMap": { value: null },
-				"testColor": { value: new THREE.Vector3( 1, 1, 1 ) }
+				"queryScale": { value: new THREE.Vector3( 1, 1, 1 ) },
+				"testColor": { value: new THREE.Vector3( 1, 1, 1 ) },
 			},
 
 			vertexShader:
@@ -157,6 +165,7 @@ THREE.PMREMGenerator.prototype = {
 				uniform samplerCube envMap;\n\
 				uniform float mapSize;\n\
 				uniform vec3 testColor;\n\
+				uniform vec3 queryScale;\n\
 				\n\
 				float GGXRoughnessToBlinnExponent( const in float ggxRoughness ) {\n\
 					float a = ggxRoughness + 0.0001;\n\
@@ -215,21 +224,21 @@ THREE.PMREMGenerator.prototype = {
 					uv.x = (uv.x - a)/bminusa * d - (uv.x - b)/bminusa * c;\n\
 					uv.y = (uv.y - a)/bminusa * d - (uv.y - b)/bminusa * c;\n\
 					if (faceIndex==0) {\n\
-						sampleDirection = vec3(-1.0, -uv.y, -uv.x);\n\
+						sampleDirection = vec3(1.0, -uv.y, -uv.x);\n\
 					} else if (faceIndex==1) {\n\
-						sampleDirection = vec3(1.0, -uv.y, uv.x);\n\
+						sampleDirection = vec3(-1.0, -uv.y, uv.x);\n\
 					} else if (faceIndex==2) {\n\
-						sampleDirection = vec3(-uv.x, 1.0, uv.y);\n\
+						sampleDirection = vec3(uv.x, 1.0, uv.y);\n\
 					} else if (faceIndex==3) {\n\
-						sampleDirection = vec3(-uv.x, -1.0, -uv.y);\n\
+						sampleDirection = vec3(uv.x, -1.0, -uv.y);\n\
 					} else if (faceIndex==4) {\n\
-						sampleDirection = vec3(-uv.x, -uv.y, 1.0);\n\
+						sampleDirection = vec3(uv.x, -uv.y, 1.0);\n\
 					} else {\n\
-						sampleDirection = vec3(uv.x, -uv.y, -1.0);\n\
+						sampleDirection = vec3(-uv.x, -uv.y, -1.0);\n\
 					}\n\
-					mat3 vecSpace = matrixFromVector(normalize(sampleDirection));\n\
+					mat3 vecSpace = matrixFromVector(normalize(sampleDirection * queryScale));\n\
 					vec3 rgbColor = vec3(0.0);\n\
-					const int NumSamples = 32;\n\
+					const int NumSamples = SAMPLES_PER_LEVEL;\n\
 					vec3 vect;\n\
 					float weight = 0.0;\n\
 					for( int i = 0; i < NumSamples; i ++ ) {\n\
