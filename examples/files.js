@@ -134,6 +134,7 @@ var files = {
 		"webgl_materials_cubemap_dynamic2",
 		"webgl_materials_cubemap_refraction",
 		"webgl_materials_displacementmap",
+		"webgl_materials_emissive",
 		"webgl_materials_envmaps",
 		"webgl_materials_envmaps_hdr",
 		"webgl_materials_falloff",
