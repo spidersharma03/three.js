@@ -118,7 +118,7 @@
 				var planeGeo = new THREE.PlaneBufferGeometry( 100.1, 200.1 );
 
 				// MIRROR planes
-				glossyMirror = new THREE.GlossyMirror( { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, specularColor: 0xffffff } );
+				glossyMirror = new THREE.GlossyMirror( { clipBias: 0.003, textureWidth: 256, textureHeight: 256, specularColor: 0xffffff } );
 
 				mirrorMesh = new THREE.Mesh( planeGeo, glossyMirror.material );
 				mirrorMesh.add( glossyMirror );
@@ -224,7 +224,7 @@
 
 				renderer.setSize( width, height );
 				glossyMirror.setSize( width, height );
-				
+
 		//		composer.setSize( width, height );
 		//		effectFXAA.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight );
 			}
