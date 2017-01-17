@@ -53,9 +53,9 @@ THREE.MirrorHelper.prototype = {
 
   setSize: function( width, height ) {
 	  for( var i=0; i<this.numMipMaps; i++) {
+	    width /= 2; height /= 2;
 	    this.mirrorTextureMipMaps[i].setSize( width, height );
 	    this.tempRenderTargets[i].setSize( width, height );
-	    width /= 2; height /= 2;
 	  }
   },
 
@@ -64,8 +64,8 @@ THREE.MirrorHelper.prototype = {
     var textureIn = this.mirror.mirrorRenderTarget;
     for( var i=0; i<this.numMipMaps; i++) {
       var renderTarget = this.mirrorTextureMipMaps[i];
-      var tempRenderTarget = this.tempRenderTargets[i];
-
+   	  var tempRenderTarget = this.tempRenderTargets[i];
+   
       this.hBlurMaterial.uniforms[ 'size' ].value.set( textureIn.width, textureIn.height );
       this.hBlurMaterial.uniforms[ "tDiffuse" ].value = textureIn.texture;
       this.quad.material = this.hBlurMaterial;
@@ -136,7 +136,7 @@ THREE.GlossyMirror = function ( options ) {
 
 	this.mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
 	this.mirrorRenderTarget.texture.name = "GlossyMirror.mirror";
-
+	
 	this.material = new THREE.ShaderMaterial( THREE.GlossyMirrorShader );
 	this.material.defines = Object.assign( {}, this.material.defines );
 	this.material.uniforms = THREE.UniformsUtils.clone( this.material.uniforms );
@@ -153,10 +153,10 @@ THREE.GlossyMirror = function ( options ) {
 	this.depthMaterial = new THREE.MeshDepthMaterial();
  	this.depthMaterial.depthPacking = THREE.RGBADepthPacking;
  	this.depthMaterial.blending = THREE.NoBlending;
-	this.depthMaterial.side = THREE.DoubleSide;
+	this.depthMaterial.side = THREE.FrontSide;
 
 	this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
- 					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearesFilter, format: THREE.RGBAFormat } );
+ 					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 	this.depthRenderTarget.texture.generateMipmaps = false;
 	this.depthRenderTarget.texture.name = "GlossyMirror.depth";
 
@@ -180,12 +180,13 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 	constructor: THREE.GlossyMirror,
 
 	setSize: function( width, height ) {
-		console.log( "GlossyMirror: setSize", width, height );
 
 		this.mirrorRenderTarget.setSize( width, height );
 		this.depthRenderTarget.setSize( width, height );
 		this.mirrorHelper.setSize( width, height );
 	 	this.material.uniforms[ 'screenSize' ].value = new THREE.Vector2(width, height);
+
+	 	this.matrixNeedsUpdate = true;
 
 	},
 
@@ -223,6 +224,10 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.mirrorCamera.position.copy( view );
 		this.mirrorCamera.up = this.up;
 		this.mirrorCamera.lookAt( target );
+		this.mirrorCamera.fov = camera.fov;
+		this.mirrorCamera.near = camera.near;
+		this.mirrorCamera.far = camera.far;
+		this.mirrorCamera.aspect = camera.aspect;
 
 		this.mirrorCamera.updateProjectionMatrix();
 		this.mirrorCamera.updateMatrixWorld();
