@@ -60,7 +60,9 @@
 			var params = {
 				material: 'normal',
 				camera: 'perspective',
-				side: 'double'
+				side: 'double',
+				clipPlane: false
+
 			};
 
 			var cameraOrtho, cameraPerspective;
@@ -74,6 +76,7 @@
 
 			var SCALE = 2.436143; // from original model
 			var BIAS = - 0.428408; // from original model
+			var clipPlane = new THREE.Plane( new THREE.Vector3( 1, 0, 0 ), 0 );
 
 			init();
 			animate();
@@ -86,6 +89,7 @@
 				gui.add( params, 'material', [ 'standard', 'normal', 'depthBasic', 'depthRGBA' ] );
 				gui.add( params, 'camera', [ 'perspective', 'ortho' ] );
 				gui.add( params, 'side', [ 'front', 'back', 'double' ] );
+				gui.add( params, 'clipPlane' );
 			}
 
 			function init() {
@@ -98,6 +102,9 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
 
+
+	
+	
 				//
 
 				scene = new THREE.Scene();
@@ -299,6 +306,15 @@
 					mesh.material = material;
 
 				}
+
+
+				if( params['clipPlane'] && renderer.clippingPlanes.length === 0 ) {
+					renderer.clippingPlanes = [ clipPlane ];
+				}
+				else if( ! params['clipPlane'] && renderer.clippingPlanes.length > 0 ) {
+					renderer.clippingPlanes = [];
+				}
+
 
 				switch ( params.camera ) {
 
