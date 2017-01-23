@@ -196,6 +196,8 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		 	this.matrixNeedsUpdate = true;
 		 }
 
+	 	this.matrixNeedsUpdate = true;
+
 	},
 
 	updateReflectionTextureMatrix: function ( camera ) {
