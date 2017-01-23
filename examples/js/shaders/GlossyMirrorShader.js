@@ -191,20 +191,18 @@ THREE.GlossyMirrorShader = {
 				"float reflectionDepth = getReflectionDepth();",
 				"float reflectionViewZ = getReflectionViewZ( reflectionDepth );",
 
-				"vec3 reflectionViewPosition = getReflectionViewPosition( screenPosition, reflectionDepth, reflectionViewZ );",
+				"vec3 reflectionViewPosition = getReflectionViewPosition( screenPosition, reflectionDepth, reflectionViewZ );",			
 				"vec3 reflectionWorldPosition = ( mirrorCameraWorldMatrix * vec4( reflectionViewPosition, 1.0 ) ).xyz;",
 
 				"vec3 closestPointOnMirror = projectOnPlane( reflectionWorldPosition, mirrorWorldPosition, mirrorNormal );",
 
-
 				"vec3 pointOnMirror = linePlaneIntersect( cameraPosition, normalize( reflectionWorldPosition - cameraPosition ), mirrorWorldPosition, mirrorNormal );",
 				"float distance = length( closestPointOnMirror - reflectionWorldPosition );",
-
-
+			
 				"localRoughness = localRoughness * distance * 0.2;",
 				"float lodLevel = localRoughness;",
 
-				"fade = 1.0 - ( distanceFade * distance );",
+				"fade = 1.0 - smoothstep( 0.0, 1.0, distanceFade * distance * 0.2 );",
 			"#else",
 
 				"float lodLevel = 0.0;",

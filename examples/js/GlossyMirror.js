@@ -16,19 +16,18 @@ THREE.MirrorHelper = function(mirror) {
   this.tempRenderTargets = [];
   var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
   var mirrorTexture = mirror.mirrorRenderTarget;
+
   var width = mirrorTexture.width/2, height = mirrorTexture.height/2;
   for( var i=0; i<this.numMipMaps; i++) {
-    var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
-    renderTarget.texture.generateMipmaps = false;
-    this.mirrorTextureMipMaps.push(renderTarget);
-    width /= 2; height /= 2;
-  }
 
-  width = mirrorTexture.width/2; height = mirrorTexture.height/2;
-  for( var i=0; i<this.numMipMaps; i++) {
-    var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
-    renderTarget.texture.generateMipmaps = false;
-    this.tempRenderTargets.push(renderTarget);
+    var mirrorRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+    mirrorRenderTarget.texture.generateMipmaps = false;
+    this.mirrorTextureMipMaps.push(mirrorRenderTarget);
+
+    var tempRenderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+    tempRenderTarget.texture.generateMipmaps = false;
+    this.tempRenderTargets.push(tempRenderTarget);
+
     width /= 2; height /= 2;
   }
 
@@ -96,6 +95,8 @@ THREE.GlossyMirror = function ( options ) {
 	var width = options.textureWidth !== undefined ? options.textureWidth : 512;
 	var height = options.textureHeight !== undefined ? options.textureHeight : 512;
 
+	this.size = new THREE.Vector3( width, height );
+
 	this.localMirrorNormal = options.localMirrorNormal !== undefined ? options.localMirrorNormal : new THREE.Vector3( 0, 0, 1 );
 
 	this.distanceFade = 0.1;
@@ -109,6 +110,7 @@ THREE.GlossyMirror = function ( options ) {
 	this.cameraWorldPosition = new THREE.Vector3();
 	this.rotationMatrix = new THREE.Matrix4();
 	this.lookAtPosition = new THREE.Vector3( 0, 0, - 1 );
+	this.matrixNeedsUpdate = true;
 
 	// For debug only, show the normal and plane of the mirror
 	var debugMode = options.debugMode !== undefined ? options.debugMode : false;
@@ -156,7 +158,7 @@ THREE.GlossyMirror = function ( options ) {
 	this.depthMaterial.side = THREE.FrontSide;
 
 	this.depthRenderTarget = new THREE.WebGLRenderTarget( width, height,
- 					{ minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
+ 					{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } );
 	this.depthRenderTarget.texture.generateMipmaps = false;
 	this.depthRenderTarget.texture.name = "GlossyMirror.depth";
 
@@ -173,6 +175,8 @@ THREE.GlossyMirror = function ( options ) {
 	this.material.uniforms.tReflection3.value = this.mirrorHelper.mirrorTextureMipMaps[2].texture;
 	this.material.uniforms.tReflection4.value = this.mirrorHelper.mirrorTextureMipMaps[3].texture;
 
+	this.setSize( width, height );
+
 };
 
 THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prototype ), {
@@ -181,12 +185,16 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 
 	setSize: function( width, height ) {
 
-		this.mirrorRenderTarget.setSize( width, height );
-		this.depthRenderTarget.setSize( width, height );
-		this.mirrorHelper.setSize( width, height );
-	 	this.material.uniforms[ 'screenSize' ].value = new THREE.Vector2(width, height);
+		if( this.size.x !== width || this.size.y !== height ) {
 
-	 	this.matrixNeedsUpdate = true;
+			this.mirrorRenderTarget.setSize( width, height );
+			this.depthRenderTarget.setSize( width, height );
+			this.mirrorHelper.setSize( width, height );
+		 	this.material.uniforms[ 'screenSize' ].value = new THREE.Vector2(width, height);
+
+		 	this.size.set( width, height );
+		 	this.matrixNeedsUpdate = true;
+		 }
 
 	},
 
@@ -257,9 +265,11 @@ THREE.GlossyMirror.prototype = Object.assign( Object.create( THREE.Object3D.prot
 		this.material.transparent = true;
 	},
 
-	render: function ( renderer, scene, camera ) {
+	render: function ( renderer, scene, camera, width, height ) {
 
 		if ( ! camera instanceof THREE.PerspectiveCamera ) console.error( "THREE.GlossyMirror: camera is not a Perspective Camera!" );
+
+		this.setSize( width, height );
 
 		if( ! this.mirrorCamera ) {
 			this.mirrorCamera = camera.clone();
