@@ -22,8 +22,16 @@
 		vec2 st1 = dFdy( normalUv.st );
 
 		vec3 S = normalize( q0 * st1.t - q1 * st0.t );
-		vec3 T = normalize( -q0 * st1.s + q1 * st0.s );
+		vec3 T = normalize( -q0 * st1.s + q1 * st0.s );		
 		vec3 N = normalize( surf_norm );
+
+		// invert S, T when the UV direction is backwards (from mirrored faces),
+		// otherwise it will do the normal mapping backwards.
+		vec3 NfromST = cross( S, T );
+		if( dot( NfromST, N ) < 0.0 ) {
+			S *= -1.0;
+			T *= -1.0;
+		}
 
 		vec3 mapN = texture2D( normalMap, normalUv ).xyz * 2.0 - 1.0;
 		mapN.xy = normalScale * mapN.xy;
