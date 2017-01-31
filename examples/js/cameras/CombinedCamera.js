@@ -14,6 +14,7 @@ THREE.CombinedCamera = function ( width, height, fov, near, far, orthoNear, orth
 	THREE.Camera.call( this );
 
 	this.fov = fov;
+	this.aspect = width / height;
 
 	this.left = - width / 2;
 	this.right = width / 2;
@@ -38,10 +39,12 @@ THREE.CombinedCamera.prototype.toPerspective = function () {
 
 	// Switches to the Perspective Camera
 
-	this.near = this.cameraP.near;
-	this.far = this.cameraP.far;
+	this.cameraP.near = this.near;
+	this.cameraP.far = this.far;
 
 	this.cameraP.fov =  this.fov / this.zoom ;
+
+	this.cameraP.aspect = this.aspect;
 
 	this.cameraP.updateProjectionMatrix();
 
@@ -57,15 +60,13 @@ THREE.CombinedCamera.prototype.toOrthographic = function () {
 	// Switches to the Orthographic camera estimating viewport from Perspective
 
 	var fov = this.fov;
-	var aspect = this.cameraP.aspect;
-	var near = this.cameraP.near;
-	var far = this.cameraP.far;
+	var aspect = this.aspect;
+	var near = this.near;
+	var far = this.far;
 
 	// The size that we set is the mid plane of the viewing frustum
 
-	var hyperfocus = ( near + far ) / 2;
-
-	var halfHeight = Math.tan( fov * Math.PI / 180 / 2 ) * hyperfocus;
+	var halfHeight = Math.tan( fov * Math.PI / 180 / 2 );
 	var halfWidth = halfHeight * aspect;
 
 	halfHeight /= this.zoom;
@@ -75,7 +76,7 @@ THREE.CombinedCamera.prototype.toOrthographic = function () {
 	this.cameraO.right = halfWidth;
 	this.cameraO.top = halfHeight;
 	this.cameraO.bottom = - halfHeight;
-
+	this.cameraO.zoom = this.zoom;
 	// this.cameraO.left = -farHalfWidth;
 	// this.cameraO.right = farHalfWidth;
 	// this.cameraO.top = farHalfHeight;
