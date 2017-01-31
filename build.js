@@ -30,6 +30,8 @@ var includes = [
 
 var output = "./build/three.extra.js";
 
+console.log( "building " + output );
+
 var buffer = [];
 buffer.push( "var THREE = require('./three');\n" );
 

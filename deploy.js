@@ -38,7 +38,7 @@ for( var i = 0; i < inputs.length; i ++ ) {
 			if( err ) return console.log( "Error: ", err );
 			fs.writeFile( outputDirectory + "/" + input, data, "utf8", function( err ) {
 				if( err ) return console.log( "Error: ", err );
-				console.log( "Success: " + input );
+				console.log( "Success: " +  inputDirectory + "/" + input + " --> " + outputDirectory + "/" + input  );
 			})
 		} );
 	}();
