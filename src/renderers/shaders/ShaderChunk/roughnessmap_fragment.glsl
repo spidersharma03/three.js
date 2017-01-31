@@ -9,6 +9,6 @@ float roughnessFactor = roughness;
 	#endif
 
 	vec4 texelRoughness = roughnessMapTexelTransform( texture2D( roughnessMap, roughnessUv ) );
-	roughnessFactor *= texelRoughness.r;
+	roughnessFactor *= texelRoughness.g;
 
 #endif

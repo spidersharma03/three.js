@@ -9,6 +9,6 @@ float metalnessFactor = metalness;
 	#endif
 
 	vec4 texelMetalness = metalnessMapTexelTransform( texture2D( metalnessMap, metalnessUv ) );
-	metalnessFactor *= texelMetalness.r;
+	metalnessFactor *= texelMetalness.b;
 
 #endif
