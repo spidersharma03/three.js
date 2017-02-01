@@ -9,6 +9,8 @@ float metalnessFactor = metalness;
 	#endif
 
 	vec4 texelMetalness = metalnessMapTexelTransform( texture2D( metalnessMap, metalnessUv ) );
+
+	// reads channel B, intended to be used with a combined OcclusionRoughnessMetallic (RGB) texture
 	metalnessFactor *= texelMetalness.b;
 
 #endif

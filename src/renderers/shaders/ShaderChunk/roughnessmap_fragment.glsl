@@ -9,6 +9,8 @@ float roughnessFactor = roughness;
 	#endif
 
 	vec4 texelRoughness = roughnessMapTexelTransform( texture2D( roughnessMap, roughnessUv ) );
+
+	// reads channel G, intended to be used with a combined OcclusionRoughnessMetallic (RGB) texture
 	roughnessFactor *= texelRoughness.g;
 
 #endif
