@@ -23,7 +23,8 @@ var includes = [
 	"examples/js/postprocessing/UnrealBloomPass.js",
 	"examples/js/GlossyMirror.js",
 	"examples/js/controls/OrbitControls.js",
-	"examples/js/ColorToJsonOverride.js"
+	"examples/js/ColorToJsonOverride.js",
+	"examples/js/cameras/CombinedCamera.js",
 ];
 
 //fs.writeFileSync( "../Clara.io/threehub/vendor/three.js", fs.readFileSync( "build/three.js", 'utf8' ), 'utf8' );
