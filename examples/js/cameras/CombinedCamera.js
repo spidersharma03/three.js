@@ -135,8 +135,8 @@ THREE.CombinedCamera.prototype.copy = function ( source ) {
 	this.hyperfocusOffset = source.hyperfocusOffset;
 	this.hyperfocusScale = source.hyperfocusScale;
 
-	this.cameraO = source.cameraO.copy();
-	this.cameraP = source.cameraP.copy();
+	this.cameraO.copy( source.cameraO );
+	this.cameraP.copy( source.cameraP );
 
 	this.inOrthographicMode = source.inOrthographicMode;
 	this.inPerspectiveMode = source.inPerspectiveMode;
