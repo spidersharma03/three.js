@@ -24,6 +24,7 @@ var includes = [
 	"examples/js/GlossyMirror.js",
 	"examples/js/controls/OrbitControls.js",
 	"examples/js/ColorToJsonOverride.js",
+	"examples/js/loaders/RGBELoader.js",
 	"examples/js/cameras/CombinedCamera.js",
 ];
 
