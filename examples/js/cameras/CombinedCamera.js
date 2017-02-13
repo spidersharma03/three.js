@@ -24,6 +24,7 @@ THREE.CombinedCamera = function ( width, height, fov, near, far) {
 
 	this.aspect =  width / height;
 	this.zoom = 1;
+	this.focus = 10;
 	this.view = null;
 	this.hyperfocusOffset = 0;
 	this.hyperfocusScale = 0.5;
@@ -49,6 +50,7 @@ THREE.CombinedCamera.prototype.toPerspective = function () {
 	this.cameraP.fov =  this.fov;
 	this.cameraP.zoom = this.zoom;
 	this.cameraP.view = this.view;
+	this.cameraP.focus = this.focus;
 
 	this.cameraP.updateProjectionMatrix();
 
