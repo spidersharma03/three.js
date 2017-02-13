@@ -26,6 +26,10 @@ var includes = [
 	"examples/js/ColorToJsonOverride.js",
 	"examples/js/loaders/RGBELoader.js",
 	"examples/js/cameras/CombinedCamera.js",
+	"examples/js/effects/ParallaxBarrierEffect.js",
+	"examples/js/effects/StereoEffect.js",
+	"examples/js/shaders/FXAAShader.js",
+	"examples/js/postprocessing/OutlinePass.js",
 ];
 
 //fs.writeFileSync( "../Clara.io/threehub/vendor/three.js", fs.readFileSync( "build/three.js", 'utf8' ), 'utf8' );
