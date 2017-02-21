@@ -30,6 +30,9 @@ var includes = [
 	"examples/js/effects/StereoEffect.js",
 	"examples/js/shaders/FXAAShader.js",
 	"examples/js/postprocessing/OutlinePass.js",
+	"examples/js/effects/VREffect.js",
+	"examples/js/controls/VRControls.js",
+	"examples/js/vr/VRController.js"
 ];
 
 //fs.writeFileSync( "../Clara.io/threehub/vendor/three.js", fs.readFileSync( "build/three.js", 'utf8' ), 'utf8' );
