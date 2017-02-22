@@ -3,7 +3,7 @@
  * @author stewdio / http://stewd.io
  */
 
-THREE.VRController = function ( id, index=0 ) {
+THREE.VRController = function ( id, index ) {
 
 	THREE.Object3D.call( this );
 
@@ -15,7 +15,7 @@ THREE.VRController = function ( id, index=0 ) {
 	var triggerIsPressed = false;
 	var gripsArePressed = false;
 	var menuIsPressed = false;
-
+	if ( index === undefined ) index = 0;
 	function findGamepad( id ) {
 
 		// Iterate across gamepads as Vive Controllers may not be
