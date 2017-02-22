@@ -303,7 +303,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		renderer.render( this.scene, this.camera, this.renderTargetBlurBuffer1, true );
 		this.separableBlurMaterial1.uniforms[ "colorTexture" ].value = this.renderTargetBlurBuffer1.texture;
 		this.separableBlurMaterial1.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionY;
-		renderer.render( this.scene, this.camera, this.renderTargetEdgeBuffer1, true );
+		//renderer.render( this.scene, this.camera, this.renderTargetEdgeBuffer1, true );
 
 		// Apply Blur on quarter res
 		this.quad.material = this.separableBlurMaterial2;
@@ -327,7 +327,7 @@ THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 
 		if ( maskActive ) renderer.context.enable( renderer.context.STENCIL_TEST );
 
-		renderer.render( this.scene, this.camera, readBuffer, false );
+		renderer.render( this.scene, this.camera, this.renderToScreen ? null : readBuffer, false );
 
 		renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
 		renderer.autoClear = oldAutoClear;
