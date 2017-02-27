@@ -2,6 +2,7 @@ var fs = require("fs");
 var path = require("path");
 
 var includes = [
+	"examples/js/lights/RectAreaLightUniformsLib.js",
 	"examples/js/pmrem/PMREMGenerator.js",
 	"examples/js/pmrem/PMREMCubeUVPacker.js",
 	"examples/js/shaders/CopyShader.js",
