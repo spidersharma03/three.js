@@ -1,7 +1,8 @@
 import { Light } from './Light';
 import { DirectionalLightShadow } from './DirectionalLightShadow';
 import { Object3D } from '../core/Object3D';
-
+import { Box3 } from '../math/Box3';
+import { Vector3 } from '../math/Vector3';
 /**
  * @author mrdoob / http://mrdoob.com/
  * @author alteredq / http://alteredqualia.com/
@@ -17,7 +18,7 @@ function DirectionalLight( color, intensity ) {
 	this.updateMatrix();
 
 	this.target = new Object3D();
-
+	this.autoShadow = false;
 	this.shadow = new DirectionalLightShadow();
 
 }
@@ -42,19 +43,19 @@ DirectionalLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
 } );
 
-DirectionalLight.prototype.autoShadow = function ( scene ) {
+DirectionalLight.prototype.createAutoShadow = function ( scene ) {
 
 	if (!scene) return;
 
 	var position = this.position;
 	var targetPosition = this.target.position;
 
-  	const box = new THREE.Box3();
-  	const result = new THREE.Box3();
+  	const box = new Box3();
+  	const result = new Box3();
   	result.makeEmpty();
 	scene.traverseVisible(function(object) {
 
-		if(object instanceof THREE.Mesh) {
+		if( object.isMesh ) {
 
 		    var geometry = object.geometry;
 
@@ -75,8 +76,11 @@ DirectionalLight.prototype.autoShadow = function ( scene ) {
 
 	});
 	var boundingSphere = result.getBoundingSphere();
-    var vector1 = new THREE.Vector3().subVectors( targetPosition, position );
-    var vector2 = new THREE.Vector3().subVectors( boundingSphere.center, position );
+    var vector1 = new Vector3().subVectors( targetPosition, position );
+    if (this.children[0] && this.children[0].uuid === this.target.uuid) {
+    	vector1 =  new Vector3(0, 0, -1).applyQuaternion(this.quaternion);
+    }
+    var vector2 = new Vector3().subVectors( boundingSphere.center, position );
     var distance = boundingSphere.center.distanceTo(position);
     var angle = vector1.angleTo(vector2);
     var size = distance * Math.sin(angle) + boundingSphere.radius;
@@ -89,6 +93,7 @@ DirectionalLight.prototype.autoShadow = function ( scene ) {
     this.shadow.camera.bottom = -size;
     this.shadow.camera.far = far;
     this.shadow.camera.near = near;
+    this.shadow.camera.updateProjectionMatrix();
 }
 
 export { DirectionalLight };
