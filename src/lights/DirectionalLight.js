@@ -43,7 +43,8 @@ DirectionalLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
 } );
 
-DirectionalLight.prototype.createAutoShadow = function ( scene ) {
+// update shadow camera by all visible meshes in the scene
+DirectionalLight.prototype.updateShadowWithPosition = function ( scene ) {
 
 	if (!scene) return;
 
@@ -53,6 +54,7 @@ DirectionalLight.prototype.createAutoShadow = function ( scene ) {
   	const box = new Box3();
   	const result = new Box3();
   	result.makeEmpty();
+
 	scene.traverseVisible(function(object) {
 
 		if( object.isMesh ) {
@@ -60,10 +62,12 @@ DirectionalLight.prototype.createAutoShadow = function ( scene ) {
 		    var geometry = object.geometry;
 
 		    if (geometry.boundingBox === null) {
-		      geometry.computeBoundingBox();
-		    }
 
+		      geometry.computeBoundingBox();
+
+		    }
 		    if (geometry.boundingBox.isEmpty() === false) {
+
 		      box.copy(geometry.boundingBox);
 		      object.matrix.compose(object.position, object.quaternion, object.scale);
 		      object.updateMatrixWorld(true);
@@ -75,14 +79,19 @@ DirectionalLight.prototype.createAutoShadow = function ( scene ) {
 		}
 
 	});
+
 	var boundingSphere = result.getBoundingSphere();
     var vector1 = new Vector3().subVectors( targetPosition, position );
-    if (this.children[0] && this.children[0].uuid === this.target.uuid) {
-    	vector1 =  new Vector3(0, 0, -1).applyQuaternion(this.quaternion);
-    }
     var vector2 = new Vector3().subVectors( boundingSphere.center, position );
-    var distance = boundingSphere.center.distanceTo(position);
+    //If light target is a child of light, get light direction, default direction is (0,0,-1) in clara
+    if (this.children[0] && this.children[0].uuid === this.target.uuid) {
+
+    	vector1 =  new Vector3(0, 0, -1).applyQuaternion(this.quaternion);
+
+    }
+
     var angle = vector1.angleTo(vector2);
+    var distance = boundingSphere.center.distanceTo(position);
     var size = distance * Math.sin(angle) + boundingSphere.radius;
     var far = angle > (Math.PI / 2) ? 0 : distance * Math.cos(angle) + boundingSphere.radius;
     var near = (far === 0 || (far - boundingSphere.radius * 2) < 0 )? 0.01 : far - boundingSphere.radius * 2;
@@ -94,6 +103,67 @@ DirectionalLight.prototype.createAutoShadow = function ( scene ) {
     this.shadow.camera.far = far;
     this.shadow.camera.near = near;
     this.shadow.camera.updateProjectionMatrix();
+}
+//Default ignore directional light's position
+DirectionalLight.prototype.updateShadow = function ( scene ) {
+	if (!scene) return;
+
+	var position = this.position;
+	var targetPosition = this.target.position;
+
+  	const box = new Box3();
+  	const result = new Box3();
+  	result.makeEmpty();
+
+	scene.traverseVisible(function(object) {
+
+		if( object.isMesh ) {
+
+		    var geometry = object.geometry;
+
+		    if (geometry.boundingBox === null) {
+
+		      geometry.computeBoundingBox();
+
+		    }
+		    if (geometry.boundingBox.isEmpty() === false) {
+
+		      box.copy(geometry.boundingBox);
+		      object.matrix.compose(object.position, object.quaternion, object.scale);
+		      object.updateMatrixWorld(true);
+		      box.applyMatrix4(object.matrixWorld);
+		      result.union(box);
+
+			}
+
+		}
+
+	});
+
+	var boundingSphere = result.getBoundingSphere();
+    var dirVec = new Vector3().subVectors( targetPosition, position ).normalize();
+    if (this.children[0] && this.children[0].uuid === this.target.uuid) {
+    	dirVec =  new Vector3(0, 0, -1).applyQuaternion(this.quaternion);
+    }
+    var shadowCamPos = boundingSphere.center.clone().sub(dirVec.clone().multiplyScalar(boundingSphere.radius));
+
+    var cameraCenterVec = new Vector3().subVectors( boundingSphere.center, shadowCamPos );
+	var angle = dirVec.angleTo(cameraCenterVec);
+    var distance = boundingSphere.center.distanceTo(shadowCamPos);
+    var size = distance * Math.sin(angle) + boundingSphere.radius;
+    var far = angle > (Math.PI / 2) ? 0 : distance * Math.cos(angle) + boundingSphere.radius;
+    var near = (far === 0 || (far - boundingSphere.radius * 2) < 0 )? 0.01 : far - boundingSphere.radius * 2;
+
+    this.shadow.virtualPosition = new Vector3(shadowCamPos.x, shadowCamPos.y, shadowCamPos.z);
+
+    this.shadow.camera.left = -size;
+    this.shadow.camera.right = size;
+    this.shadow.camera.top = size;
+    this.shadow.camera.bottom = -size;
+    this.shadow.camera.far = far;
+    this.shadow.camera.near = near;
+    this.shadow.camera.updateProjectionMatrix();
+
 }
 
 export { DirectionalLight };
