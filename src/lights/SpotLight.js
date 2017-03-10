@@ -66,7 +66,8 @@ SpotLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
 } );
 
-SpotLight.prototype.createAutoShadow = function ( scene ) {
+// update shadow camera by all visible meshes in the scene
+SpotLight.prototype.updateShadow = function ( scene ) {
 
 	if (!scene) return;
 
@@ -76,6 +77,7 @@ SpotLight.prototype.createAutoShadow = function ( scene ) {
   	const box = new Box3();
   	const result = new Box3();
   	result.makeEmpty();
+
 	scene.traverseVisible(function(object) {
 
 		if( object.isMesh ) {
@@ -83,10 +85,12 @@ SpotLight.prototype.createAutoShadow = function ( scene ) {
 		    var geometry = object.geometry;
 
 		    if (geometry.boundingBox === null) {
-		      geometry.computeBoundingBox();
-		    }
 
+		      geometry.computeBoundingBox();
+
+		    }
 		    if (geometry.boundingBox.isEmpty() === false) {
+
 		      box.copy(geometry.boundingBox);
 		      object.matrix.compose(object.position, object.quaternion, object.scale);
 		      object.updateMatrixWorld(true);
@@ -98,16 +102,20 @@ SpotLight.prototype.createAutoShadow = function ( scene ) {
 		}
 
 	});
+
 	var boundingSphere = result.getBoundingSphere();
     var vector1 = new Vector3().subVectors( targetPosition, position );
+    var vector2 = new Vector3().subVectors( boundingSphere.center, position );
+    //If light target is a child of light, get light direction, default direction is (0,0,-1) in clara
     if (this.children[0] && this.children[0].uuid === this.target.uuid) {
     	vector1 =  new Vector3(0, 0, -1).applyQuaternion(this.quaternion);
     }
-    var vector2 = new Vector3().subVectors( boundingSphere.center, position );
-    var distance = boundingSphere.center.distanceTo(position);
+
     var angle = vector1.angleTo(vector2);
-    var far = angle > (Math.PI / 2) ? 0 : distance * Math.cos(angle) + boundingSphere.radius;
-    var near = (far === 0 || (far - boundingSphere.radius * 2) < 0 )? 0.01 : far - boundingSphere.radius * 2;
+    var distance = boundingSphere.center.distanceTo(position);
+    var far = angle > (Math.PI / 2) ? 0.1 : distance * Math.cos(angle) + boundingSphere.radius;
+    var near = ( (far - boundingSphere.radius * 2) < 0 ) ? 0.01 : far - boundingSphere.radius * 2;
+
     this.distance = far;
     this.shadow.camera.far = far;
     this.shadow.camera.near = near;
