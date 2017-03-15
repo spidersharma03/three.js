@@ -147,12 +147,9 @@ DirectionalLight.prototype.updateShadow = function ( scene ) {
     }
     var shadowCamPos = boundingSphere.center.clone().sub(dirVec.clone().multiplyScalar(boundingSphere.radius));
 
-    var cameraCenterVec = new Vector3().subVectors( boundingSphere.center, shadowCamPos );
-	var angle = dirVec.angleTo(cameraCenterVec);
-    var distance = boundingSphere.center.distanceTo(shadowCamPos);
-    var size = distance * Math.sin(angle) + boundingSphere.radius;
-    var far = angle > (Math.PI / 2) ? 0 : distance * Math.cos(angle) + boundingSphere.radius;
-    var near = (far === 0 || (far - boundingSphere.radius * 2) < 0 )? 0.01 : far - boundingSphere.radius * 2;
+    var size = boundingSphere.radius;
+    var far = 2 * boundingSphere.radius;
+    var near = 0;
 
     this.shadow.virtualPosition = new Vector3(shadowCamPos.x, shadowCamPos.y, shadowCamPos.z);
 
