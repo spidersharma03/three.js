@@ -154,7 +154,7 @@ WebGLOITManager.prototype = {
         blendSrcAlpha:material.blendSrcAlpha, blendDstAlpha:material.blendDstAlpha, premultipliedAlpha:material.premultipliedAlpha,
         needsUpdate:material.needsUpdate, depthWrite: material.depthWrite, depthTest: material.depthTest
       };
-      this.blendFactorsMap[material] = blendState;
+      this.blendFactorsMap[material.uuid] = blendState;
       material.blending = newBlendState.blending;
       material.blendEquation = newBlendState.blendEquation;
       material.blendSrc = newBlendState.blendSrc;
@@ -175,7 +175,7 @@ WebGLOITManager.prototype = {
 
       var renderItem = transparentList[ i ];
       var material = renderItem.material;
-      var originalBlendState = this.blendFactorsMap[material];
+      var originalBlendState = this.blendFactorsMap[material.uuid];
       material.blending = originalBlendState.blending;
       material.blendEquation = originalBlendState.blendEquation;
       material.blendSrc = originalBlendState.blendSrc;
