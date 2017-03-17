@@ -45,19 +45,38 @@
 
 		<script src="../examples/js/libs/dat.gui.min.js"></script>
 		<script src="../examples/js/controls/OrbitControls.js"></script>
+		<script src="../examples/js/loaders/OBJLoader.js"></script>
+		<script src="../src/renderers/webgl/WebGLProfiler.js"></script>
 		<script src="js/Detector.js"></script>
 
 		<script>
+
+			var loader = new THREE.OBJLoader();
 
 			var container = document.getElementById( 'container' );
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var rnd = new THREE.WebGLRenderer();
+			rnd.toneMapping = THREE.Uncharted2ToneMapping;
+
 			var cam = new THREE.PerspectiveCamera( 34, window.innerWidth / window.innerHeight, 0.1, 20000 );
 			var orb = new THREE.OrbitControls( cam, rnd.domElement );
 
 			var scn = new THREE.Scene();
+
+			// load a resource
+			// loader.load(
+			// 	// resource URL
+			// 	'models/obj/totem.obj',
+			// 	// Function when resource is loaded
+			// 	function ( object ) {
+			// 		object.position.set( 12, 2, 5 );
+			// 		object.scale.set(10, 10, 10);
+			// 		scn.add( object );
+			// 	}
+			// );
+
 			var origin = new THREE.Object3D();
 
 			var matPhongParams = {
@@ -70,7 +89,9 @@
 			};
 
 			var matPhongFloor = new THREE.MeshPhongMaterial( matPhongParams );
+			matPhongFloor.extensions = { shaderTextureLOD: true };
 			var matPhongObjects = new THREE.MeshPhongMaterial( matPhongParams );
+			matPhongObjects.extensions = { shaderTextureLOD: true };
 
 			var matStdFloor = new THREE.MeshStandardMaterial( matStdParams );
 			var matStdObjects = new THREE.MeshStandardMaterial( matStdParams );
@@ -81,9 +102,13 @@
 			var geoKnot = new THREE.TorusKnotGeometry( 1.5, 0.5, 100, 16 );
 
 			var mshPhongFloor = new THREE.Mesh( geoFloor, matPhongFloor );
+			var mshPhongWall = new THREE.Mesh( geoFloor, matPhongFloor );
 			var mshPhongBox = new THREE.Mesh( geoBox, matPhongObjects );
 			var mshPhongSphere = new THREE.Mesh( geoSphere, matPhongObjects );
 			var mshPhongKnot = new THREE.Mesh( geoKnot, matPhongObjects );
+
+			mshPhongWall.rotation.x = Math.PI/2;
+			mshPhongWall.position.set(0,0, 15);
 
 			var mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 			var mshStdBox = new THREE.Mesh( geoBox, matStdObjects );
@@ -126,10 +151,13 @@
 
 				cam.position.set( 0, 20, 45 );
 
-				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 2, 10 );
+
+				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 10, 10 );
 				rectLight.matrixAutoUpdate = true;
-				rectLight.intensity = 80.0;
+				rectLight.intensity = 100.0;
 				rectLight.position.set( 5, 5, 0 );
+				// rectLight.lookAt( new THREE.Vector3(5, 0, -5) );
+				// rectLight.updateMatrixWorld();
 
 				// TODO: ensure RectAreaLight handles target param correctly
 				// rectLight.target = mshPhongBox;
@@ -137,13 +165,40 @@
 				rectLightHelper = new THREE.RectAreaLightHelper( rectLight );
 				rectLight.add( rectLightHelper );
 
+				var loader = new THREE.TextureLoader();
+
+				// load a resource
+				loader.load(
+					// resource URL
+					'textures/neonfull.jpg',
+					// Function when resource is loaded
+					function ( texture ) {
+						// texture.flipY = false;
+						// rectLight.areaTexture = texture;
+						// rectLightHelper.children[0].material.map = texture;
+						// rectLightHelper.children[1].material.map = texture;
+						// rectLightHelper.children[0].material.needsUpdate = true;
+						// rectLightHelper.children[1].material.needsUpdate = true;
+						// rectLight.areaTexture.generateMipMaps = true;
+						// rectLight.areaTexture.needsUpdate = true;
+					},
+					// Function called when download progresses
+					function ( xhr ) {
+						console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+					},
+					// Function called when download errors
+					function ( xhr ) {
+						console.log( 'An error happened' );
+					}
+				);
+
 				// TODO (abelnation): rect light shadow
 
 				scn.add( cam );
 				scn.add( origin );
 
 				matPhongFloor.color.set( 0x808080 );
-				matPhongObjects.color.set( 0xA00000 );
+				matPhongObjects.color.set( 0xffffff );
 				matStdFloor.color.set( 0x808080 );
 				matStdObjects.color.set( 0xA00000 );
 
@@ -164,27 +219,28 @@
 				mshPhongKnot.receiveShadow = true;
 
 				scn.add( mshPhongFloor );
+				scn.add( mshPhongWall );
 				scn.add( mshPhongBox );
 				scn.add( mshPhongSphere );
 				scn.add( mshPhongKnot );
 
-				mshStdBox.castShadow = true;
-				mshStdBox.receiveShadow = true;
-				mshStdBox.position.set( 0, 5, -5 );
-				mshStdBox.rotation.set( 0, Math.PI / 2.0, 0 );
+				// mshStdBox.castShadow = true;
+				// mshStdBox.receiveShadow = true;
+				// mshStdBox.position.set( 0, 5, -5 );
+				// mshStdBox.rotation.set( 0, Math.PI / 2.0, 0 );
+				//
+				// mshStdSphere.castShadow = true;
+				// mshStdSphere.receiveShadow = true;
+				// mshStdSphere.position.set(-5, 5, -5 );
+				//
+				// mshStdKnot.position.set( 5, 5, -5 );
+				// mshStdKnot.castShadow = true;
+				// mshStdKnot.receiveShadow = true;
 
-				mshStdSphere.castShadow = true;
-				mshStdSphere.receiveShadow = true;
-				mshStdSphere.position.set(-5, 5, -5 );
-
-				mshStdKnot.position.set( 5, 5, -5 );
-				mshStdKnot.castShadow = true;
-				mshStdKnot.receiveShadow = true;
-
-				scn.add( mshStdFloor );
-				scn.add( mshStdBox );
-				scn.add( mshStdSphere );
-				scn.add( mshStdKnot );
+				// scn.add( mshStdFloor );
+				// scn.add( mshStdBox );
+				// scn.add( mshStdSphere );
+				// scn.add( mshStdKnot );
 
 				scn.add( amb );
 
@@ -204,7 +260,7 @@
 				rnd.setSize( window.innerWidth, window.innerHeight );
 				cam.aspect = ( window.innerWidth / window.innerHeight );
 				cam.updateProjectionMatrix();
-				orb.target = mshPhongBox.position;
+				// orb.target = mshPhongBox.position;
 
 			}
 
@@ -220,7 +276,7 @@
 			}
 
 			function update() {
-
+				return;
 				var dt = 6000;
 				var qdt = dt / 4.0;
 				var dirSigns = [
@@ -250,7 +306,19 @@
 			function render() {
 
 				rectLightHelper.update(); // required
+				if( this.profiler === undefined ) {
+					this.profiler = new THREE.WebGLProfiler(rnd);
+				}
+				this.profiler.start();
+
 				rnd.render( scn, cam );
+
+				this.profiler.end();
+
+				if( this.profiler.available() ) {
+					var value = this.profiler.value();
+					console.log('Time = ' +  value);
+				}
 
 			}
 
@@ -319,7 +387,7 @@
 
 				} );
 
-				lightFolder.add( param, 'intensity', 0.0, 200.0 ).onChange( function ( val ) {
+				lightFolder.add( param, 'intensity', 0.0, 10000.0 ).onChange( function ( val ) {
 
 					rectLight.intensity = val;
 

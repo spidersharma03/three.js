@@ -83,3 +83,46 @@ mat3 transpose( const in mat3 v ) {
 	return tmp;
 
 }
+
+float rectangleSolidAngle ( vec3 worldPos ,vec3 p0 , vec3 p1 , vec3 p2 , vec3 p3 ) {
+ vec3 v0 = p0 - worldPos ;
+ vec3 v1 = p1 - worldPos ;
+ vec3 v2 = p2 - worldPos ;
+ vec3 v3 = p3 - worldPos ;
+ vec3 n0 = normalize ( cross (v0 , v1 ));
+ vec3 n1 = normalize ( cross (v1 , v2 ));
+ vec3 n2 = normalize ( cross (v2 , v3 ));
+ vec3 n3 = normalize ( cross (v3 , v0 ));
+
+ float g0 = acos ( dot (-n0 , n1 ));
+ float g1 = acos ( dot (-n1 , n2 ));
+ float g2 = acos ( dot (-n2 , n3 ));
+ float g3 = acos ( dot (-n3 , n0 ));
+
+ return g0 + g1 + g2 + g3 - 2.0 * PI ;
+}
+
+float rightPyramidSolidAngle ( float dist , float halfWidth , float halfHeight ) {
+ float a = halfWidth ;
+ float b = halfHeight ;
+ float h = dist ;
+ return 4.0 * asin (a * b / sqrt (( a * a + h * h) * (b * b + h * h) ));
+}
+
+vec3 rayPlaneIntersect (in vec3 rayOrigin , in vec3 rayDirection , in vec3 planeOrigin , in vec3 planeNormal ) {
+ float distance = dot ( planeNormal , planeOrigin - rayOrigin ) / dot ( planeNormal , rayDirection );
+ return rayOrigin + rayDirection * distance ;
+}
+
+vec3 closestPointRect (in vec3 pos , in vec3 planeOrigin , in vec3 left , in vec3 up , in float halfWidth , in float halfHeight ) {
+
+	vec3 dir = pos - planeOrigin ;
+ // - Project in 2D plane ( forward is the light direction away from
+ // the plane )
+ // - Clamp inside the rectangle
+ // - Calculate new world position
+ vec2 dist2D = vec2 (dot ( dir , left ) , dot ( dir , up ));
+ vec2 rectHalfSize = vec2 ( halfWidth , halfHeight ) ;
+ dist2D = clamp ( dist2D , - rectHalfSize , rectHalfSize );
+ return planeOrigin + dist2D .x * left + dist2D .y * up ;
+}

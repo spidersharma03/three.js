@@ -404,7 +404,214 @@ vec3 Rect_Area_Light_Diffuse_Reflectance(
 	return diffuseReflectance;
 
 }
+
+void Rect_Area_Light_Diffuse_Blender(
+		const in GeometricContext geometry,
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, const in sampler2D areaTexture, float shininess,
+		inout vec3 diffuse, inout vec3 specular ) {
+
+	vec3 normal = geometry.normal;
+	vec3 viewDirection  = geometry.viewDir;
+	vec3 vertexPosition = geometry.position;
+
+	float w = length(lightHalfWidth);
+	float h = length(lightHalfHeight);
+
+	vec3 areaLightRight = lightHalfWidth/w;
+	vec3 areaLightUp = lightHalfHeight/h;
+
+	vec3 lightNormal = normalize( cross(lightHalfWidth, lightHalfHeight));
+	//vec3 areaDiffuseTerm = vec3(0.0);
+	float dotProd = dot ( vertexPosition - lightPos , lightNormal );
+	if ( dotProd > 0.0 ) {
+		vec3 proj = projectOnPlane( vertexPosition, lightPos, lightNormal );
+		vec3 dir = proj - lightPos;
+		vec2 diagonal = vec2( dot( dir, areaLightRight ), dot( dir, areaLightUp ) );
+		vec2 nearest2D = vec2( clamp( diagonal.x, -w, w ), clamp( diagonal.y, -h, h ) );
+		vec3 nearestPointInside = lightPos + ( areaLightRight * nearest2D.x + areaLightUp * nearest2D.y );
+		vec3 lightDir = normalize( nearestPointInside - vertexPosition );
+		float NdotL = max( dot( lightNormal, -lightDir ), 0.0 );
+		float NdotL2 = max( dot( normal, lightDir ) * 0.5 + 0.5, 0.0 );
+		vec3 areaDiffuseWeight = vec3( ( NdotL2 * NdotL ) );
+		float dist = distance( vertexPosition, nearestPointInside );
+		float attenuation = 1.0/( 0.0 + dist );
+	  diffuse = areaDiffuseWeight * attenuation;
+
+		float d = distance( vertexPosition, nearestPointInside );
+		vec2 co = ( diagonal.xy + vec2( w, h ) ) / ( 2.0 * vec2( w, h ) );
+		//co.x = 1.0 - co.x;
+		vec4 diff = vec4( 0.0 );
+		if ( dotProd < 0.0 ) {
+			diff = vec4( 0.0 );
+		} else {
+			float lod = max( pow( d, 0.1 ), 0.0 ) * 6.0;
+			vec4 t00 = texture2DLodEXT( areaTexture, co, lod);
+			vec4 t01 = texture2DLodEXT( areaTexture, co, lod + 1.0);
+			diff = mix(t00, t01, 0.5);
+		}
+		//diffuse *= diff.xyz;
+
+		vec3 R = reflect( normalize( -vertexPosition ), normal );
+		vec3 E = linePlaneIntersect( vertexPosition, R, lightPos, lightNormal );
+		float specAngle = dot( R, lightNormal );
+
+		if( specAngle > 0.0 ) {
+			vec3 dirSpec = E - lightPos;
+			vec2 dirSpec2D = vec2( dot( dirSpec, areaLightRight ), dot( dirSpec, areaLightUp ) );
+			vec2 nearestSpec2D = vec2( clamp( dirSpec2D.x, -w, w ), clamp( dirSpec2D.y, -h, h ) );
+			float specFactor = 1.0 - clamp( length( nearestSpec2D - dirSpec2D ) * 0.05 * shininess, 0.0, 1.0 );
+			vec3 areaSpecularWeight = specFactor * specAngle * areaDiffuseWeight;
+			vec3 areaSpecularTerm = areaSpecularWeight * attenuation;
+			specular += areaSpecularTerm;
+
+			if ( false ) {
+				float hard = 16.0;
+				float gloss = 16.0;
+				vec3 specPlane = lightPos + ( areaLightRight * dirSpec2D.x + areaLightUp * dirSpec2D.y );
+				float dist = max( distance( vertexPosition, specPlane ), 0.0 );
+				float d = ( ( 1.0 / hard ) / 2.0 ) * ( dist / gloss );
+				w = max( w, 0.0 );
+				h = max( h, 0.0 );
+				vec2 co = dirSpec2D / ( d + 1.0 );
+				co /= 2.0 * vec2( w, h );
+				co = co + vec2( 0.5 );
+				co.y = 1.0 - co.y;
+				float lod = ( 2.0 / hard * max( dist, 0.0 ) );
+				vec4 t00 = texture2DLodEXT( areaTexture, co, lod );
+				vec4 t01 = texture2DLodEXT( areaTexture, co, lod + 1.0 );
+				vec4 spec = mix( t00, t01, 0.5 );
+				specular *= spec.xyz;
+			}
+		}
+	}
+}
+
+vec3 Rect_Area_Light_Diffuse_FB(
+		const in GeometricContext geometry,
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight ) {
+
+	vec3 normal = geometry.normal;
+	vec3 viewDirection  = geometry.viewDir;
+	vec3 vertexPosition = geometry.position;
+
+	vec3 lightNormal = normalize( cross(lightHalfWidth, lightHalfHeight));
+
+	vec3 areaDiffuseTerm = vec3(0.0);
+
+	if ( dot ( vertexPosition - lightPos , lightNormal ) > 0.0 ) {
+		vec3 p0 = lightPos + lightHalfWidth + lightHalfHeight ;
+		vec3 p1 = lightPos - lightHalfWidth + lightHalfHeight ;
+		vec3 p2 = lightPos - lightHalfWidth - lightHalfHeight ;
+		vec3 p3 = lightPos + lightHalfWidth - lightHalfHeight ;
+
+		float solidAngle = rectangleSolidAngle ( vertexPosition , p0 , p1 , p2 , p3 );
+		//float solidAngle = rightPyramidSolidAngle( length( lightPos - vertexPosition ), length(lightHalfHeight), length(lightHalfWidth));
+
+		float illuminance = solidAngle * 0.2 * (
+		clamp ( dot( normalize ( p0 - vertexPosition ) , normal ), 0.0, 1.0 ) +
+		clamp ( dot( normalize ( p1 - vertexPosition ) , normal ), 0.0, 1.0 )+
+		clamp ( dot( normalize ( p2 - vertexPosition ) , normal ), 0.0, 1.0 )+
+		clamp ( dot( normalize ( p3 - vertexPosition ) , normal ), 0.0, 1.0 )+
+		clamp ( dot( normalize ( lightPos - vertexPosition ) , normal ), 0.0, 1.0 ) );
+		areaDiffuseTerm = vec3(illuminance);
+	}
+	return areaDiffuseTerm;
+}
+
+vec3 Rect_Area_Light_Diffuse_Drobot(
+		const in GeometricContext geometry,
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, const in sampler2D areaTexture ) {
+
+	vec3 normal = geometry.normal;
+	vec3 viewDirection  = geometry.viewDir;
+	vec3 vertexPosition = geometry.position;
+
+	vec3 lightNormal = normalize( cross(lightHalfWidth, lightHalfHeight));
+
+	vec3 areaDiffuseTerm = vec3(0.0);
+	float dotProd = dot ( vertexPosition - lightPos , lightNormal );
+
+	if ( dotProd > 0.0 ) {
+ 		float clampCosAngle = 0.001 + clamp ( dot ( normal , lightNormal ), 0.0, 1.0 );
+ 		// clamp d0 to the positive hemisphere of surface normal
+ 		vec3 d0 = normalize ( - lightNormal + normal * clampCosAngle );
+ 		// clamp d1 to the negative hemisphere of light plane normal
+ 		vec3 d1 = normalize ( normal - lightNormal * clampCosAngle );
+ 		vec3 dh = normalize ( d0 + d1 );
+		vec3 proj = rayPlaneIntersect( vertexPosition, dh, lightPos, lightNormal );
+		vec3 dir = proj - lightPos;
+		float w = length(lightHalfWidth);
+		float h = length(lightHalfHeight);
+		vec3 areaLightRight = lightHalfWidth/w;
+		vec3 areaLightUp = lightHalfHeight/h;
+		vec2 diagonal = vec2( dot( dir, areaLightRight ), dot( dir, areaLightUp ) );
+		vec2 nearest2D = vec2( clamp( diagonal.x, -w, w ), clamp( diagonal.y, -h, h ) );
+		vec3 nearestPointInside = lightPos + ( areaLightRight * nearest2D.x + areaLightUp * nearest2D.y );
+
+		vec3 p0 = lightPos + lightHalfWidth + lightHalfHeight ;
+		vec3 p1 = lightPos - lightHalfWidth + lightHalfHeight ;
+		vec3 p2 = lightPos - lightHalfWidth - lightHalfHeight ;
+		vec3 p3 = lightPos + lightHalfWidth - lightHalfHeight ;
+
+ 		float solidAngle = rectangleSolidAngle ( vertexPosition , p0 , p1 , p2 , p3 );
+		//float solidAngle = rightPyramidSolidAngle( length( lightPos - vertexPosition ), w, h);
+
+ 		vec3 unormLightVector = nearestPointInside - vertexPosition ;
+		float d = length(unormLightVector);
+ 		vec3 L = unormLightVector/d;
+
+ 		float illuminance =  solidAngle * clamp ( dot(normal, L), 0.0, 1.0);
+		areaDiffuseTerm = vec3(illuminance);
+
+		/*vec2 co = ( diagonal.xy + vec2( w, h ) ) / ( 2.0 * vec2( w, h ) );
+		//co.x = 1.0 - co.x;
+		vec4 diff = vec4( 0.0 );
+
+		float lod = max( pow( d, 0.1 ), 0.0 ) * 6.0;
+		vec4 t00 = texture2DLodEXT( areaTexture, co, lod);
+		vec4 t01 = texture2DLodEXT( areaTexture, co, lod + 1.0);
+		diff = mix(t00, t01, 0.5);
+
+		areaDiffuseTerm *= diff.xyz;*/
+	}
+	return areaDiffuseTerm;
+}
+
+vec3 Rect_Area_Light_Specular_RepresentativePoint(
+		const in GeometricContext geometry,
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, const in sampler2D areaTexture, float shininess ) {
+
+		vec3 normal = geometry.normal;
+		vec3 viewDirection  = geometry.viewDir;
+		vec3 vertexPosition = geometry.position;
+		vec3 lightNormal = normalize( cross(lightHalfWidth, lightHalfHeight));
+
+		//vec3 viewReflection = reflect( viewDirection, normal );
+		vec3 viewReflection = reflect( viewDirection, normal );
+
+		vec3 reflectionLightPlaneIntersection = linePlaneIntersect( vertexPosition, viewReflection, lightPos, lightNormal );
+
+		float specAngle = dot( viewReflection, lightNormal );
+
+		vec3 mrp = vec3(0.0);
+
+		if ( specAngle > 0.0 ) {
+
+			vec3 dirSpec = reflectionLightPlaneIntersection - lightPos;
+			float w = length(lightHalfWidth);
+			float h = length(lightHalfHeight);
+			vec3 areaLightRight = lightHalfWidth/w;
+			vec3 areaLightUp = lightHalfHeight/h;
+			vec2 dirSpec2D = vec2( dot( dirSpec, areaLightRight ), dot( dirSpec, areaLightUp ) );
+			vec2 nearestSpec2D = vec2( clamp( dirSpec2D.x, -w, w ), clamp( dirSpec2D.y, -h, h ) );
+			mrp = ( areaLightRight * nearestSpec2D.x + areaLightUp * nearestSpec2D.y );
+
+		}
+
+		return mrp;
+}
 // End RectArea BRDF
+
 
 // ref: https://www.unrealengine.com/blog/physically-based-shading-on-mobile - environmentBRDF for GGX on mobile
 vec3 BRDF_Specular_GGX_Environment( const in GeometricContext geometry, const in vec3 specularColor, const in float roughness ) {

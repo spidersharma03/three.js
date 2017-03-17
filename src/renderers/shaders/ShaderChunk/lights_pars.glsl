@@ -128,6 +128,9 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		vec3 halfHeight;
 	};
 
+
+	uniform sampler2D rectAreaTexture[ NUM_RECT_AREA_LIGHTS ];
+
 	// Pre-computed values of LinearTransformedCosine approximation of BRDF
 	// BRDF approximation Texture is 64x64
 	uniform sampler2D ltcMat; // RGBA Float
