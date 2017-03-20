@@ -51,8 +51,8 @@ DirectionalLight.prototype.updateShadowWithPosition = function ( scene ) {
 	var position = this.position;
 	var targetPosition = this.target.position;
 
-  	const box = new Box3();
-  	const result = new Box3();
+  	var box = new Box3();
+  	var result = new Box3();
   	result.makeEmpty();
 
 	scene.traverseVisible(function(object) {
