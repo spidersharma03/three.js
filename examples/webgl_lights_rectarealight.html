@@ -103,12 +103,20 @@
 
 			var mshPhongFloor = new THREE.Mesh( geoFloor, matPhongFloor );
 			var mshPhongWall = new THREE.Mesh( geoFloor, matPhongFloor );
+			var mshPhongWall1 = new THREE.Mesh( geoFloor, matPhongFloor );
+			var mshPhongWall2 = new THREE.Mesh( geoFloor, matPhongFloor );
 			var mshPhongBox = new THREE.Mesh( geoBox, matPhongObjects );
 			var mshPhongSphere = new THREE.Mesh( geoSphere, matPhongObjects );
 			var mshPhongKnot = new THREE.Mesh( geoKnot, matPhongObjects );
 
-			mshPhongWall.rotation.x = Math.PI/2;
-			mshPhongWall.position.set(0,0, 15);
+			mshPhongWall.rotation.z = Math.PI/2;
+			mshPhongWall.position.set(-10,0, 0);
+
+			mshPhongWall1.rotation.z = Math.PI/2;
+			mshPhongWall1.position.set(15,0, 0);
+
+			mshPhongWall2.rotation.x = Math.PI/2;
+			mshPhongWall2.position.set(0,0, -7);
 
 			var mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 			var mshStdBox = new THREE.Mesh( geoBox, matStdObjects );
@@ -152,35 +160,35 @@
 				cam.position.set( 0, 20, 45 );
 
 
-				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 10, 10 );
+				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 25, 1 );
 				rectLight.matrixAutoUpdate = true;
 				rectLight.intensity = 100.0;
-				rectLight.position.set( 5, 5, 0 );
-				// rectLight.lookAt( new THREE.Vector3(5, 0, -5) );
+				rectLight.position.set( 0, 5, 0 );
+				// rectLight.lookAt( new THREE.Vector3(0, 0, 0) );
 				// rectLight.updateMatrixWorld();
 
 				// TODO: ensure RectAreaLight handles target param correctly
 				// rectLight.target = mshPhongBox;
 
 				rectLightHelper = new THREE.RectAreaLightHelper( rectLight );
-				rectLight.add( rectLightHelper );
+				// rectLight.add( rectLightHelper );
 
 				var loader = new THREE.TextureLoader();
 
 				// load a resource
 				loader.load(
 					// resource URL
-					'textures/neonfull.jpg',
+					'textures/3165.jpg',
 					// Function when resource is loaded
 					function ( texture ) {
 						// texture.flipY = false;
-						// rectLight.areaTexture = texture;
-						// rectLightHelper.children[0].material.map = texture;
-						// rectLightHelper.children[1].material.map = texture;
-						// rectLightHelper.children[0].material.needsUpdate = true;
-						// rectLightHelper.children[1].material.needsUpdate = true;
-						// rectLight.areaTexture.generateMipMaps = true;
-						// rectLight.areaTexture.needsUpdate = true;
+						rectLight.areaTexture = texture;
+						rectLightHelper.children[0].material.map = texture;
+						rectLightHelper.children[1].material.map = texture;
+						rectLightHelper.children[0].material.needsUpdate = true;
+						rectLightHelper.children[1].material.needsUpdate = true;
+						rectLight.areaTexture.generateMipMaps = true;
+						rectLight.areaTexture.needsUpdate = true;
 					},
 					// Function called when download progresses
 					function ( xhr ) {
@@ -196,6 +204,12 @@
 
 				scn.add( cam );
 				scn.add( origin );
+
+				sphereGeometry = new THREE.SphereGeometry( rectLight.width/2, 32, 32 );
+				var material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
+			  sphereLightMesh = new THREE.Mesh( sphereGeometry, material );
+				// scn.add( sphereLightMesh );
+				sphereLightMesh.position.copy(rectLight.position);
 
 				matPhongFloor.color.set( 0x808080 );
 				matPhongObjects.color.set( 0xffffff );
@@ -220,6 +234,8 @@
 
 				scn.add( mshPhongFloor );
 				scn.add( mshPhongWall );
+				scn.add( mshPhongWall1 );
+				scn.add( mshPhongWall2 );
 				scn.add( mshPhongBox );
 				scn.add( mshPhongSphere );
 				scn.add( mshPhongKnot );
@@ -372,6 +388,7 @@
 				lightFolder.add( param, 'width', 0.1, 20).onChange( function ( val ) {
 
 					rectLight.width = val;
+					sphereGeometry.radius = val;
 
 				} );
 
@@ -412,7 +429,7 @@
 
 				} );
 
-				phongFolder.add( param, 'shininess p', 0.0, 1000.0 ).listen().onChange( function ( val ) {
+				phongFolder.add( param, 'shininess p', 0.0, 10000.0 ).listen().onChange( function ( val ) {
 
 					matPhongObjects.shininess = val;
 					matPhongFloor.shininess = val;

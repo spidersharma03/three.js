@@ -299,7 +299,32 @@ void initRectPoints( const in vec3 pos, const in vec3 halfWidth, const in vec3 h
 
 }
 
-vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3 brdfMat, const in vec3 rectPoints[4] ) {
+vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 p2_, vec3 p3_, vec3 p4_)
+{
+    // area light plane basis
+    vec3 V1 = p2_ - p1_;
+    vec3 V2 = p4_ - p1_;
+    vec3 planeOrtho = cross(V1, V2);
+    float planeAreaSquared = dot(planeOrtho, planeOrtho);
+    float planeDistxPlaneArea = dot(planeOrtho, p1_);
+    // orthonormal projection of (0,0,0) in area light space
+    vec3 P = planeDistxPlaneArea * planeOrtho / planeAreaSquared - p1_;
+
+    // find tex coords of P
+    float dot_V1_V2 = dot(V1,V2);
+    float inv_dot_V1_V1 = 1.0 / dot(V1, V1);
+    vec3 V2_ = V2 - V1 * dot_V1_V2 * inv_dot_V1_V1;
+    vec2 Puv;
+    Puv.y = dot(V2_, P) / dot(V2_, V2_);
+    Puv.x = dot(V1, P)*inv_dot_V1_V1 - dot_V1_V2*inv_dot_V1_V1*Puv.y ;
+
+    // LOD
+    float d = abs(planeDistxPlaneArea) / pow(planeAreaSquared, 0.75);
+
+    return texture2DLodEXT(areaTexture, Puv, log(1.0*2048.0*d)/log(3.0) ).rgb;
+}
+
+vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3 brdfMat, const in vec3 rectPoints[4], const in sampler2D areaTexture ) {
 
 	vec3 N = geometry.normal;
 	vec3 V = geometry.viewDir;
@@ -320,6 +345,8 @@ vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3
 	clippedRect[1] = brdfWrtSurface * ( rectPoints[1] - P );
 	clippedRect[2] = brdfWrtSurface * ( rectPoints[2] - P );
 	clippedRect[3] = brdfWrtSurface * ( rectPoints[3] - P );
+
+	vec3 texColor = vec3(1.0);//FetchDiffuseFilteredTexture(areaTexture, clippedRect[0], clippedRect[1], clippedRect[2], clippedRect[3]);
 
 	// clip light rect to horizon, resulting in at most 5 points
 	// we do this because we are integrating the BRDF over the hemisphere centered on the surface points normal
@@ -355,7 +382,7 @@ vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3
 
 	vec3 Lo_i = vec3( sum, sum, sum );
 
-	return Lo_i;
+	return Lo_i * texColor;
 
 }
 
@@ -363,7 +390,7 @@ vec3 Rect_Area_Light_Specular_Reflectance(
 		const in GeometricContext geometry,
 		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight,
 		const in float roughness,
-		const in sampler2D ltcMat, const in sampler2D ltcMag ) {
+		const in sampler2D ltcMat, const in sampler2D ltcMag, const in sampler2D areaTexture ) {
 
 	vec3 rectPoints[4];
 	initRectPoints( lightPos, lightHalfWidth, lightHalfHeight, rectPoints );
@@ -384,7 +411,7 @@ vec3 Rect_Area_Light_Specular_Reflectance(
 		vec3( t.w,   0, t.x )
 	);
 
-	vec3 specularReflectance = integrateLtcBrdfOverRect( geometry, brdfLtcApproxMat, rectPoints );
+	vec3 specularReflectance = integrateLtcBrdfOverRect( geometry, brdfLtcApproxMat, rectPoints, areaTexture );
 	specularReflectance *= brdfLtcScalar;
 
 	return specularReflectance;
@@ -393,13 +420,13 @@ vec3 Rect_Area_Light_Specular_Reflectance(
 
 vec3 Rect_Area_Light_Diffuse_Reflectance(
 		const in GeometricContext geometry,
-		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight ) {
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, const in sampler2D areaTexture ) {
 
 	vec3 rectPoints[4];
 	initRectPoints( lightPos, lightHalfWidth, lightHalfHeight, rectPoints );
 
 	mat3 diffuseBrdfMat = mat3(1);
-	vec3 diffuseReflectance = integrateLtcBrdfOverRect( geometry, diffuseBrdfMat, rectPoints );
+	vec3 diffuseReflectance = integrateLtcBrdfOverRect( geometry, diffuseBrdfMat, rectPoints, areaTexture );
 
 	return diffuseReflectance;
 
@@ -488,7 +515,7 @@ void Rect_Area_Light_Diffuse_Blender(
 
 vec3 Rect_Area_Light_Diffuse_FB(
 		const in GeometricContext geometry,
-		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight ) {
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, inout float solidAngle ) {
 
 	vec3 normal = geometry.normal;
 	vec3 viewDirection  = geometry.viewDir;
@@ -504,7 +531,7 @@ vec3 Rect_Area_Light_Diffuse_FB(
 		vec3 p2 = lightPos - lightHalfWidth - lightHalfHeight ;
 		vec3 p3 = lightPos + lightHalfWidth - lightHalfHeight ;
 
-		float solidAngle = rectangleSolidAngle ( vertexPosition , p0 , p1 , p2 , p3 );
+	  solidAngle = rectangleSolidAngle ( vertexPosition , p0 , p1 , p2 , p3 );
 		//float solidAngle = rightPyramidSolidAngle( length( lightPos - vertexPosition ), length(lightHalfHeight), length(lightHalfWidth));
 
 		float illuminance = solidAngle * 0.2 * (
@@ -604,11 +631,134 @@ vec3 Rect_Area_Light_Specular_RepresentativePoint(
 			vec3 areaLightUp = lightHalfHeight/h;
 			vec2 dirSpec2D = vec2( dot( dirSpec, areaLightRight ), dot( dirSpec, areaLightUp ) );
 			vec2 nearestSpec2D = vec2( clamp( dirSpec2D.x, -w, w ), clamp( dirSpec2D.y, -h, h ) );
-			mrp = ( areaLightRight * nearestSpec2D.x + areaLightUp * nearestSpec2D.y );
+			mrp = lightPos + ( areaLightRight * nearestSpec2D.x + areaLightUp * nearestSpec2D.y );
 
 		}
 
 		return mrp;
+}
+
+vec3 getSpecularDominantDirArea(vec3 N, vec3 R, float roughness)
+{
+	// Simple linear approximation
+	float lerpFactor = (1.0 - roughness);
+
+	return normalize(mix(N, R, lerpFactor));
+}
+
+vec3 Rect_Area_Light_Specular_RepresentativePointAccurate(
+		const in GeometricContext geometry,
+		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, const in sampler2D areaTexture, float roughness ) {
+
+		vec3 normal = geometry.normal;
+		vec3 viewDirection  = geometry.viewDir;
+		vec3 vertexPosition = geometry.position;
+		vec3 lightNormal = normalize( cross(lightHalfWidth, lightHalfHeight));
+
+		//vec3 viewReflection = reflect( viewDirection, normal );
+		vec3 viewReflection = normalize(reflect( viewDirection, normal ));
+		//viewReflection = getSpecularDominantDirArea(normal, viewReflection, roughness );
+
+		vec3 p0 = lightPos + lightHalfWidth + lightHalfHeight - vertexPosition ;
+		vec3 p1 = lightPos - lightHalfWidth + lightHalfHeight - vertexPosition;
+		vec3 p2 = lightPos - lightHalfWidth - lightHalfHeight - vertexPosition;
+		vec3 p3 = lightPos + lightHalfWidth - lightHalfHeight - vertexPosition;
+
+		//float traced = Trace_rectangle(vertexPosition, viewReflection, p0, p1, p2, p3);
+
+		vec3 mrp = vec3(0.0);
+
+		vec3 normals[4];
+		vec3 vv[5];
+
+		vv[0] = p0;
+		vv[1] = p1;
+		vv[2] = p2;
+		vv[3] = p3;
+		vv[4] = p0;
+
+		normals[0] = normalize(cross(p0, p1));
+		normals[1] = normalize(cross(p1, p2));
+		normals[2] = normalize(cross(p2, p3));
+		normals[3] = normalize(cross(p3, p0));
+
+		float NdotR = 100000.0;
+		vec3 v1, v2;
+		vec3 nmin;
+		for( int i=0; i< 4; i++) {
+			float dotProd = dot( normals[i], viewReflection);
+			if( dotProd < NdotR ) {
+				v2 = vv[i];
+				v1 = vv[i+1];
+				nmin = normals[i];
+				NdotR = dotProd;
+				if( i == 3) {
+					v2 = vv[3];
+					v1 = vv[4];
+				}
+			}
+		}
+
+
+		if( dot(viewReflection, nmin) >= 0.0 ) {
+			return linePlaneIntersect( vertexPosition, viewReflection, lightPos, lightNormal );
+
+			return normalize(viewReflection);
+		} else {
+			vec3 dir;
+			vec3 rproj = viewReflection - nmin * dot( nmin, viewReflection);
+			vec3 cross1 = cross( rproj, v1 );
+			vec3 cross2 = cross( v2, rproj );
+			if( dot(cross1, viewReflection ) < 0.0 ) {
+				dir = normalize(v1);
+			}
+			else if( dot(cross2, viewReflection ) < 0.0 ) {
+				dir = normalize(v2);
+			} else {
+				dir = normalize(rproj);
+				//dir = normalize(lightPos - vertexPosition);
+			}
+			//return normalize( lightPos - vertexPosition);
+			return linePlaneIntersect( vertexPosition, dir, lightPos, lightNormal );
+		}
+		/*if ( traced > 0.0 ) {
+
+			mrp = linePlaneIntersect( vertexPosition, viewReflection, lightPos, lightNormal );
+
+		} else {
+			return lightPos;
+			vec3 tracedPlane = linePlaneIntersect( vertexPosition, viewReflection, lightPos, lightNormal );
+
+			// Then find the closest point along the edges of the rectangle (edge = segment)
+			vec3 PC[4];
+
+			PC[0] = ClosestPointOnSegment(p0, p1, tracedPlane);
+			PC[1] = ClosestPointOnSegment(p1, p2, tracedPlane);
+			PC[2] = ClosestPointOnSegment(p2, p3, tracedPlane);
+			PC[3] = ClosestPointOnSegment(p3, p0, tracedPlane);
+
+			float dist[4];
+
+			dist[0] = distance(PC[0], tracedPlane);
+			dist[1] = distance(PC[1], tracedPlane);
+			dist[2] = distance(PC[2], tracedPlane);
+			dist[3] = distance(PC[3], tracedPlane);
+
+			vec3 min_ = PC[0];
+			float minDist = dist[0];
+			for (int iLoop = 1; iLoop < 4; iLoop++)
+			{
+				if (dist[iLoop] < minDist)
+				{
+					minDist = dist[iLoop];
+					min_ = PC[iLoop];
+				}
+			}
+
+			mrp = min_;
+		}*/
+
+		//return mrp;
 }
 // End RectArea BRDF
 

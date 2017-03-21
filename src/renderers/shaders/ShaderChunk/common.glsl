@@ -126,3 +126,45 @@ vec3 closestPointRect (in vec3 pos , in vec3 planeOrigin , in vec3 left , in vec
  dist2D = clamp ( dist2D , - rectHalfSize , rectHalfSize );
  return planeOrigin + dist2D .x * left + dist2D .y * up ;
 }
+
+// returns distance on the ray to the object if hit, 0 otherwise
+float Trace_plane(vec3 o, vec3 d, vec3 planeOrigin, vec3 planeNormal)
+{
+	return dot(planeNormal, (planeOrigin - o) / dot(planeNormal, d));
+}
+
+// o		: ray origin
+// d		: ray direction
+// A,B,C	: traingle corners
+// returns distance on the ray to the object if hit, 0 otherwise
+float Trace_triangle(vec3 o, vec3 d, vec3 A, vec3 B, vec3 C)
+{
+	vec3 planeNormal = normalize(cross(B - A, C - B));
+	float t = Trace_plane(o, d, A, planeNormal);
+	vec3 p = o + d*t;
+
+	vec3 N1 = normalize(cross(B - A, p - B));
+	vec3 N2 = normalize(cross(C - B, p - C));
+	vec3 N3 = normalize(cross(A - C, p - A));
+
+	float d0 = dot(N1, N2);
+	float d1 = dot(N2, N3);
+
+	float threshold = 1.0 - 0.001;
+	return (d0 > threshold && d1 > threshold) ? 1.0 : 0.0;
+}
+// o		: ray origin
+// d		: ray direction
+// A,B,C,D	: rectangle corners
+// returns distance on the ray to the object if hit, 0 otherwise
+float Trace_rectangle(vec3 o, vec3 d, vec3 A, vec3 B, vec3 C, vec3 D)
+{
+	return max(Trace_triangle(o, d, A, B, C), Trace_triangle(o, d, C, D, A));
+}
+
+vec3 ClosestPointOnSegment(vec3 a, vec3 b, vec3 c)
+{
+	vec3 ab = b - a;
+	float t = dot(c - a, ab) / dot(ab, ab);
+	return a + clamp(t, 0.0, 1.0) * ab;
+}
