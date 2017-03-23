@@ -638,14 +638,6 @@ vec3 Rect_Area_Light_Specular_RepresentativePoint(
 		return mrp;
 }
 
-vec3 getSpecularDominantDirArea(vec3 N, vec3 R, float roughness)
-{
-	// Simple linear approximation
-	float lerpFactor = (1.0 - roughness);
-
-	return normalize(mix(N, R, lerpFactor));
-}
-
 vec3 Rect_Area_Light_Specular_RepresentativePointAccurate(
 		const in GeometricContext geometry,
 		const in vec3 lightPos, const in vec3 lightHalfWidth, const in vec3 lightHalfHeight, const in sampler2D areaTexture, float roughness ) {

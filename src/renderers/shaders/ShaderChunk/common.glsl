@@ -168,3 +168,10 @@ vec3 ClosestPointOnSegment(vec3 a, vec3 b, vec3 c)
 	float t = dot(c - a, ab) / dot(ab, ab);
 	return a + clamp(t, 0.0, 1.0) * ab;
 }
+
+vec3 ClosestPointOnLine(vec3 a, vec3 b, vec3 c)
+{
+	vec3 ab = b - a;
+	float t = dot(c - a, ab) / dot(ab, ab);
+	return a + t * ab;
+}

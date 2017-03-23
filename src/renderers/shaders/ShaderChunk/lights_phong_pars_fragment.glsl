@@ -87,6 +87,89 @@ struct BlinnPhongMaterial {
 
 	}
 
+	float illuminanceSphereOrDisk(float cosTheta, float sinSigmaSqr)
+	{
+		float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+		float illuminance = 0.0;
+		// Note: Following test is equivalent to the original formula.
+		// There is 3 phase in the curve: cosTheta > sqrt(sinSigmaSqr),
+		// cosTheta > -sqrt(sinSigmaSqr) and else it is 0
+		// The two outer case can be merge into a cosTheta * cosTheta > sinSigmaSqr
+		// and using saturate(cosTheta) instead.
+		if (cosTheta * cosTheta > sinSigmaSqr)
+		{
+			illuminance = PI * sinSigmaSqr * saturate(cosTheta);
+		}
+		else
+		{
+			float x = sqrt(1.0 / sinSigmaSqr - 1.0); // For a disk this simplify to x = d / r
+			float y = -x * (cosTheta / sinTheta);
+			float sinThetaSqrtY = sinTheta * sqrt(1.0 - y * y);
+			illuminance = (cosTheta * acos(y) - x * sinThetaSqrtY) * sinSigmaSqr + atan(sinThetaSqrtY / x);
+		}
+
+		return max(illuminance, 0.0);
+	}
+
+	vec3 getSpecularDominantDirArea(vec3 N, vec3 R, float roughness)
+	{
+		// Simple linear approximation
+		float lerpFactor = (1.0 - roughness);
+
+		return normalize(mix(N, R, lerpFactor));
+	}
+
+	void RE_Direct_Disk_BlinnPhong( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in BlinnPhongMaterial material, inout ReflectedLight reflectedLight ) {
+
+		vec3 matDiffColor = material.diffuseColor;
+		vec3 matSpecColor = material.specularColor;
+		vec3 lightColor   = rectAreaLight.color;
+		float shininess = material.specularShininess;
+
+		float roughness = BlinnExponentToGGXRoughness( material.specularShininess );
+		vec3 vertexPosition = geometry.position;
+		vec3 normal = geometry.normal;
+		vec3 viewDirection = geometry.viewDir;
+		vec3 lightPos = rectAreaLight.position;
+		float lightRadius = length(rectAreaLight.halfHeight);
+		vec3 viewReflection = reflect( viewDirection, normal );
+		//viewReflection = getSpecularDominantDirArea(normal, viewReflection, 0.03);
+
+		vec3 Lunormalized = lightPos - vertexPosition;
+		float dist = length(Lunormalized);
+		vec3 L = Lunormalized / dist;
+
+		vec3 lightNormal = normalize( cross(rectAreaLight.halfWidth, rectAreaLight.halfHeight));
+
+		float sqrDist = dot(Lunormalized, Lunormalized);
+
+		float cosTheta = clamp(dot(normal, L), -0.999, 0.999); // Clamp to avoid edge case
+																// We need to prevent the object penetrating into the surface
+																// and we must avoid divide by 0, thus the 0.9999f
+		float sqrLightRadius = lightRadius * lightRadius;
+		float sinSigmaSqr = sqrLightRadius / (sqrLightRadius + max(sqrLightRadius, sqrDist));
+		float fLight = illuminanceSphereOrDisk(cosTheta, sinSigmaSqr) * saturate ( dot( -lightNormal , L));;
+
+		// Evaluate Lighting Equation.
+		L = lightPos - vertexPosition;
+		float distL = length(L);
+		vec3 p = rayPlaneIntersect(vertexPosition, viewReflection, lightPos, lightNormal);
+		vec3 centerToRay = p - lightPos;
+		vec3 closestPoint = Lunormalized + centerToRay * saturate(lightRadius / length(centerToRay));
+		L = normalize(closestPoint);
+		float alpha		= roughness * roughness;
+		float alphaPrime	= clamp( lightRadius / ( distL * 2.0 ) + alpha, 0.0, 1.0 );
+
+		IncidentLight light;
+		light.direction = L;
+		vec3 brdfValue = BRDF_Specular_GGX( light, geometry, material.specularColor, roughness ) * material.specularStrength;
+		brdfValue *= alphaPrime * alphaPrime;
+
+		reflectedLight.directSpecular += lightColor * matSpecColor * brdfValue * fLight;
+		reflectedLight.directDiffuse  += lightColor * matDiffColor * fLight/PI;
+	}
+
 	void RE_Direct_Sphere_BlinnPhong( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in BlinnPhongMaterial material, inout ReflectedLight reflectedLight ) {
 
 		vec3 matDiffColor = material.diffuseColor;
@@ -99,15 +182,29 @@ struct BlinnPhongMaterial {
 		vec3 normal = geometry.normal;
 		vec3 viewDirection = geometry.viewDir;
 		vec3 lightPos = rectAreaLight.position;
-		float lightRadius = length(rectAreaLight.halfWidth);
+		float lightRadius = length(rectAreaLight.halfHeight);
 		vec3 viewReflection = reflect( viewDirection, normal );
 
+		vec3 Lunormalized = lightPos - vertexPosition;
+		float dist = length(Lunormalized);
+		vec3 L = Lunormalized / dist;
+
+		float sqrDist = dot(Lunormalized, Lunormalized);
+
+		float cosTheta = clamp(dot(normal, L), -0.999, 0.999); // Clamp to avoid edge case
+																// We need to prevent the object penetrating into the surface
+																// and we must avoid divide by 0, thus the 0.9999f
+		float sqrLightRadius = lightRadius * lightRadius;
+		float sinSigmaSqr = min(sqrLightRadius / sqrDist, 0.9999);
+		float fLight = illuminanceSphereOrDisk(cosTheta, sinSigmaSqr);
+
 		// Evaluate Lighting Equation.
-		vec3 L = lightPos - vertexPosition;
+	  L = lightPos - vertexPosition;
 		vec3 centerToRay	= dot( L, viewReflection ) * viewReflection - L;
 		vec3 closestPoint	= L + centerToRay * clamp( lightRadius / length( centerToRay ), 0.0, 1.0 );
 		vec3 l	= normalize( closestPoint );
-		float NdotL	= clamp( dot( normal, l ), 0.0, 1.0 );
+		vec3 d = closestPoint - vertexPosition;
+		float NdotL	= clamp( dot( normal, l ), 0.0, 1.0 )/( dot(d, d) + 1.0);
 		float distL		= length( L );
 		float alpha		= roughness * roughness;
 		float alphaPrime	= clamp( lightRadius / ( distL * 2.0 ) + alpha, 0.0, 1.0 );
@@ -117,8 +214,8 @@ struct BlinnPhongMaterial {
 		vec3 brdfValue = BRDF_Specular_GGX( light, geometry, material.specularColor, roughness ) * material.specularStrength;
 		brdfValue *= alphaPrime * alphaPrime;
 
-		reflectedLight.directSpecular += lightColor * matSpecColor * brdfValue * NdotL;
-		reflectedLight.directDiffuse  += lightColor * matDiffColor * NdotL/PI;
+		reflectedLight.directSpecular += lightColor * matSpecColor * brdfValue * fLight;
+		reflectedLight.directDiffuse  += lightColor * matDiffColor * fLight/PI;
 	}
 
 	void RE_Direct_Tube_BlinnPhong( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in BlinnPhongMaterial material, inout ReflectedLight reflectedLight ) {
@@ -136,17 +233,49 @@ struct BlinnPhongMaterial {
 		float lightRadius = length(rectAreaLight.halfHeight);
 
 		vec3 viewReflection = reflect( viewDirection, normal );
-		vec3 tubeStart = lightPos - rectAreaLight.halfWidth * 0.5;
-		vec3 tubeEnd = lightPos + rectAreaLight.halfWidth * 0.5;
 
-		vec3 L0			= tubeStart - vertexPosition;
-		vec3 L1			= tubeEnd - vertexPosition;
-		float distL0	= length( L0 );
-		float distL1	= length( L1 );
+		vec3 Lunormalized = lightPos - vertexPosition;
+		float dist = length(Lunormalized);
+		vec3 L = Lunormalized / dist;
 
-		float NoL0		= dot( L0, normal ) / ( 2.0 * distL0 );
-		float NoL1		= dot( L1, normal ) / ( 2.0 * distL1 );
-		float NdotL	= ( 2.0 * clamp( NoL0 + NoL1, 0.0, 1.0 ) )/ ( distL0 * distL1 + dot( L0, L1 ) + 2.0 );
+		float sqrDist = dot(Lunormalized, Lunormalized);
+
+		vec3 P0 = lightPos - rectAreaLight.halfWidth;
+		vec3 P1 = lightPos + rectAreaLight.halfWidth;
+
+		// The sphere is placed at the nearest point on the segment.
+		// The rectangular plane is define by the following orthonormal frame:
+		vec3 forward = normalize(ClosestPointOnLine(P0, P1, vertexPosition) - vertexPosition);
+		vec3 up = normalize(cross(rectAreaLight.halfWidth, forward));
+
+		vec3 p0 = lightPos - rectAreaLight.halfWidth + lightRadius * up;
+		vec3 p1 = lightPos - rectAreaLight.halfWidth - lightRadius * up;
+		vec3 p2 = lightPos + rectAreaLight.halfWidth - lightRadius * up;
+		vec3 p3 = lightPos + rectAreaLight.halfWidth + lightRadius * up;
+
+
+		float solidAngle = rectangleSolidAngle(vertexPosition, p0, p1, p2, p3);
+
+		float fLight = solidAngle * 0.2 * (
+			saturate(dot(normalize(p0 - vertexPosition), normal)) +
+			saturate(dot(normalize(p1 - vertexPosition), normal)) +
+			saturate(dot(normalize(p2 - vertexPosition), normal)) +
+			saturate(dot(normalize(p3 - vertexPosition), normal)) +
+			saturate(dot(normalize(lightPos - vertexPosition), normal)));
+
+		// We then add the contribution of the sphere
+		vec3 spherePosition = ClosestPointOnSegment(P0, P1, vertexPosition);
+		vec3 sphereUnormL = spherePosition - vertexPosition;
+		vec3 sphereL = normalize(sphereUnormL);
+		float sqrSphereDistance = dot(sphereUnormL, sphereUnormL);
+
+		float fLightSphere = PI * saturate(dot(sphereL, normal)) * lightRadius * lightRadius / sqrSphereDistance;
+
+	 	fLight += fLightSphere;
+
+		fLight = max(0.0, fLight);
+		vec3 L0 = P0 - vertexPosition;
+		vec3 L1 = P1 - vertexPosition;
 
 		vec3 Ld			= L1 - L0;
 		float RoL0		= dot( viewReflection, L0 );
@@ -169,8 +298,8 @@ struct BlinnPhongMaterial {
 		vec3 brdfValue = BRDF_Specular_GGX( light, geometry, material.specularColor, roughness ) * material.specularStrength;
 		brdfValue *= alphaPrime * alphaPrime;
 
-		reflectedLight.directSpecular += lightColor * matSpecColor * brdfValue * NdotL;
-		reflectedLight.directDiffuse  += lightColor * matDiffColor * NdotL/PI;
+		reflectedLight.directSpecular += lightColor * matSpecColor * brdfValue * fLight;
+		reflectedLight.directDiffuse  += lightColor * matDiffColor * fLight/PI;
 	}
 #endif
 
@@ -205,8 +334,9 @@ void RE_IndirectDiffuse_BlinnPhong( const in vec3 irradiance, const in Geometric
 }
 
 #define RE_Direct				RE_Direct_BlinnPhong
-#define RE_Direct_RectArea		RE_Direct_RectAreaNew_BlinnPhong
+#define RE_Direct_RectArea		RE_Direct_RectArea_BlinnPhong
 #define RE_Direct_Sphere			RE_Direct_Sphere_BlinnPhong
+#define RE_Direct_Disk			  RE_Direct_Disk_BlinnPhong
 #define RE_Direct_Tube				RE_Direct_Tube_BlinnPhong
 #define RE_IndirectDiffuse		RE_IndirectDiffuse_BlinnPhong
 

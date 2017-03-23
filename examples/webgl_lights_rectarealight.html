@@ -59,6 +59,8 @@
 
 			var rnd = new THREE.WebGLRenderer();
 			rnd.toneMapping = THREE.Uncharted2ToneMapping;
+			rnd.toneMappingWhitePoint = 2;
+			rnd.toneMappingExposure = 2;
 
 			var cam = new THREE.PerspectiveCamera( 34, window.innerWidth / window.innerHeight, 0.1, 20000 );
 			var orb = new THREE.OrbitControls( cam, rnd.domElement );
@@ -160,12 +162,12 @@
 				cam.position.set( 0, 20, 45 );
 
 
-				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 25, 1 );
+				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 2 );
 				rectLight.matrixAutoUpdate = true;
-				rectLight.intensity = 100.0;
-				rectLight.position.set( 0, 5, 0 );
-				// rectLight.lookAt( new THREE.Vector3(0, 0, 0) );
-				// rectLight.updateMatrixWorld();
+				rectLight.intensity = 10.0;
+				rectLight.position.set( 0, 15, 0 );
+				rectLight.lookAt( new THREE.Vector3(0, 0, 4) );
+				rectLight.updateMatrixWorld();
 
 				// TODO: ensure RectAreaLight handles target param correctly
 				// rectLight.target = mshPhongBox;
@@ -205,11 +207,25 @@
 				scn.add( cam );
 				scn.add( origin );
 
-				sphereGeometry = new THREE.SphereGeometry( rectLight.width/2, 32, 32 );
+				sphereGeometry = new THREE.SphereGeometry( rectLight.height/2, 32, 32 );
 				var material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
 			  sphereLightMesh = new THREE.Mesh( sphereGeometry, material );
 				// scn.add( sphereLightMesh );
 				sphereLightMesh.position.copy(rectLight.position);
+
+				var rootTube = new THREE.Object3D();
+				rootTube.position.copy(rectLight.position);
+				var geometry = new THREE.CylinderGeometry( rectLight.height/2, rectLight.height/2, rectLight.width, 32 );
+				var cylinder = new THREE.Mesh( geometry, material );
+				cap1Mesh = new THREE.Mesh( sphereGeometry, material );
+				cap2Mesh = new THREE.Mesh( sphereGeometry, material );
+				cap1Mesh.position.y = rectLight.width/2;
+				cap2Mesh.position.y = -rectLight.width/2;
+				rootTube.add(cylinder);
+				rootTube.add(cap1Mesh);
+				rootTube.add(cap2Mesh);
+				rootTube.rotation.z = Math.PI/2;
+				scn.add( rootTube );
 
 				matPhongFloor.color.set( 0x808080 );
 				matPhongObjects.color.set( 0xffffff );
@@ -258,7 +274,7 @@
 				// scn.add( mshStdSphere );
 				// scn.add( mshStdKnot );
 
-				scn.add( amb );
+				// scn.add( amb );
 
 				scn.add( rectLight );
 

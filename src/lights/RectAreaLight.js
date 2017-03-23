@@ -16,6 +16,7 @@ function RectAreaLight( color, intensity, width, height ) {
 	this.width = ( width !== undefined ) ? width : 10;
 	this.height = ( height !== undefined ) ? height : 10;
 
+	this.type = 0; // Various shapes 0- Rect, 1-Sphere, 2-Tube, 3-Disk
 	this.areaTexture = null;
 	// TODO (abelnation): distance/decay
 
