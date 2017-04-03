@@ -48,7 +48,7 @@ DirectionalLight.prototype.updateShadowWithPosition = function ( scene ) {
 
 	if (!scene) return;
 
-	var position = this.position;
+	var position = this.getWorldPosition();
 	var targetPosition = this.target.position;
 
   	var box = new Box3();
@@ -86,7 +86,7 @@ DirectionalLight.prototype.updateShadowWithPosition = function ( scene ) {
     //If light target is a child of light, get light direction, default direction is (0,0,-1) in clara
     if (this.children[0] && this.children[0].uuid === this.target.uuid) {
 
-    	vector1 =  new Vector3(0, 0, -1).applyQuaternion(this.quaternion);
+    	vector1 =  new Vector3(0, 0, -1).applyQuaternion(this.getWorldQuaternion());
 
     }
 
