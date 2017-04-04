@@ -126,6 +126,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		vec3 position;
 		vec3 halfWidth;
 		vec3 halfHeight;
+		int shapeType;
 	};
 
 

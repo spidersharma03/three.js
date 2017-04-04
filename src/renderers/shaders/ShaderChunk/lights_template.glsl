@@ -88,10 +88,14 @@ IncidentLight directLight;
 	for ( int i = 0; i < NUM_RECT_AREA_LIGHTS; i ++ ) {
 
 		rectAreaLight = rectAreaLights[ i ];
-		RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight );
-    //RE_Direct_Sphere( rectAreaLight, geometry, material, reflectedLight );
-    //RE_Direct_Disk( rectAreaLight, geometry, material, reflectedLight );
-    //RE_Direct_Tube( rectAreaLight, geometry, material, reflectedLight );
+    if( rectAreaLight.shapeType == 0 )
+		  RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight );
+    else if( rectAreaLight.shapeType == 1 )
+      RE_Direct_Sphere( rectAreaLight, geometry, material, reflectedLight );
+    else if( rectAreaLight.shapeType == 2 )
+      RE_Direct_Disk( rectAreaLight, geometry, material, reflectedLight );
+    else
+      RE_Direct_Tube( rectAreaLight, geometry, material, reflectedLight );
 
 	}
 

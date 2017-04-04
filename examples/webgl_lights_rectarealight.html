@@ -14,10 +14,11 @@
 			#info {
 				position: absolute;
 				top: 0px; width: 100%;
-				color: #ffffff;
+				color: #00ff00;
 				padding: 5px;
 				font-family: Monospace;
-				font-size: 13px;
+				font-size: 20px;
+				font-weight: bold;
 				text-align: center;
 			}
 
@@ -35,9 +36,7 @@
 
 		<div id="container"></div>
 		<div id="info">
-			<a href="http://threejs.org" target="_blank">three.js</a> - Demo of RectAreaLight on Phong and Standard Material Meshes - by <a href="http://github.com/abelnation" target="_blank">abelnation</a><br />
-			Click and drag to move OrbitControls.<br />
-			<br />
+
 		</div>
 
 		<script src="../build/three.js"></script>
@@ -52,15 +51,21 @@
 		<script>
 
 			var loader = new THREE.OBJLoader();
+			var numLights = 4;
+			var lightFolderName = [];
+			for( var i=0; i<numLights; i++)
+				lightFolderName.push("Light" + i);
+
+			//['Light1', 'Light2', 'Light3', 'Light4'];
 
 			var container = document.getElementById( 'container' );
-
+			var infoDiv = document.getElementById( 'info' );
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
-			var rnd = new THREE.WebGLRenderer();
+			var rnd = new THREE.WebGLRenderer({antialias:true});
 			rnd.toneMapping = THREE.Uncharted2ToneMapping;
-			rnd.toneMappingWhitePoint = 2;
-			rnd.toneMappingExposure = 2;
+			rnd.toneMappingWhitePoint = 100;
+			rnd.toneMappingExposure = 1;
 
 			var cam = new THREE.PerspectiveCamera( 34, window.innerWidth / window.innerHeight, 0.1, 20000 );
 			var orb = new THREE.OrbitControls( cam, rnd.domElement );
@@ -112,13 +117,13 @@
 			var mshPhongKnot = new THREE.Mesh( geoKnot, matPhongObjects );
 
 			mshPhongWall.rotation.z = Math.PI/2;
-			mshPhongWall.position.set(-10,0, 0);
+			mshPhongWall.position.set(-20,0, 0);
 
 			mshPhongWall1.rotation.z = Math.PI/2;
-			mshPhongWall1.position.set(15,0, 0);
+			mshPhongWall1.position.set(25,0, 0);
 
 			mshPhongWall2.rotation.x = Math.PI/2;
-			mshPhongWall2.position.set(0,0, -7);
+			mshPhongWall2.position.set(0,0, -17);
 
 			var mshStdFloor = new THREE.Mesh( geoFloor, matStdFloor );
 			var mshStdBox = new THREE.Mesh( geoBox, matStdObjects );
@@ -127,8 +132,11 @@
 
 			var amb = new THREE.AmbientLight( 0x000000 );
 
+			var rectLights = [];
+			var rectLightHelpers = [];
 			var rectLight;
 			var rectLightHelper;
+			var rectLightHelper1;
 
 			var ray = new THREE.Raycaster();
 			var mouseDown = new THREE.Vector2();
@@ -161,19 +169,43 @@
 
 				cam.position.set( 0, 20, 45 );
 
+				var lightPositions = [ new THREE.Vector3(0, 10, 0), new THREE.Vector3(10, 10, 0), new THREE.Vector3(0, 10, -10), new THREE.Vector3(10, 10, -13),
+				new THREE.Vector3(0, 22, 15), new THREE.Vector3(10, 20, 0), new THREE.Vector3(0, 20, -10), new THREE.Vector3(10, 20, -13),
+			 	new THREE.Vector3(0, 22, 35), new THREE.Vector3(10, 20, 30) ];
 
-				rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 2 );
-				rectLight.matrixAutoUpdate = true;
-				rectLight.intensity = 10.0;
-				rectLight.position.set( 0, 15, 0 );
-				rectLight.lookAt( new THREE.Vector3(0, 0, 4) );
-				rectLight.updateMatrixWorld();
+				for( var i=0; i<numLights; i++) {
+					rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 6 );
+					rectLight.matrixAutoUpdate = true;
+					rectLight.intensity = 30.0;
+					rectLight.shapeType = 0;
+					var x = lightPositions[i].x;
+					var y = lightPositions[i].y;
+					var z = lightPositions[i].z;
+					rectLight.position.set( x, y, z );
+					rectLight.lookAt( new THREE.Vector3(2, 0, 0) );
+					rectLight.updateMatrixWorld();
+					rectLights.push(rectLight);
+				}
+
+				// rectLight1 = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 2 );
+				// rectLight1.matrixAutoUpdate = true;
+				// rectLight1.intensity = 10.0;
+				// rectLight1.shapeType = 3;
+				// rectLight1.position.set( 10, 10, 0 );
+				// rectLight1.lookAt( new THREE.Vector3(2, 0, 0) );
+				// rectLight1.updateMatrixWorld();
+				// rectLights.push(rectLight1);
 
 				// TODO: ensure RectAreaLight handles target param correctly
 				// rectLight.target = mshPhongBox;
 
-				rectLightHelper = new THREE.RectAreaLightHelper( rectLight );
-				// rectLight.add( rectLightHelper );
+				for( var i=0; i<numLights; i++) {
+					rectLightHelper = new THREE.RectAreaLightHelper( rectLights[i] );
+					rectLights[i].add( rectLightHelper );
+					rectLightHelpers.push( rectLightHelper );
+					scn.add(rectLights[i]);
+				}
+
 
 				var loader = new THREE.TextureLoader();
 
@@ -185,12 +217,12 @@
 					function ( texture ) {
 						// texture.flipY = false;
 						rectLight.areaTexture = texture;
-						rectLightHelper.children[0].material.map = texture;
-						rectLightHelper.children[1].material.map = texture;
-						rectLightHelper.children[0].material.needsUpdate = true;
-						rectLightHelper.children[1].material.needsUpdate = true;
-						rectLight.areaTexture.generateMipMaps = true;
-						rectLight.areaTexture.needsUpdate = true;
+						// rectLightHelper.children[0].material.map = texture;
+						// rectLightHelper.children[1].material.map = texture;
+						// rectLightHelper.children[0].material.needsUpdate = true;
+						// rectLightHelper.children[1].material.needsUpdate = true;
+						// rectLight.areaTexture.generateMipMaps = true;
+						// rectLight.areaTexture.needsUpdate = true;
 					},
 					// Function called when download progresses
 					function ( xhr ) {
@@ -206,26 +238,6 @@
 
 				scn.add( cam );
 				scn.add( origin );
-
-				sphereGeometry = new THREE.SphereGeometry( rectLight.height/2, 32, 32 );
-				var material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
-			  sphereLightMesh = new THREE.Mesh( sphereGeometry, material );
-				// scn.add( sphereLightMesh );
-				sphereLightMesh.position.copy(rectLight.position);
-
-				var rootTube = new THREE.Object3D();
-				rootTube.position.copy(rectLight.position);
-				var geometry = new THREE.CylinderGeometry( rectLight.height/2, rectLight.height/2, rectLight.width, 32 );
-				var cylinder = new THREE.Mesh( geometry, material );
-				cap1Mesh = new THREE.Mesh( sphereGeometry, material );
-				cap2Mesh = new THREE.Mesh( sphereGeometry, material );
-				cap1Mesh.position.y = rectLight.width/2;
-				cap2Mesh.position.y = -rectLight.width/2;
-				rootTube.add(cylinder);
-				rootTube.add(cap1Mesh);
-				rootTube.add(cap2Mesh);
-				rootTube.rotation.z = Math.PI/2;
-				scn.add( rootTube );
 
 				matPhongFloor.color.set( 0x808080 );
 				matPhongObjects.color.set( 0xffffff );
@@ -256,6 +268,20 @@
 				scn.add( mshPhongSphere );
 				scn.add( mshPhongKnot );
 
+				loader.load('textures/specstrength.jpg',
+				function ( texture ) {
+					mshPhongSphere.material.specularMap = texture;
+					mshPhongSphere.material.bumpMap = texture;
+					mshPhongSphere.material.bumpScale = 0.01;
+					mshPhongFloor.material.specularMap = texture;
+					mshPhongFloor.material.bumpMap = texture;
+					mshPhongFloor.material.bumpScale = 0.1;
+					mshPhongFloor.material.needsUpdate = texture;
+					mshPhongSphere.material.needsUpdate = texture;
+					texture.wrapS = THREE.RepeatWrapping;
+					texture.wrapT = THREE.RepeatWrapping;
+					texture.repeat.set( 20, 20 );
+				});
 				// mshStdBox.castShadow = true;
 				// mshStdBox.receiveShadow = true;
 				// mshStdBox.position.set( 0, 5, -5 );
@@ -275,9 +301,6 @@
 				// scn.add( mshStdKnot );
 
 				// scn.add( amb );
-
-				scn.add( rectLight );
-
 				document.body.appendChild( rnd.domElement );
 				onResize();
 				window.addEventListener( 'resize', onResize, false );
@@ -336,8 +359,9 @@
 			}
 
 			function render() {
-
-				rectLightHelper.update(); // required
+				for( var i=0; i<rectLightHelpers.length; i++){
+					rectLightHelpers[i].update();
+				}
 				if( this.profiler === undefined ) {
 					this.profiler = new THREE.WebGLProfiler(rnd);
 				}
@@ -349,7 +373,8 @@
 
 				if( this.profiler.available() ) {
 					var value = this.profiler.value();
-					console.log('Time = ' +  value);
+					//console.log('Time = ' +  value);
+					infoDiv.innerHTML = parseInt(value ) + 'ms';
 				}
 
 			}
@@ -383,6 +408,7 @@
 
 				param = {
 					motion: true,
+					Type: '0',
 					width: rectLight.width,
 					height: rectLight.height,
 					color: rectLight.color.getHex(),
@@ -400,37 +426,49 @@
 
 				gui.add( param, 'motion' );
 
-				var lightFolder = gui.addFolder( 'Light' );
-				lightFolder.add( param, 'width', 0.1, 20).onChange( function ( val ) {
+				for( var i = 0; i < numLights; i++ ) {
 
-					rectLight.width = val;
-					sphereGeometry.radius = val;
+					var lightFolder = gui.addFolder( lightFolderName[i] );
 
-				} );
+					lightFolder.add( param, 'Type', { 'Rect': '0', 'Sphere': '1', 'Disk': '2', 'Tube': '3' } ).onChange(
+						(function(index, value){
+							rectLights[index].shapeType = Number(value);
+						}).bind(this, i)
+					);
 
-				lightFolder.add( param, 'height', 0.1, 20).onChange( function ( val ) {
+					lightFolder.add( param, 'width', 0.1, 50).onChange( (function (index, val ) {
+						rectLights[index].width = val;
+					}).bind(this, i)
+				 );
 
-					rectLight.height = val;
+					lightFolder.add( param, 'height', 0.1, 20).onChange( (function (index, val ) {
 
-				} );
+						rectLights[index].height = val;
 
-				lightFolder.addColor( param, 'color' ).onChange( function ( val ) {
+					}).bind(this, i)
+				 );
 
-					rectLight.color.setHex( val );
+					lightFolder.addColor( param, 'color' ).onChange( (function ( index,val ) {
 
-				} );
+						rectLights[index].color.setHex( val );
 
-				lightFolder.add( param, 'intensity', 0.0, 10000.0 ).onChange( function ( val ) {
+					}).bind(this, i)
+				);
 
-					rectLight.intensity = val;
+					lightFolder.add( param, 'intensity', 0.0, 10000.0 ).onChange( (function (index, val ) {
 
-				} );
+						rectLights[index].intensity = val;
 
-				lightFolder.addColor( param, 'ambient light color' ).onChange( function ( val ) {
+					}).bind(this, i)
+				 );
 
-					amb.color.setHex( val );
+					lightFolder.addColor( param, 'ambient light color' ).onChange( (function ( val ) {
 
-				} );
+						amb.color.setHex( val );
+
+					}).bind(this, i)
+					);
+				}
 
 				var phongFolder = gui.addFolder( 'Phong Material' );
 				phongFolder.addColor( param, 'floor color p' ).onChange( function ( val ) {

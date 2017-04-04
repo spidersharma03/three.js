@@ -2348,10 +2348,11 @@ function WebGLRenderer( parameters ) {
 
 				uniforms.halfWidth.set( light.width * 0.5,                0.0, 0.0 );
 				uniforms.halfHeight.set(              0.0, light.height * 0.5, 0.0 );
-
+				uniforms.shapeType = light.shapeType;
+				
 				uniforms.halfWidth.applyMatrix4( _matrix42 );
 				uniforms.halfHeight.applyMatrix4( _matrix42 );
-
+				uniforms
 				// TODO (abelnation): RectAreaLight distance?
 				// uniforms.distance = distance;
 

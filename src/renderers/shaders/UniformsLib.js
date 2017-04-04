@@ -157,7 +157,8 @@ var UniformsLib = {
 			color: {},
 			position: {},
 			width: {},
-			height: {}
+			height: {},
+			shapeType: {}
 		} },
 
 		rectAreaTexture: { value: [] },
