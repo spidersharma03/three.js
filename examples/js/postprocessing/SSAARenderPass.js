@@ -61,19 +61,14 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 		if ( this.sampleRenderTarget ) {
 			this.sampleRenderTarget.dispose();
 			this.sampleRenderTarget = null;
-		}
-		if ( this.accumulateRenderTarget ) {
-			this.accumulateRenderTarget.dispose();
-			this.accumulateRenderTarget = null;
-		}
+		}	
 
 	},
 
 	setSize: function ( width, height ) {
 
 		if ( this.sampleRenderTarget ) this.sampleRenderTarget.setSize( width, height );
-		if ( this.accumulateRenderTarget ) this.accumulateRenderTarget.setSize( width, height );
-
+	
 	},
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
@@ -81,9 +76,7 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 		if ( ! this.sampleRenderTarget ) {
 
 			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat, name: "SSAARenderPass.sample" } );
-			this.accumulateRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat, name: "SSAARenderPass.accumulation" } );
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat, type: THREE.UnsignedByteType, name: "SSAARenderPass.sample" } );
 
 		}
 
@@ -126,12 +119,12 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 
 			this.addMaterial.uniforms[ "opacity" ].value = sampleWeight;
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			renderer.renderPass( this.addMaterial, this.accumulateRenderTarget, ( i === 0 ) );
+			renderer.renderPass( this.addMaterial, writeBuffer, ( i === 0 ) );
 		}
 
 		if ( this.camera.clearViewOffset ) this.camera.clearViewOffset();
 
-		this.overMaterial.uniforms[ "tDiffuse" ].value = this.accumulateRenderTarget.texture;
+		this.overMaterial.uniforms[ "tDiffuse" ].value = writeBuffer.texture;
 
 		renderer.setClearColor( this.clearColor, this.clearAlpha );
 		renderer.renderPass( this.overMaterial, this.renderToScreen ? null : readBuffer, this.clear );
