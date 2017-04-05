@@ -1,5 +1,6 @@
 /**
  * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / http://clara.io/
  */
 
 THREE.EffectComposer = function ( renderer, renderTarget ) {
@@ -17,14 +18,17 @@ THREE.EffectComposer = function ( renderer, renderTarget ) {
 		var size = renderer.getSize();
 		renderTarget = new THREE.WebGLRenderTarget( size.width, size.height, parameters );
 		renderTarget.texture.name = "EffectComposer.rt1";
+		renderTarget.texture.generateMipmaps = false;
 	}
 
 	this.renderTarget1 = renderTarget;
 	this.renderTarget2 = renderTarget.clone();
 	this.renderTarget2.texture.name = "EffectComposer.rt2";
+	this.renderTarget2.texture.generateMipmaps = false;
 
 	this.writeBuffer = this.renderTarget1;
 	this.readBuffer = this.renderTarget2;
+	this.tempBufferMap = {};
 
 	this.passes = [];
 
@@ -43,6 +47,16 @@ Object.assign( THREE.EffectComposer.prototype, {
 		this.readBuffer = this.writeBuffer;
 		this.writeBuffer = tmp;
 
+	},
+
+	requestBuffer: function( key ) {
+		if( ! this.tempBufferMap[ key ] ) {
+			var sharedRenderTarget = this.renderTarget1.clone();
+			sharedRenderTarget.texture.name = "EffectComposer.buffer[" + key + "]";
+			sharedRenderTarget.texture.generateMipmaps = false;
+			this.tempBufferMap[ key ] = sharedRenderTarget;
+		}
+		return this.tempBufferMap[ key ];		
 	},
 
 	addPass: function ( pass ) {
@@ -128,13 +142,44 @@ Object.assign( THREE.EffectComposer.prototype, {
 
 		this.writeBuffer = this.renderTarget1;
 		this.readBuffer = this.renderTarget2;
+	},
+
+	dispose: function() {
+
+		for (var key in this.tempBufferMap) {
+
+    		if (this.tempBufferMap.hasOwnProperty(key)) {
+				
+				this.tempBufferMap[key].dispose();
+
+	    	}
+
+		}	
+		
+		for ( var i = 0; i < this.passes.length; i ++ ) {
+
+			this.passes[i].dispose();
+
+		}
 
 	},
+
 
 	setSize: function ( width, height ) {
 
 		this.renderTarget1.setSize( width, height );
 		this.renderTarget2.setSize( width, height );
+
+		for (var key in this.tempBufferMap) {
+
+    		if (this.tempBufferMap.hasOwnProperty(key)) {
+				
+				this.tempBufferMap[key].setSize( width, height );
+
+	    	}
+
+		}	
+
 
 		for ( var i = 0; i < this.passes.length; i ++ ) {
 
@@ -166,6 +211,8 @@ THREE.Pass = function () {
 Object.assign( THREE.Pass.prototype, {
 
 	setSize: function( width, height ) {},
+
+	dispose: function() {},
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
