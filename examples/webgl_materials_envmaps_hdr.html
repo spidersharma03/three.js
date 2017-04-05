@@ -52,15 +52,20 @@
 		<script src="js/postprocessing/BloomPass.js"></script>
 		<script src="js/shaders/ConvolutionShader.js"></script>
 
+		<script src="js/postprocessing/SSAARenderPass.js"></script>
+		<script src="js/postprocessing/RenderPass.js"></script>
+
 		<script>
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var container, stats;
+			var composer, copyPass, ssaaRenderPass;
+	
 			var params = {
 				envMap: "HDR",
 				projection: 'normal',
-				roughness: 1.0,
+				roughness: 0.0,
 				reflectivity: 0.5,
 				bumpScale: 0.3,
 				background: false,
@@ -86,20 +91,30 @@
 
 				scene = new THREE.Scene();
 
-				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				renderer = new THREE.WebGLRenderer( {
+					antialias: false,
+				    precision: 'highp',
+				    alpha: true,
+				    preserveDrawingBuffer: true
+				} );
+				renderer.toneMapping = THREE.ReinhardToneMapping;
+  				renderer.physicallyCorrectLights = true;
 				renderer.setClearColor( new THREE.Color( 0xffffff ) );
-				renderer.toneMapping = THREE.LinearToneMapping;
-
-				standardMaterial = new THREE.MeshStandardMaterial( {
+				
+				standardMaterial = new THREE.MeshPhysicalMaterial( {
 					map: null,
 					bumpScale: - 0.05,
 					color: 0xff4444,
-					metalness: 0.5,
-					roughness: 1.0,
-					shading: THREE.SmoothShading
+					metalness: 1.0,
+					roughness: 0.0,
+					reflectivity: 0.5,
+					shading: THREE.SmoothShading,
+					blending: THREE.NormalBlending,
+					premultipliedAlpha: true,
+					side: THREE.DoubleSide
 				} );
 
-				var geometry = new THREE.TorusKnotGeometry( 18, 8, 150, 20 );
+				var geometry = new THREE.SphereGeometry( 25.0, 24, 24 );
 				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
 				torusMesh1.position.x = 0.0;
 				torusMesh1.castShadow = true;
@@ -111,7 +126,7 @@
 					map: null,
 					roughnessMap: null,
 					color: 0xffffff,
-					metalness: 0.0,
+					metalness: 1.0,
 					roughness: 0.0,
 					shading: THREE.SmoothShading
 				} );
@@ -129,9 +144,9 @@
 					map.wrapT = THREE.RepeatWrapping;
 					map.anisotropy = 4;
 					map.repeat.set( 9, 2 );
-					standardMaterial.map = map;
-					standardMaterial.roughnessMap = map;
-					standardMaterial.bumpMap = map;
+					//standardMaterial.map = map;
+					//standardMaterial.roughnessMap = map;
+					//standardMaterial.bumpMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
 
@@ -203,7 +218,16 @@
 				renderer.shadowMap.enabled = true;
 				container.appendChild( renderer.domElement );
 
-				//renderer.toneMapping = THREE.ReinhardToneMapping;
+				composer = new THREE.EffectComposer( renderer );
+				ssaaRenderPass = new THREE.SSAARenderPass( scene, camera );
+				ssaaRenderPass.clear = true;
+				ssaaRenderPass.sampleLevel = 2;
+				ssaaRenderPass.unbiased = false;
+				composer.addPass( ssaaRenderPass );
+				copyPass = new THREE.ShaderPass( THREE.CopyShader );
+				copyPass.renderToScreen = true;
+				composer.addPass( copyPass );
+
 				renderer.gammaInput = true;
 				renderer.gammaOutput = true;
 
@@ -237,6 +261,7 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( width, height );
+				composer.setSize( width, height );
 
 			}
 
@@ -302,6 +327,7 @@
 				}
 
 				renderer.toneMappingExposure = Math.pow( params.exposure, 4.0 );
+				renderer.toneMapping = THREE.LinearToneMapping;
 
 				var timer = Date.now() * 0.00025;
 
@@ -314,7 +340,7 @@
 
 				}
 
-				renderer.render( scene, camera );
+				composer.render();
 
 			}
 
