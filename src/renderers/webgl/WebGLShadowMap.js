@@ -212,7 +212,8 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 			var shadowMatrix = shadow.matrix;
 
 			_lightPositionWorld.setFromMatrixPosition( light.matrixWorld );
-			shadowCamera.position.copy( _lightPositionWorld );
+
+			shadowCamera.position.copy( shadow.virtualPosition ? shadow.virtualPosition : _lightPositionWorld );
 
 			_renderer.setRenderTarget( shadowMap );
 			_renderer.clear();
@@ -237,6 +238,13 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 					_lookTarget.setFromMatrixPosition( light.target.matrixWorld );
 					shadowCamera.lookAt( _lookTarget );
 
+				}
+
+				if ( shadow.virtualPosition ) {
+
+					var offset = shadowCamera.position.clone().sub(_lightPositionWorld);
+					_lookTarget.add(offset);
+					shadowCamera.lookAt( _lookTarget );
 				}
 
 				shadowCamera.updateMatrixWorld();
