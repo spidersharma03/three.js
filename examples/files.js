@@ -124,6 +124,7 @@ var files = {
 		"webgl_materials_blending",
 		"webgl_materials_blending_custom",
 		"webgl_materials_bumpmap",
+		"webgl_materials_bumpmap_scale",
 		"webgl_materials_bumpmap_skin",
 		"webgl_materials_cars",
 		"webgl_materials_channels",

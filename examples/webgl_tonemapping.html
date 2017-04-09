@@ -92,7 +92,7 @@
 				renderer = new THREE.WebGLRenderer( { antialias: false } );
 
 				standardMaterial = new THREE.MeshStandardMaterial( {
-					bumpScale: - 0.05,
+					bumpScale: 1,
 					color: 0xffffff,
 					metalness: 0.9,
 					roughness: 0.8,
@@ -256,7 +256,7 @@
 
 
 					standardMaterial.roughness = params.roughness;
-					standardMaterial.bumpScale = - 0.05 * params.bumpScale;
+					standardMaterial.bumpScale = 1 * params.bumpScale;
 					standardMaterial.opacity = params.opacity;
 
 				}
