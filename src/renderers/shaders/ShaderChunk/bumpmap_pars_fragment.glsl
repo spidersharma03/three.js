@@ -33,8 +33,8 @@
 
 	vec3 perturbNormalArb( vec3 surf_pos, vec3 surf_norm, vec2 dHdxy ) {
 
-		vec3 vSigmaX = dFdx( surf_pos );
-		vec3 vSigmaY = dFdy( surf_pos );
+		vec3 vSigmaX = normalize( dFdx( surf_pos ) );
+		vec3 vSigmaY = normalize( dFdy( surf_pos ) );
 		vec3 vN = surf_norm;		// normalized
 
 		vec3 R1 = cross( vSigmaY, vN );
