@@ -13,7 +13,7 @@ var inputs = [
 	];
 
 var inputDirectory = "./build";
-var outputDirectory = "../Clara.io/hub/three";
+var outputDirectory = "../Clara/hub/three";
 
 var packageTemplate = {
   "name": "three",
