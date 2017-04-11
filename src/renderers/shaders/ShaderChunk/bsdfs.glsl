@@ -113,10 +113,11 @@ float G_GGX_SmithCorrelated( const in float alpha, const in float dotNL, const i
 float D_GGX( const in float alpha, const in float dotNH ) {
 
 	float a2 = pow2( alpha );
-
+	
 	float denom = pow2( dotNH ) * ( a2 - 1.0 ) + 1.0; // avoid alpha = 0 with dotNH = 1
 
-	return RECIPROCAL_PI * a2 / pow2( denom );
+	//return RECIPROCAL_PI * a2 / pow2( denom );
+	return RECIPROCAL_PI * pow2( alpha / denom );
 
 }
 
