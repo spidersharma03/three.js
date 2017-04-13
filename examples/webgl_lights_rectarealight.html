@@ -14,7 +14,7 @@
 			#info {
 				position: absolute;
 				top: 0px; width: 100%;
-				color: #00ff00;
+				color: #ff0000;
 				padding: 5px;
 				font-family: Monospace;
 				font-size: 20px;
@@ -46,12 +46,15 @@
 		<script src="../examples/js/controls/OrbitControls.js"></script>
 		<script src="../examples/js/loaders/OBJLoader.js"></script>
 		<script src="../src/renderers/webgl/WebGLProfiler.js"></script>
+		<script src="js/pmrem/AreaLightTextureFilter.js"></script>
 		<script src="js/Detector.js"></script>
 
 		<script>
 
+			// var formFactorTexture = createClippedSphereFormFactorTexture();
+			var areaLightTextureFilter;
 			var loader = new THREE.OBJLoader();
-			var numLights = 4;
+			var numLights = 1;
 			var lightFolderName = [];
 			for( var i=0; i<numLights; i++)
 				lightFolderName.push("Light" + i);
@@ -64,7 +67,7 @@
 
 			var rnd = new THREE.WebGLRenderer({antialias:true});
 			rnd.toneMapping = THREE.Uncharted2ToneMapping;
-			rnd.toneMappingWhitePoint = 100;
+			rnd.toneMappingWhitePoint = 4;
 			rnd.toneMappingExposure = 1;
 
 			var cam = new THREE.PerspectiveCamera( 34, window.innerWidth / window.innerHeight, 0.1, 20000 );
@@ -115,7 +118,6 @@
 			var mshPhongBox = new THREE.Mesh( geoBox, matPhongObjects );
 			var mshPhongSphere = new THREE.Mesh( geoSphere, matPhongObjects );
 			var mshPhongKnot = new THREE.Mesh( geoKnot, matPhongObjects );
-
 			mshPhongWall.rotation.z = Math.PI/2;
 			mshPhongWall.position.set(-20,0, 0);
 
@@ -167,14 +169,14 @@
 				rnd.gammaOutput = true;
 				rnd.antialias = true;
 
-				cam.position.set( 0, 20, 45 );
+				cam.position.set( 0, 2, 0 );
 
-				var lightPositions = [ new THREE.Vector3(0, 10, 0), new THREE.Vector3(10, 10, 0), new THREE.Vector3(0, 10, -10), new THREE.Vector3(10, 10, -13),
+				var lightPositions = [ new THREE.Vector3(0, 5, -8), new THREE.Vector3(10, 10, 0), new THREE.Vector3(0, 10, -10), new THREE.Vector3(10, 10, -13),
 				new THREE.Vector3(0, 22, 15), new THREE.Vector3(10, 20, 0), new THREE.Vector3(0, 20, -10), new THREE.Vector3(10, 20, -13),
 			 	new THREE.Vector3(0, 22, 35), new THREE.Vector3(10, 20, 30) ];
 
 				for( var i=0; i<numLights; i++) {
-					rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 6 );
+					rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 15 );
 					rectLight.matrixAutoUpdate = true;
 					rectLight.intensity = 30.0;
 					rectLight.shapeType = 0;
@@ -182,7 +184,7 @@
 					var y = lightPositions[i].y;
 					var z = lightPositions[i].z;
 					rectLight.position.set( x, y, z );
-					rectLight.lookAt( new THREE.Vector3(2, 0, 0) );
+					rectLight.lookAt( new THREE.Vector3(0, 5, 0) );
 					rectLight.updateMatrixWorld();
 					rectLights.push(rectLight);
 				}
@@ -212,17 +214,20 @@
 				// load a resource
 				loader.load(
 					// resource URL
-					'textures/3165.jpg',
+					'textures/UV_Grid_Sm.jpg',
 					// Function when resource is loaded
 					function ( texture ) {
-						// texture.flipY = false;
+						texture.flipY = false;
 						rectLight.areaTexture = texture;
-						// rectLightHelper.children[0].material.map = texture;
-						// rectLightHelper.children[1].material.map = texture;
-						// rectLightHelper.children[0].material.needsUpdate = true;
-						// rectLightHelper.children[1].material.needsUpdate = true;
-						// rectLight.areaTexture.generateMipMaps = true;
-						// rectLight.areaTexture.needsUpdate = true;
+						rectLightHelper.children[0].children[0].material.map = texture;
+						rectLightHelper.children[0].children[1].material.map = texture;
+						rectLightHelper.children[0].children[0].material.needsUpdate = true;
+						rectLightHelper.children[0].children[1].material.needsUpdate = true;
+						rectLight.areaTexture.generateMipmaps = false;
+						rectLight.areaTexture.needsUpdate = true;
+
+						// areaLightTextureFilter = new THREE.AreaLightTextureFilter(texture);
+						// areaLightTextureFilter.update(rnd);
 					},
 					// Function called when download progresses
 					function ( xhr ) {
@@ -254,19 +259,19 @@
 
 				mshPhongSphere.castShadow = true;
 				mshPhongSphere.receiveShadow = true;
-				mshPhongSphere.position.set(-5, 5, 5 );
+				mshPhongSphere.position.set(0, 3, 0 );
 
 				mshPhongKnot.position.set( 5, 5, 5 );
 				mshPhongKnot.castShadow = true;
 				mshPhongKnot.receiveShadow = true;
 
 				scn.add( mshPhongFloor );
-				scn.add( mshPhongWall );
-				scn.add( mshPhongWall1 );
-				scn.add( mshPhongWall2 );
-				scn.add( mshPhongBox );
-				scn.add( mshPhongSphere );
-				scn.add( mshPhongKnot );
+				// scn.add( mshPhongWall );
+				// scn.add( mshPhongWall1 );
+				// scn.add( mshPhongWall2 );
+				// scn.add( mshPhongBox );
+				// scn.add( mshPhongSphere );
+				// scn.add( mshPhongKnot );
 
 				loader.load('textures/specstrength.jpg',
 				function ( texture ) {
@@ -275,7 +280,7 @@
 					mshPhongSphere.material.bumpScale = 0.01;
 					mshPhongFloor.material.specularMap = texture;
 					mshPhongFloor.material.bumpMap = texture;
-					mshPhongFloor.material.bumpScale = 0.1;
+					mshPhongFloor.material.bumpScale = 0.01;
 					mshPhongFloor.material.needsUpdate = texture;
 					mshPhongSphere.material.needsUpdate = texture;
 					texture.wrapS = THREE.RepeatWrapping;
@@ -374,7 +379,7 @@
 				if( this.profiler.available() ) {
 					var value = this.profiler.value();
 					//console.log('Time = ' +  value);
-					infoDiv.innerHTML = parseInt(value ) + 'ms';
+					infoDiv.innerHTML = value.toFixed(2) + 'ms';
 				}
 
 			}

@@ -18,7 +18,7 @@ struct BlinnPhongMaterial {
 
 #if NUM_RECT_AREA_LIGHTS > 0
 
-	#define DIFFUSE_DROBOT_RECT
+	//#define DIFFUSE_DROBOT_RECT
 	#define DIFFUSE_DROBOT_TUBE
 	//#define DIFFUSE_DROBOT_DISK
 
@@ -80,8 +80,8 @@ struct BlinnPhongMaterial {
 		#endif
 
 		// TODO (abelnation): note why division by 2PI is necessary
-		reflectedLight.directSpecular += lightColor * matSpecColor * spec / PI2;
-		reflectedLight.directDiffuse  += lightColor * matDiffColor * diff / PI2;
+		reflectedLight.directSpecular += lightColor * matSpecColor * spec;
+		reflectedLight.directDiffuse  += lightColor * matDiffColor * diff;
 
 	}
 

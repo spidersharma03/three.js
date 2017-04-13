@@ -290,6 +290,37 @@ float integrateLtcBrdfOverRectEdge( vec3 v1, vec3 v2 ) {
 
 }
 
+float integrateLtcBrdfOverRectEdgeOpt( vec3 v1, vec3 v2 ) {
+
+	float x = dot(v1, v2);
+	float y = abs(x);
+
+	float a = 5.42031 + ( 3.12829 + 0.0902326 * y ) * y;
+	float b = 3.45068 + ( 4.18814 + y ) * y;
+	float theta_sintheta = a/b;
+	//float theta_sintheta = 1.5708 + ( -0.879406 + 0.308609 * y ) * y;
+	if( x < 0.0 )
+		theta_sintheta = PI * inversesqrt( 1.0 - x * x ) - theta_sintheta;
+
+	vec3 u = cross( v1, v2 );
+	return theta_sintheta * u.z;
+}
+
+vec3 formVectorEdge( vec3 v1, vec3 v2 ) {
+
+	float x = dot(v1, v2);
+	float y = abs(x);
+
+	float a = 5.42031 + ( 3.12829 + 0.0902326 * y ) * y;
+	float b = 3.45068 + ( 4.18814 + y ) * y;
+	float theta_sintheta = a/b;
+	if( x < 0.0 )
+		theta_sintheta = PI * inversesqrt( 1.0 - x * x ) - theta_sintheta;
+
+	vec3 u = cross( v1, v2 );
+	return theta_sintheta * u;
+}
+
 void initRectPoints( const in vec3 pos, const in vec3 halfWidth, const in vec3 halfHeight, out vec3 rectPoints[4] ) {
 
 	rectPoints[0] = pos - halfWidth - halfHeight;
@@ -299,16 +330,19 @@ void initRectPoints( const in vec3 pos, const in vec3 halfWidth, const in vec3 h
 
 }
 
-vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 p2_, vec3 p3_, vec3 p4_)
+vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 p2_, vec3 p3_, vec3 p4_, vec3 f)
 {
     // area light plane basis
     vec3 V1 = p2_ - p1_;
     vec3 V2 = p4_ - p1_;
     vec3 planeOrtho = cross(V1, V2);
     float planeAreaSquared = dot(planeOrtho, planeOrtho);
-    float planeDistxPlaneArea = dot(planeOrtho, p1_);
+    //float planeDistxPlaneArea = dot(planeOrtho, p1_);
     // orthonormal projection of (0,0,0) in area light space
-    vec3 P = planeDistxPlaneArea * planeOrtho / planeAreaSquared - p1_;
+    //vec3 P = planeDistxPlaneArea * planeOrtho / planeAreaSquared - p1_;
+		vec3 P0 = rayPlaneIntersect(vec3(0.0), normalize(f), p3_, normalize(planeOrtho));
+		float planeDistxPlaneArea = dot(P0, P0);
+		vec3 P = P0 - p1_;
 
     // find tex coords of P
     float dot_V1_V2 = dot(V1,V2);
@@ -319,9 +353,9 @@ vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 
     Puv.x = dot(V1, P)*inv_dot_V1_V1 - dot_V1_V2*inv_dot_V1_V1*Puv.y ;
 
     // LOD
-    float d = abs(planeDistxPlaneArea) / pow(planeAreaSquared, 0.75);
+    float d = sqrt(planeDistxPlaneArea) / pow(2.0*sqrt(planeAreaSquared), 0.5);
 
-    return texture2DLodEXT(areaTexture, Puv, log(1.0*2048.0*d)/log(3.0) ).rgb;
+    return texture2DLodEXT(areaTexture, Puv, log(2.0*2048.0*d) ).rgb;
 }
 
 vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3 brdfMat, const in vec3 rectPoints[4], const in sampler2D areaTexture ) {
@@ -367,13 +401,13 @@ vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3
 	// integrate
 	// simplified integration only needs to be evaluated for each edge in the polygon
 	float sum = 0.0;
-	sum += integrateLtcBrdfOverRectEdge( clippedRect[0], clippedRect[1] );
-	sum += integrateLtcBrdfOverRectEdge( clippedRect[1], clippedRect[2] );
-	sum += integrateLtcBrdfOverRectEdge( clippedRect[2], clippedRect[3] );
+	sum += integrateLtcBrdfOverRectEdgeOpt( clippedRect[0], clippedRect[1] );
+	sum += integrateLtcBrdfOverRectEdgeOpt( clippedRect[1], clippedRect[2] );
+	sum += integrateLtcBrdfOverRectEdgeOpt( clippedRect[2], clippedRect[3] );
 	if (n >= 4)
-		sum += integrateLtcBrdfOverRectEdge( clippedRect[3], clippedRect[4] );
+		sum += integrateLtcBrdfOverRectEdgeOpt( clippedRect[3], clippedRect[4] );
 	if (n == 5)
-		sum += integrateLtcBrdfOverRectEdge( clippedRect[4], clippedRect[0] );
+		sum += integrateLtcBrdfOverRectEdgeOpt( clippedRect[4], clippedRect[0] );
 
 	// TODO (abelnation): two-sided area light
 	// sum = twoSided ? abs(sum) : max(0.0, sum);
@@ -384,6 +418,73 @@ vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3
 
 	return Lo_i * texColor;
 
+}
+
+float SphereFormFactor( vec3 f ) {
+	float l = length(f);
+	//return f.z;
+	return max((l*l + f.z)/(l+1.0), 0.0);
+}
+
+vec3 integrateLtcBrdfOverRectOpt( const in GeometricContext geometry, const in mat3 brdfMat, const in vec3 rectPoints[4], const in sampler2D areaTexture ) {
+
+	vec3 N = geometry.normal;
+	vec3 V = geometry.viewDir;
+	vec3 P = geometry.position;
+
+	// construct orthonormal basis around N
+	vec3 T1, T2;
+	T1 = normalize(V - N * dot( V, N ));
+	// TODO (abelnation): I had to negate this cross product to get proper light.  Curious why sample code worked without negation
+	T2 = - cross( N, T1 );
+
+	// rotate area light in (T1, T2, N) basis
+	mat3 brdfWrtSurface = brdfMat * transpose( mat3( T1, T2, N ) );
+
+	// transformed rect relative to surface point
+	vec3 clippedRect[4];
+	clippedRect[0] = brdfWrtSurface * ( rectPoints[0] - P );
+	clippedRect[1] = brdfWrtSurface * ( rectPoints[1] - P );
+	clippedRect[2] = brdfWrtSurface * ( rectPoints[2] - P );
+	clippedRect[3] = brdfWrtSurface * ( rectPoints[3] - P );
+
+	// Find light normal
+	vec3 v1 = clippedRect[1] - clippedRect[0];
+	vec3 v2 = clippedRect[3] - clippedRect[0];
+	vec3 lightNormal = cross(v1, v2);
+
+	bool bSameSide = dot(lightNormal, clippedRect[0]) > 0.0;
+	if( !bSameSide )
+		return vec3(0.0);
+
+	vec3 clippedRectOrig[4];
+	clippedRectOrig[0] = clippedRect[0];
+	clippedRectOrig[1] = clippedRect[1];
+	clippedRectOrig[2] = clippedRect[2];
+	clippedRectOrig[3] = clippedRect[3];
+
+	vec3 texColor = vec3(1.0);//FetchDiffuseFilteredTexture(areaTexture, clippedRect[0], clippedRect[1], clippedRect[2], clippedRect[3]);
+
+	// project clipped rect onto sphere
+	clippedRect[0] = normalize( clippedRect[0] );
+	clippedRect[1] = normalize( clippedRect[1] );
+	clippedRect[2] = normalize( clippedRect[2] );
+	clippedRect[3] = normalize( clippedRect[3] );
+
+	// integrate
+	// simplified integration only needs to be evaluated for each edge in the polygon
+	vec3 formFactorVector = vec3(0.0);
+	formFactorVector += formVectorEdge( clippedRect[0], clippedRect[1] );
+	formFactorVector += formVectorEdge( clippedRect[1], clippedRect[2] );
+	formFactorVector += formVectorEdge( clippedRect[2], clippedRect[3] );
+	formFactorVector += formVectorEdge( clippedRect[3], clippedRect[0] );
+	formFactorVector /= (2.0*PI);
+	texColor = FetchDiffuseFilteredTexture(areaTexture, clippedRectOrig[0], clippedRectOrig[1], clippedRectOrig[2], clippedRectOrig[3], formFactorVector);
+
+	// TODO (abelnation): two-sided area light
+	// sum = twoSided ? abs(sum) : max(0.0, sum);
+
+	return texColor * SphereFormFactor(formFactorVector);
 }
 
 vec3 Rect_Area_Light_Specular_Reflectance(
@@ -411,7 +512,7 @@ vec3 Rect_Area_Light_Specular_Reflectance(
 		vec3( t.w,   0, t.x )
 	);
 
-	vec3 specularReflectance = integrateLtcBrdfOverRect( geometry, brdfLtcApproxMat, rectPoints, areaTexture );
+	vec3 specularReflectance = integrateLtcBrdfOverRectOpt( geometry, brdfLtcApproxMat, rectPoints, areaTexture );
 	specularReflectance *= brdfLtcScalar;
 
 	return specularReflectance;
@@ -426,7 +527,7 @@ vec3 Rect_Area_Light_Diffuse_Reflectance(
 	initRectPoints( lightPos, lightHalfWidth, lightHalfHeight, rectPoints );
 
 	mat3 diffuseBrdfMat = mat3(1);
-	vec3 diffuseReflectance = integrateLtcBrdfOverRect( geometry, diffuseBrdfMat, rectPoints, areaTexture );
+	vec3 diffuseReflectance = integrateLtcBrdfOverRectOpt( geometry, diffuseBrdfMat, rectPoints, areaTexture );
 
 	return diffuseReflectance;
 
