@@ -132,6 +132,7 @@ RectAreaLightHelper.prototype.update = function () {
 				// }
 				var scale = this.light.height;
 				this.rootSphere.scale.set(scale, scale, scale);
+				this.rootSphere.children[0].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
 		}
 		else if( this.light.shapeType === 2 ) {
 				// if( !added ) {
@@ -148,8 +149,8 @@ RectAreaLightHelper.prototype.update = function () {
 
 					var lookVec = vector2.clone().sub( vector1 );
 					this.rootDisk.lookAt( lookVec );
-					this.rootDisk.children[0].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
 				}
+				this.rootDisk.children[0].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
 		}
 		else if( this.light.shapeType === 3 ) {
 				// if( !added ) {
@@ -172,6 +173,9 @@ RectAreaLightHelper.prototype.update = function () {
 					var lookVec = vector2.clone().sub( vector1 );
 					this.rootTube.lookAt( lookVec );
 				}
+				this.rootTube.children[0].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
+				this.rootTube.children[1].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
+				this.rootTube.children[2].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
 		}
 		else {
 				// if( !added ) {
@@ -193,7 +197,7 @@ RectAreaLightHelper.prototype.update = function () {
 				}
 
 				// update materials
-				var size = this.light.width * this.light.height/4;
+				var size = 1;//this.light.width * this.light.height/4;
 				mesh1.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity/size );
 				mesh2.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity/size );
 

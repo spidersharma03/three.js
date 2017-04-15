@@ -23,7 +23,7 @@ struct BlinnPhongMaterial {
 	//#define DIFFUSE_DROBOT_DISK
 
 
-	void RE_Direct_RectArea_BlinnPhong( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in BlinnPhongMaterial material, inout ReflectedLight reflectedLight ) {
+	void RE_Direct_RectArea_BlinnPhong( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in BlinnPhongMaterial material, inout ReflectedLight reflectedLight, const in sampler2D rectAreaTexture ) {
 
 		vec3 matDiffColor = material.diffuseColor;
 		vec3 matSpecColor = material.specularColor;
@@ -36,7 +36,7 @@ struct BlinnPhongMaterial {
 				geometry,
 				rectAreaLight.position, rectAreaLight.halfWidth, rectAreaLight.halfHeight,
 				roughness * roughness,
-				ltcMat, ltcMag, rectAreaTexture[0] );
+				ltcMat, ltcMag, rectAreaTexture );
 
 		#ifdef DIFFUSE_DROBOT_RECT
 			vec3 diff = vec3(0.0);
@@ -76,7 +76,7 @@ struct BlinnPhongMaterial {
 		#else
 			vec3 diff = Rect_Area_Light_Diffuse_Reflectance(
 					geometry,
-					rectAreaLight.position, rectAreaLight.halfWidth, rectAreaLight.halfHeight, rectAreaTexture[0] );
+					rectAreaLight.position, rectAreaLight.halfWidth, rectAreaLight.halfHeight, rectAreaTexture );
 		#endif
 
 		// TODO (abelnation): note why division by 2PI is necessary

@@ -89,7 +89,7 @@ IncidentLight directLight;
 
 		rectAreaLight = rectAreaLights[ i ];
     if( rectAreaLight.shapeType == 0 )
-		  RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight );
+		  RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight, rectAreaTexture[ i ] );
     else if( rectAreaLight.shapeType == 1 )
       RE_Direct_Sphere( rectAreaLight, geometry, material, reflectedLight );
     else if( rectAreaLight.shapeType == 2 )
