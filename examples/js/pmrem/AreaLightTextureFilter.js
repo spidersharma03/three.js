@@ -5,26 +5,19 @@
 THREE.AreaLightTextureFilter = function( sourceTexture, samplesPerLevel ) {
 
 	this.sourceTexture = sourceTexture;
+
+	if( !this.isPowerOfTwo(sourceTexture.image) )
+		this.sourceTexture.image = this.makePowerOfTwo( sourceTexture.image );
+
 	this.resolution = {x: sourceTexture.image.width, y:sourceTexture.image.height };
   this.samplesPerLevel = ( samplesPerLevel !== undefined ) ? samplesPerLevel : 16;
 
-	// var monotonicEncoding = ( sourceTexture.encoding === THREE.LinearEncoding ) ||
-	// 	( sourceTexture.encoding === THREE.GammaEncoding ) || ( sourceTexture.encoding === THREE.sRGBEncoding );
-
-	// this.sourceTexture.minFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.NearestFilter;
-	// this.sourceTexture.magFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.NearestFilter;
-	// this.sourceTexture.generateMipmaps = this.sourceTexture.generateMipmaps && monotonicEncoding;
-
 	var size = this.resolution;
 	var params = {
-		format: this.sourceTexture.format,
+		format: THREE.RGBAFormat,
 		magFilter: THREE.LinearFilter,
 		minFilter: THREE.LinearFilter,
-		type: this.sourceTexture.type,
-		generateMipmaps: false,
-		anisotropy: this.sourceTexture.anisotropy,
-		encoding: this.sourceTexture.encoding
-	 };
+	};
 
 	// how many LODs fit
   var maxSize = Math.max( size.x, size.y );
@@ -38,8 +31,10 @@ THREE.AreaLightTextureFilter = function( sourceTexture, samplesPerLevel ) {
 
 	for ( var i = 0; i < this.numLods; i ++ ) {
 		var renderTarget = new THREE.WebGLRenderTarget( sizex, sizey, params );
+		// renderTarget.texture.generateMipmaps = false;
 		this.renderTargetsHorizontal.push( renderTarget );
 		var renderTarget = new THREE.WebGLRenderTarget( sizex, sizey, params );
+		// renderTarget.texture.generateMipmaps = false;
     this.renderTargetsVertical.push( renderTarget );
 		sizex = Math.ceil(sizex / 2);
     sizey = Math.ceil(sizey / 2);
@@ -66,7 +61,65 @@ THREE.AreaLightTextureFilter.prototype = {
 
 	constructor : THREE.AreaLightTextureFilter,
 
-	update: function( renderer ) {
+	isPowerOfTwo: function( image ) {
+
+		return this._isPowerOfTwo( image.width ) && this._isPowerOfTwo( image.height );
+
+	},
+
+	_isPowerOfTwo: function ( value ) {
+
+		return ( value & ( value - 1 ) ) === 0 && value !== 0;
+
+	},
+
+	nearestPowerOfTwo: function ( value ) {
+
+		return Math.pow( 2, Math.round( Math.log( value ) / Math.LN2 ) );
+
+	},
+
+	makePowerOfTwo: function( image ) {
+
+		if ( image instanceof HTMLImageElement || image instanceof HTMLCanvasElement ) {
+
+			var canvas = document.createElementNS( 'http://www.w3.org/1999/xhtml', 'canvas' );
+			canvas.width = this.nearestPowerOfTwo( image.width );
+			canvas.height = this.nearestPowerOfTwo( image.height );
+
+			var context = canvas.getContext( '2d' );
+			context.drawImage( image, 0, 0, canvas.width, canvas.height );
+
+			console.warn( 'THREE.WebGLRenderer: image is not power of two (' + image.width + 'x' + image.height + '). Resized to ' + canvas.width + 'x' + canvas.height, image );
+
+			return canvas;
+
+		}
+
+		return image;
+
+	},
+
+	disposeRenderTargets: function() {
+		for( let i=0; i<this.renderTargetsHorizontal.length; i++ ) {
+			let renderTarget = this.renderTargetsHorizontal[i];
+			renderTarget.dispose();
+		  renderTarget = this.renderTargetsVertical[i];
+			renderTarget.dispose();
+		}
+		this.renderTargetsHorizontal = [];
+		this.renderTargetsVertical	 = [];
+	},
+
+	createFilteredTexture: function( renderer ) {
+
+		var texture = new THREE.DataTexture();
+		texture.format = THREE.RGBAFormat;
+		texture.generateMipmaps = false;
+		texture.magFilter = THREE.LinearFilter;
+		texture.minFilter = THREE.LinearMipMapLinearFilter;
+
+		var channelsPerPixel = 4;
 
 		var gammaInput = renderer.gammaInput;
 		var gammaOutput = renderer.gammaOutput;
@@ -79,10 +132,10 @@ THREE.AreaLightTextureFilter.prototype = {
 		renderer.gammaOutput = false;
 
     var renderTarget = this.sourceTexture;
-
-		for ( var i = 1; i < this.numLods; i ++ ) {
-
-      this.shader.uniforms[ 'filterRadius' ].value = 0;
+		var filterRadii = [1, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5];
+		for ( var i = 0; i < this.numLods; i ++ ) {
+			// renderTarget = this.sourceTexture;
+      this.shader.uniforms[ 'filterRadius' ].value = filterRadii[i];
 			this.shader.uniforms[ 'texSize' ].value = new THREE.Vector2(this.renderTargetsHorizontal[i].width, this.renderTargetsHorizontal[i].height);
       this.shader.uniforms[ 'direction' ].value = new THREE.Vector2(1, 0);
       this.shader.uniforms[ 'colorTexture' ].value = renderTarget;
@@ -92,19 +145,24 @@ THREE.AreaLightTextureFilter.prototype = {
       renderer.render( this.scene, this.camera, this.renderTargetsVertical[i], true );
       renderTarget = this.renderTargetsVertical[i];
 
-      var buffer = new Uint8Array(4 * renderTarget.width * renderTarget.height);
+      var buffer = new Uint8Array(channelsPerPixel * renderTarget.width * renderTarget.height);
 			renderer.setRenderTarget( renderTarget );
       renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
-      this.sourceTexture.mipmaps[i] = { data: buffer, width: renderTarget.width, height: renderTarget.height };
+      texture.mipmaps[i] = { data: buffer, width: renderTarget.width, height: renderTarget.height };
 		}
-		this.sourceTexture.generateMipmaps = false;
-		this.sourceTexture.needsUpdate = true;
+		texture.image.data = texture.mipmaps[0].data;
+		texture.image.width = texture.mipmaps[0].width;
+		texture.image.height = texture.mipmaps[0].height;
+		texture.needsUpdate = true;
 
 		renderer.toneMapping = toneMapping;
 		renderer.toneMappingExposure = toneMappingExposure;
 		renderer.gammaInput = gammaInput;
 		renderer.gammaOutput = gammaOutput;
 
+		this.disposeRenderTargets();
+
+		return texture;
 	},
 
   getSeperableBlurMaterial: function() {
@@ -167,7 +225,7 @@ THREE.AreaLightTextureFilter.prototype = {
 						diffuseSum += sample2 * w;\
 						weightSum += w;\
 					}\
-					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);}"
+					gl_FragColor = vec4(diffuseSum/weightSum , 1.0);}"
 		} );
 	}
 

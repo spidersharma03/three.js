@@ -66,9 +66,9 @@
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var rnd = new THREE.WebGLRenderer({antialias:true});
-			rnd.toneMapping = THREE.Uncharted2ToneMapping;
-			rnd.toneMappingWhitePoint = 4;
-			rnd.toneMappingExposure = 1;
+			// rnd.toneMapping = THREE.Uncharted2ToneMapping;
+			// rnd.toneMappingWhitePoint = 4;
+			// rnd.toneMappingExposure = 1;
 
 			var cam = new THREE.PerspectiveCamera( 34, window.innerWidth / window.innerHeight, 0.1, 20000 );
 			var orb = new THREE.OrbitControls( cam, rnd.domElement );
@@ -169,7 +169,7 @@
 				rnd.gammaOutput = true;
 				rnd.antialias = true;
 
-				cam.position.set( 0, 2, 0 );
+				cam.position.set( 0, 20, 20 );
 
 				var lightPositions = [ new THREE.Vector3(0, 5, -8), new THREE.Vector3(10, 10, 0), new THREE.Vector3(0, 10, -10), new THREE.Vector3(10, 10, -13),
 				new THREE.Vector3(0, 22, 15), new THREE.Vector3(10, 20, 0), new THREE.Vector3(0, 20, -10), new THREE.Vector3(10, 20, -13),
@@ -178,7 +178,7 @@
 				for( var i=0; i<numLights; i++) {
 					rectLight = new THREE.RectAreaLight( 0xFFFFFF, undefined, 15, 15 );
 					rectLight.matrixAutoUpdate = true;
-					rectLight.intensity = 30.0;
+					rectLight.intensity = 1.0;
 					rectLight.shapeType = 0;
 					var x = lightPositions[i].x;
 					var y = lightPositions[i].y;
@@ -214,20 +214,24 @@
 				// load a resource
 				loader.load(
 					// resource URL
-					'textures/UV_Grid_Sm.jpg',
+					'textures/lava/lavatile.jpg',
 					// Function when resource is loaded
 					function ( texture ) {
-						texture.flipY = false;
-						rectLight.areaTexture = texture;
-						rectLightHelper.children[0].children[0].material.map = texture;
-						rectLightHelper.children[0].children[1].material.map = texture;
+						// texture.flipY = false;
+						// rectLight.areaTexture = texture;
+						// rectLightHelper.children[0].children[0].material.needsUpdate = true;
+						// rectLightHelper.children[0].children[1].material.needsUpdate = true;
+						// rectLightHelper.children[0].children[0].material.map = rectLight.areaTexture;
+						// rectLightHelper.children[0].children[1].material.map = rectLight.areaTexture;
+						// rectLight.areaTexture.generateMipmaps = true;
+						// rectLight.areaTexture.needsUpdate = true;
+
+						areaLightTextureFilter = new THREE.AreaLightTextureFilter(texture);
+						rectLight.areaTexture = areaLightTextureFilter.createFilteredTexture(rnd);
+						rectLightHelper.children[0].children[0].material.map = rectLight.areaTexture;
+						rectLightHelper.children[0].children[1].material.map = rectLight.areaTexture;
 						rectLightHelper.children[0].children[0].material.needsUpdate = true;
 						rectLightHelper.children[0].children[1].material.needsUpdate = true;
-						rectLight.areaTexture.generateMipmaps = false;
-						rectLight.areaTexture.needsUpdate = true;
-
-						// areaLightTextureFilter = new THREE.AreaLightTextureFilter(texture);
-						// areaLightTextureFilter.update(rnd);
 					},
 					// Function called when download progresses
 					function ( xhr ) {
@@ -259,33 +263,39 @@
 
 				mshPhongSphere.castShadow = true;
 				mshPhongSphere.receiveShadow = true;
-				mshPhongSphere.position.set(0, 3, 0 );
+				mshPhongSphere.position.set(0, 4, 0 );
 
 				mshPhongKnot.position.set( 5, 5, 5 );
 				mshPhongKnot.castShadow = true;
 				mshPhongKnot.receiveShadow = true;
 
 				scn.add( mshPhongFloor );
+				// var temp = mshPhongFloor.clone();
+				// temp.position.y += 4;
+				// scn.add(temp);
+				// rnd.sortObjects = false;
 				// scn.add( mshPhongWall );
 				// scn.add( mshPhongWall1 );
 				// scn.add( mshPhongWall2 );
 				// scn.add( mshPhongBox );
+				// mshPhongSphere.material.wireframe = true;
+				// mshPhongSphere.material.side = THREE.DoubleSide;
 				// scn.add( mshPhongSphere );
 				// scn.add( mshPhongKnot );
 
-				loader.load('textures/specstrength.jpg',
+				loader.load('textures/brick_roughness.jpg',
 				function ( texture ) {
 					mshPhongSphere.material.specularMap = texture;
 					mshPhongSphere.material.bumpMap = texture;
-					mshPhongSphere.material.bumpScale = 0.01;
+					mshPhongSphere.material.bumpScale = -0.02;
 					mshPhongFloor.material.specularMap = texture;
 					mshPhongFloor.material.bumpMap = texture;
-					mshPhongFloor.material.bumpScale = 0.01;
+					mshPhongFloor.material.bumpScale = -0.02;
 					mshPhongFloor.material.needsUpdate = texture;
 					mshPhongSphere.material.needsUpdate = texture;
 					texture.wrapS = THREE.RepeatWrapping;
 					texture.wrapT = THREE.RepeatWrapping;
-					texture.repeat.set( 20, 20 );
+					texture.repeat.set( 40, 40 );
 				});
 				// mshStdBox.castShadow = true;
 				// mshStdBox.receiveShadow = true;

@@ -126,18 +126,11 @@ RectAreaLightHelper.prototype.update = function () {
 		this.updateLightShape();
 
 		if( this.light.shapeType === 1 ) {
-				// if( !added ) {
-				// 	this.add( this.rootSphere );
-				// 	added = true;
-				// }
 				var scale = this.light.height;
 				this.rootSphere.scale.set(scale, scale, scale);
+				this.rootSphere.children[0].material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
 		}
 		else if( this.light.shapeType === 2 ) {
-				// if( !added ) {
-				// 	this.add( this.rootDisk );
-				// 	added = true;
-				// }
 				var scale = this.light.height;
 				this.rootDisk.scale.set(scale, 1, scale);
 
@@ -152,10 +145,6 @@ RectAreaLightHelper.prototype.update = function () {
 				}
 		}
 		else if( this.light.shapeType === 3 ) {
-				// if( !added ) {
-				// 	this.add( this.rootTube );
-				// 	added = true;
-				// }
 				var scaley = this.light.width;
 				var scalex = this.light.height;
 				this.rootTube.children[0].scale.set(scalex, scaley, scalex);
@@ -174,10 +163,6 @@ RectAreaLightHelper.prototype.update = function () {
 				}
 		}
 		else {
-				// if( !added ) {
-				// 	this.add( this.rootRect );
-				// 	added = true;
-				// }
 				var mesh1 = this.rootRect.children[ 0 ];
 				var mesh2 = this.rootRect.children[ 1 ];
 
@@ -193,17 +178,15 @@ RectAreaLightHelper.prototype.update = function () {
 				}
 
 				// update materials
-				var size = this.light.width * this.light.height/4;
+				var size = 1;//this.light.width * this.light.height/4;
 				mesh1.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity/size );
 				mesh2.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity/size );
 
 				// calculate new dimensions of the helper
-
 				var hx = this.light.width * 0.5;
 				var hy = this.light.height * 0.5;
 
 				// because the buffer attribute is shared over both geometries, we only have to update once
-
 				var position = mesh1.geometry.getAttribute( 'position' );
 				var array = position.array;
 				var uvs = mesh1.geometry.getAttribute( 'uv' );

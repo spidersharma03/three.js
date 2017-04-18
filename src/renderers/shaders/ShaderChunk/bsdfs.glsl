@@ -337,9 +337,7 @@ vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 
     vec3 V2 = p4_ - p1_;
     vec3 planeOrtho = cross(V1, V2);
     float planeAreaSquared = dot(planeOrtho, planeOrtho);
-    //float planeDistxPlaneArea = dot(planeOrtho, p1_);
-    // orthonormal projection of (0,0,0) in area light space
-    //vec3 P = planeDistxPlaneArea * planeOrtho / planeAreaSquared - p1_;
+
 		vec3 P0 = rayPlaneIntersect(vec3(0.0), normalize(f), p3_, normalize(planeOrtho));
 		float planeDistxPlaneArea = dot(P0, P0);
 		vec3 P = P0 - p1_;
@@ -354,8 +352,7 @@ vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 
 
     // LOD
     float d = sqrt(planeDistxPlaneArea) / pow(2.0*sqrt(planeAreaSquared), 0.5);
-
-    return texture2DLodEXT(areaTexture, Puv, log(2.0*2048.0*d) ).rgb;
+		return texture2DLodEXT(areaTexture, Puv, log(2.0*512.0*d) ).rgb;
 }
 
 vec3 integrateLtcBrdfOverRect( const in GeometricContext geometry, const in mat3 brdfMat, const in vec3 rectPoints[4], const in sampler2D areaTexture ) {

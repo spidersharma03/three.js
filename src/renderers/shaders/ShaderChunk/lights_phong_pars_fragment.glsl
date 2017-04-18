@@ -29,7 +29,7 @@ struct BlinnPhongMaterial {
 		vec3 matSpecColor = material.specularColor;
 		vec3 lightColor   = rectAreaLight.color;
 
-		float roughness = BlinnExponentToGGXRoughness( material.specularShininess );
+		float roughness = BlinnExponentToGGXRoughness( material.specularShininess * material.specularStrength);
 
 		// Evaluate Lighting Equation
 		vec3 spec = Rect_Area_Light_Specular_Reflectance(
@@ -170,7 +170,7 @@ struct BlinnPhongMaterial {
 		vec3 lightColor   = rectAreaLight.color;
 		float shininess = material.specularShininess;
 
-		float roughness = BlinnExponentToGGXRoughness( material.specularShininess );
+		float roughness = BlinnExponentToGGXRoughness( material.specularShininess * material.specularStrength );
 		vec3 vertexPosition = geometry.position;
 		vec3 normal = geometry.normal;
 		vec3 viewDirection = geometry.viewDir;
