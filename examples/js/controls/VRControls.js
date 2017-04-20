@@ -100,6 +100,12 @@ THREE.VRControls = function ( object, onError ) {
 				pose = vrDisplay.getPose();
 
 			}
+						// device connection lost
+			if ( pose.orientation == null && pose.position == null ) {
+
+				object.quaternion.set( 0, 0, 0, 1 );
+
+			}
 
 			if ( pose.orientation !== null ) {
 
