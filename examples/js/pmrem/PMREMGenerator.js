@@ -241,11 +241,12 @@ THREE.PMREMGenerator.prototype = {
 					const int NumSamples = SAMPLES_PER_LEVEL;\n\
 					vec3 vect;\n\
 					float weight = 0.0;\n\
-					for( int i = 0; i < NumSamples; i ++ ) {\n\
-						float sini = sin(float(i));\n\
-						float cosi = cos(float(i));\n\
+						for( int i = 0; i < NumSamples; i ++ ) {\n\
+						float alpha = ( float(i) + 0.5 ) / float(NumSamples);\n\
+						float sini = sin(alpha);\n\
+						float cosi = cos(alpha);\n\
 						float r = rand(vec2(sini, cosi));\n\
-						vect = ImportanceSampleGGX(vec2(float(i) / float(NumSamples), r), vecSpace, roughness);\n\
+						vect = ImportanceSampleGGX(vec2(alpha, r), vecSpace, roughness);\n\
 						float dotProd = dot(vect, normalize(sampleDirection));\n\
 						weight += dotProd;\n\
 						vec3 color = envMapTexelToLinear(textureCube(envMap,vect)).rgb;\n\
