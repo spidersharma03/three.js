@@ -14,10 +14,10 @@
 			#info {
 				position: absolute;
 				top: 0px; width: 100%;
-				color: #ffffff;
+				color: #ff0000;
 				padding: 5px;
 				font-family: Monospace;
-				font-size: 13px;
+				font-size: 20px;
 				text-align: center;
 			}
 
@@ -34,7 +34,7 @@
 	<body>
 
 		<div id="info">
-			<a href="http://threejs.org" target="_blank">three.js</a> webgl - Filtered ESM by <a href="http://eduperiment.com" target="_blank">Prashant Sharma</a><br />
+
 		</div>
 
 		<script src="../build/three.js"></script>
@@ -42,6 +42,7 @@
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/OBJLoader.js"></script>
 		<script src="js/utils/PoissonDiskGenerator.js"></script>
+		<script src="../src/renderers/webgl/WebGLProfiler.js"></script>
 		<script src="js/FilteredESM.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/libs/stats.min.js"></script>
@@ -50,6 +51,7 @@
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
+			var infoDiv = document.getElementById("info");
 			var filteredESM;
 			var stats;
 			var basicMaterial = new THREE.MeshLambertMaterial({color:0xffffff});
@@ -100,6 +102,7 @@
 				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 				stats = new Stats();
 				document.body.appendChild(stats.dom);
+				document.body.appendChild(infoDiv);
 
 				// renderer.gammaInput = true;
 				// renderer.gammaOutput = true;
@@ -187,7 +190,7 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-
+				infoDiv.innerHTML = Number(filteredESM.time).toFixed(2);
 				render();
 				stats.update();
 				controls.update();

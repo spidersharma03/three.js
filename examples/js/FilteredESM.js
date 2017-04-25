@@ -33,9 +33,10 @@ function FilteredESM( scene, camera, light ) {
   this.shadowFilterMaterial.uniforms["shadowMapSize"].value = new THREE.Vector2(shadowMapWidth, shadowMapHeight);
   this.VERTICAL_DIRECTION = new THREE.Vector2(0, 1);
   this.HORIZONTAL_DIRECTION = new THREE.Vector2(1, 0);
-  this.shadowFilterMaterial.defines["KERNEL_WIDTH"] = 1;
+  this.shadowFilterMaterial.defines["KERNEL_WIDTH"] = 3;
 
   this.accumulatePassMaterial = this.getAccumulatePassMaterial();
+  this.accumulatePassMaterial.uniforms["shadowMapSize"].value = new THREE.Vector2(shadowMapWidth, shadowMapHeight);
   this.accumulatePassMaterial.uniforms["windowSize"].value = new THREE.Vector2(window.innerWidth, window.innerHeight);
   this.accumulatePassMaterial.uniforms["shadowMap"].value = this.shadowDepthMap;
   this.accumulatePassMaterial.uniforms["nearFarPlanes"].value = new THREE.Vector2(nearPlane, farPlane);
@@ -45,13 +46,16 @@ function FilteredESM( scene, camera, light ) {
   this.accumulatePassMaterial.uniforms["shadowBuffer"].value = this.getShadowBuffer();
 
   this.frameCount = 0;
-  this.poissonSampler = new PoissonDiskGenerator(500, -1);
+  this.poissonSampler = new PoissonDiskGenerator(70, -1);
   this.lightPositionSamples = this.poissonSampler.generatePoints();
+  this.lightPositionSamples = this.poissonSampler.shuffle(this.lightPositionSamples);
   this.currentLightSample = new THREE.Vector3();
   this.lightOrientation   = new THREE.Vector3(0, -1, 0);
   this.lightTarget = new THREE.Vector3();
   this.accumulatePassMaterial.uniforms["maxSamples"].value = this.lightPositionSamples.length;
   this.arealightSize = 4;
+
+  this.profiler = new THREE.WebGLProfiler(renderer);
 }
 
 FilteredESM.prototype = {
@@ -82,6 +86,8 @@ FilteredESM.prototype = {
   },
 
   render: function( renderer ) {
+
+    this.profiler.start();
 
     this.frameCount = this.frameCount >= this.lightPositionSamples.length ? this.lightPositionSamples.length : this.frameCount;
 
@@ -127,6 +133,11 @@ FilteredESM.prototype = {
     renderer.render( this.scene, this.camera, null, true );
     this.scene.overrideMaterial = null;
 
+    this.profiler.end();
+
+    if(this.profiler.available()) {
+      this.time = this.profiler.value();
+    }
   },
   // Render shadow map of a light
   renderShadowDepthMap: function( renderer, light, shadowDepthMap ) {
@@ -143,7 +154,7 @@ FilteredESM.prototype = {
   },
 
   filterShadowDepthMap: function( renderer ) {
-    // return;
+    return;
     this.sceneOrtho.overrideMaterial = this.shadowFilterMaterial;
     this.shadowFilterMaterial.uniforms["direction"].value = this.VERTICAL_DIRECTION;
     this.shadowFilterMaterial.uniforms["shadowMap"].value = this.shadowDepthMap;
@@ -273,6 +284,7 @@ FilteredESM.prototype = {
         "shadowMap" : { value: null },
         "shadowBuffer" : { value: null },
         "windowSize"   : { value: null },
+        "shadowMapSize": { value: null },
         "shadowMatrix": { value: new THREE.Matrix4() },
         "lightPosition": { value: new THREE.Vector3() },
         "nearFarPlanes" : { value: new THREE.Vector2() },
@@ -300,24 +312,81 @@ FilteredESM.prototype = {
         varying vec3 lightVector;\
         varying vec4 shadowCoord;\
         uniform vec2 windowSize;\
+        uniform vec2 shadowMapSize;\
         uniform sampler2D shadowMap;\
         uniform sampler2D shadowBuffer;\
         uniform vec2 nearFarPlanes;\
         uniform float currentFrameCount;\
         uniform float maxSamples;\
+        \
+        float texture2DCompare( sampler2D depths, vec2 uv, float compare ) {\
+      		float shadowDepth = texture2D( depths, uv ).r + 0.015;\
+          shadowDepth = shadowDepth * ( nearFarPlanes.y - nearFarPlanes.x ) + nearFarPlanes.x;\
+          return step( compare, shadowDepth );\
+      	}\
+        \
+        float texture2DShadowLerp( sampler2D depths, vec2 size, vec2 uv, float compare ) {\
+      		const vec2 offset = vec2( 0.0, 1.0 );\
+      		vec2 texelSize = vec2( 1.0 ) / size;\
+      		vec2 centroidUV = floor( uv * size + 0.5 ) / size;\
+      		float lb = texture2DCompare( depths, centroidUV + texelSize * offset.xx, compare );\
+      		float lt = texture2DCompare( depths, centroidUV + texelSize * offset.xy, compare );\
+      		float rb = texture2DCompare( depths, centroidUV + texelSize * offset.yx, compare );\
+      		float rt = texture2DCompare( depths, centroidUV + texelSize * offset.yy, compare );\
+      		vec2 f = fract( uv * size + 0.5 );\
+      		float a = mix( lb, lt, f.y );\
+      		float b = mix( rb, rt, f.y );\
+      		float c = mix( a, b, f.x );\
+      		return c;\
+      	}\
+        \
         void main() {\
           float lightDepth = shadowCoord.z + 2.0*nearFarPlanes.y*nearFarPlanes.x/(nearFarPlanes.y - nearFarPlanes.x);\
 		      lightDepth *= -((nearFarPlanes.y - nearFarPlanes.x)/(nearFarPlanes.y + nearFarPlanes.x));\
           float lightDist = -lightDepth;\
           vec2 shadowCoord2d = shadowCoord.xy/shadowCoord.w;\
-          float NdotL = max(dot( normalize(normalEyeSpace), normalize(lightVector)), 0.0);\
-          float bias = tan(acos(NdotL));\
-          bias = clamp(bias, 0.0, 0.01);\
-          float shadowDepth = (texture2D( shadowMap, shadowCoord2d )).r + bias;\
-          shadowDepth = shadowDepth * ( nearFarPlanes.y - nearFarPlanes.x ) + nearFarPlanes.x;\
-          const float c = 0.75;\
-          float shadowValue = step( lightDist, shadowDepth );\
- 			    shadowValue = min(exp(-c*(lightDist - shadowDepth)), 1.0);\
+          const int mode = 1;\
+          const float shadowRadius = 4.0;\
+          float shadowValue = 0.0;\
+          if( mode == 0 )\
+            shadowValue = texture2DCompare(shadowMap, shadowCoord2d, lightDist);\
+          else if( mode == 1 ) {\
+            vec2 texelSize = vec2( 1.0 ) / shadowMapSize;\
+      			float dx0 = - texelSize.x * shadowRadius;\
+      			float dy0 = - texelSize.y * shadowRadius;\
+      			float dx1 = + texelSize.x * shadowRadius;\
+      			float dy1 = + texelSize.y * shadowRadius;\
+            shadowValue = ( \
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx0, dy0 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( 0.0, dy0 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx1, dy0 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx0, 0.0 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d, lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx1, 0.0 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx0, dy1 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( 0.0, dy1 ), lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx1, dy1 ), lightDist )\
+      			) * ( 1.0 / 9.0 );\
+          }\
+          else {\
+            vec2 texelSize = vec2( 1.0 ) / shadowMapSize;\
+       			float dx0 = - texelSize.x * shadowRadius;\
+       			float dy0 = - texelSize.y * shadowRadius;\
+       			float dx1 = + texelSize.x * shadowRadius;\
+       			float dy1 = + texelSize.y * shadowRadius;\
+       			shadowValue = (\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx0, dy0 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( 0.0, dy0 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx1, dy0 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx0, 0.0 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d, lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx1, 0.0 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx0, dy1 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( 0.0, dy1 ), lightDist ) +\
+       				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx1, dy1 ), lightDist )\
+       			) * ( 1.0 / 9.0 );\
+          }\
+          \
           float prevShadow = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
           if(currentFrameCount > maxSamples){\
             shadowValue = prevShadow;\
