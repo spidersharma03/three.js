@@ -52,6 +52,18 @@ THREE.TexturePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.uniforms[ "tDiffuse" ].value = this.map;
 		this.material.transparent = ( this.opacity < 1.0 );
 
+		if (this.map) {
+
+			var rectSize = renderer.getSize();
+			var width = this.map.image.width / rectSize.width || 1;
+			var height = this.map.image.height / rectSize.height || 1;
+			var min = Math.min(width, height);
+			width = (1 / min) * width;
+			height = (1 / min) * height;
+			this.quad.scale.set(width, height, 1);
+
+		}
+
 		renderer.render( this.scene, this.camera, this.renderToScreen ? null : readBuffer, this.clear );
 
 		renderer.autoClear = oldAutoClear;
