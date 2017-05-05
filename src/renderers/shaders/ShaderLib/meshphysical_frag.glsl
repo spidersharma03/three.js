@@ -12,6 +12,7 @@ uniform float opacity;
 #endif
 
 varying vec3 vViewPosition;
+varying vec3 vertexWorldPosition;
 
 #ifndef FLAT_SHADED
 

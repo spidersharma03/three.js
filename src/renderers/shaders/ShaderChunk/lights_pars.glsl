@@ -1,5 +1,42 @@
 uniform vec3 ambientLightColor;
 
+struct AABB {
+	vec3 min;
+	vec3 max;
+};
+const float roomLength = 40.0;
+const float roomWidth  = 40.0;
+const float roomHeight  = 28.0;
+const AABB probeAABB = AABB(vec3(-roomWidth*0.5, 0.0, -roomLength*0.5), vec3(roomWidth*0.5, roomHeight, roomLength*0.5));
+
+const vec3 probePos = vec3(0.0, roomHeight*0.5, 0.0);
+
+struct Ray {
+    vec3 origin;
+    vec3 direction;
+    vec3 inv_direction;
+};
+
+Ray makeRay(in vec3 origin, in vec3 direction) {
+    return Ray(origin, direction, vec3(1.0) / direction);
+}
+
+void cubeMapProject(vec3 nrdir, vec3 vPositionW, inout vec3 hitPoint ) {
+		const float epsilon = 0.01;
+		Ray ray = makeRay(vPositionW, nrdir);
+		hitPoint = vec3(100000.0, 100000.0, 100000.0);
+
+    vec3 rbmax = (probeAABB.max - vPositionW) / nrdir;
+    vec3 rbmin = (probeAABB.min - vPositionW) / nrdir;
+
+    vec3 rbminmax = max(rbmin, rbmax);
+    float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+
+    vec3 posonbox = vPositionW + nrdir * fa;
+		vec3 d = posonbox - vPositionW;
+		hitPoint = posonbox;
+}
+
 vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 	vec3 irradiance = ambientLightColor;
@@ -126,8 +163,10 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		vec3 position;
 		vec3 halfWidth;
 		vec3 halfHeight;
+		bool bTextured;
 	};
 
+	uniform sampler2D rectAreaTexture[ NUM_RECT_AREA_LIGHTS ];
 	// Pre-computed values of LinearTransformedCosine approximation of BRDF
 	// BRDF approximation Texture is 64x64
 	uniform sampler2D ltcMat; // RGBA Float
@@ -183,8 +222,8 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 			#ifdef TEXTURE_LOD_EXT
 
-				vec4 envMapColor = textureCubeLodEXT( envMap, queryVec, float( maxMIPLevel ) );
-
+				//vec4 envMapColor = textureCubeLodEXT( envMap, queryVec, float( maxMIPLevel ) );
+				vec4 envMapColor = textureCubeLodEXT( envMap, queryVec, 5.0 );
 			#else
 
 				// force the bias high to get the last LOD level as it is the most blurred.
@@ -241,11 +280,24 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 		#ifdef ENVMAP_TYPE_CUBE
 
+			vec3 hitPoint;
+			cubeMapProject(reflectVec, vertexWorldPosition, hitPoint);
+			reflectVec = normalize( hitPoint - probePos );
 			vec3 queryReflectVec = vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
 
 			#ifdef TEXTURE_LOD_EXT
 
-				vec4 envMapColor = textureCubeLodEXT( envMap, queryReflectVec, specularMIPLevel );
+				//vec4 envMapColor = textureCubeLodEXT( envMap, queryReflectVec, specularMIPLevel );
+				const float cubeUV_maxLods3 = log2(256.0 * 0.25) - 0.0;
+
+      	float roughnessVal = BlinnExponentToGGXRoughness(blinnShininessExponent) * cubeUV_maxLods3;
+        float r1 = floor(roughnessVal);
+        float r2 = r1 + 1.0;
+        float t = fract(roughnessVal);
+
+				vec4 envMapColor1 = textureCubeLodEXT( envMap, queryReflectVec, r1 );
+				vec4 envMapColor2 = textureCubeLodEXT( envMap, queryReflectVec, r2 );
+				vec4 envMapColor = mix( envMapColor1, envMapColor2, t );
 
 			#else
 

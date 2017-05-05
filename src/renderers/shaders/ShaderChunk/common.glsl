@@ -83,3 +83,8 @@ mat3 transpose( const in mat3 v ) {
 	return tmp;
 
 }
+
+vec3 rayPlaneIntersect (in vec3 rayOrigin , in vec3 rayDirection , in vec3 planeOrigin , in vec3 planeNormal ) {
+ float distance = dot ( planeNormal , planeOrigin - rayOrigin ) / dot ( planeNormal , rayDirection );
+ return rayOrigin + rayDirection * distance ;
+}

@@ -88,7 +88,7 @@ IncidentLight directLight;
 	for ( int i = 0; i < NUM_RECT_AREA_LIGHTS; i ++ ) {
 
 		rectAreaLight = rectAreaLights[ i ];
-		RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight );
+		RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight, rectAreaTexture[ i ], rectAreaLight.bTextured );
 
 	}
 
@@ -122,7 +122,7 @@ IncidentLight directLight;
 
 	#endif
 
-	#if defined( USE_ENVMAP ) && defined( PHYSICAL ) && defined( ENVMAP_TYPE_CUBE_UV )
+	#if defined( USE_ENVMAP ) && defined( PHYSICAL ) && ( defined( ENVMAP_TYPE_CUBE_UV ) || defined( ENVMAP_TYPE_CUBE ) )
 
 		// TODO, replace 8 with the real maxMIPLevel
 		irradiance += getLightProbeIndirectIrradiance( /*lightProbe,*/ geometry, 8 );

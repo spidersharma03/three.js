@@ -23,7 +23,7 @@ float clearCoatDHRApprox( const in float roughness, const in float dotNL ) {
 
 #if NUM_RECT_AREA_LIGHTS > 0
 
-	void RE_Direct_RectArea_Physical( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
+	void RE_Direct_RectArea_Physical( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight, const in sampler2D rectAreaTexture, const in bool bTextured ) {
 
 		vec3 normal = geometry.normal;
 		vec3 viewDir = geometry.viewDir;
@@ -40,7 +40,7 @@ float clearCoatDHRApprox( const in float roughness, const in float dotNL ) {
 		rectCoords[ 2 ] = lightPos + halfWidth + halfHeight;
 		rectCoords[ 3 ] = lightPos - halfWidth + halfHeight;
 
-		vec2 uv = LTC_Uv( normal, viewDir, roughness );
+		vec2 uv = LTC_Uv( normal, viewDir, roughness * roughness );
 
 		float norm = texture2D( ltcMag, uv ).a;
 
@@ -52,9 +52,9 @@ float clearCoatDHRApprox( const in float roughness, const in float dotNL ) {
 			vec3( t.w,   0, t.x )
 		);
 
-		reflectedLight.directSpecular += lightColor * material.specularColor * norm * LTC_Evaluate( normal, viewDir, position, mInv, rectCoords ); // no fresnel
+		reflectedLight.directSpecular += lightColor * material.specularColor * norm * LTC_Evaluate( normal, viewDir, position, mInv, rectCoords, rectAreaTexture, bTextured ); // no fresnel
 
-		reflectedLight.directDiffuse += lightColor * material.diffuseColor * LTC_Evaluate( normal, viewDir, position, mat3( 1 ), rectCoords );
+		reflectedLight.directDiffuse += lightColor * material.diffuseColor * LTC_Evaluate( normal, viewDir, position, mat3( 1 ), rectCoords, rectAreaTexture, bTextured );
 
 	}
 

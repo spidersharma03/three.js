@@ -16,6 +16,7 @@ function RectAreaLight( color, intensity, width, height ) {
 	this.width = ( width !== undefined ) ? width : 10;
 	this.height = ( height !== undefined ) ? height : 10;
 
+	this.areaTexture = null;
 	// TODO (abelnation): distance/decay
 
 	// TODO (abelnation): update method for RectAreaLight to update transform to lookat target

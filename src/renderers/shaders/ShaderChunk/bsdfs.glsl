@@ -172,7 +172,32 @@ vec3 LTC_EdgeVectorFormFactor( const in vec3 v1, const in vec3 v2 ) {
 
 }
 
-vec3 LTC_Evaluate( const in vec3 N, const in vec3 V, const in vec3 P, const in mat3 mInv, const in vec3 rectCoords[ 4 ] ) {
+vec3 FetchDiffuseFilteredTexture(const in sampler2D areaTexture, vec3 p1_, vec3 p2_, vec3 p3_, vec3 p4_, vec3 f)
+{
+    // area light plane basis
+    vec3 V1 = p2_ - p1_;
+    vec3 V2 = p4_ - p1_;
+    vec3 planeOrtho = cross(V1, V2);
+    float planeAreaSquared = dot(planeOrtho, planeOrtho);
+
+		vec3 P0 = rayPlaneIntersect(vec3(0.0), normalize(f), p3_, normalize(planeOrtho));
+		float planeDistxPlaneArea = dot(P0, P0);
+		vec3 P = P0 - p1_;
+
+    // find tex coords of P
+    float dot_V1_V2 = dot(V1,V2);
+    float inv_dot_V1_V1 = 1.0 / dot(V1, V1);
+    vec3 V2_ = V2 - V1 * dot_V1_V2 * inv_dot_V1_V1;
+    vec2 Puv;
+    Puv.y = dot(V2_, P) / dot(V2_, V2_);
+    Puv.x = dot(V1, P)*inv_dot_V1_V1 - dot_V1_V2*inv_dot_V1_V1*Puv.y ;
+
+    // LOD
+    float d = sqrt(planeDistxPlaneArea) / pow(2.0*sqrt(planeAreaSquared), 0.5);
+		return texture2DLodEXT(areaTexture, Puv, log(2.0*512.0*d) ).rgb;
+}
+
+vec3 LTC_Evaluate( const in vec3 N, const in vec3 V, const in vec3 P, const in mat3 mInv, const in vec3 rectCoords[ 4 ], const in sampler2D rectAreaTexture, const in bool bTextured ) {
 
 	// bail if point is on back side of plane of light
 	// assumes ccw winding order of light vertices
@@ -197,6 +222,12 @@ vec3 LTC_Evaluate( const in vec3 N, const in vec3 V, const in vec3 P, const in m
 	coords[ 2 ] = mat * ( rectCoords[ 2 ] - P );
 	coords[ 3 ] = mat * ( rectCoords[ 3 ] - P );
 
+	vec3 coordsOrig[4];
+	coordsOrig[0] = coords[0];
+	coordsOrig[1] = coords[1];
+	coordsOrig[2] = coords[2];
+	coordsOrig[3] = coords[3];
+
 	// project rect onto sphere
 	coords[ 0 ] = normalize( coords[ 0 ] );
 	coords[ 1 ] = normalize( coords[ 1 ] );
@@ -210,10 +241,15 @@ vec3 LTC_Evaluate( const in vec3 N, const in vec3 V, const in vec3 P, const in m
 	vectorFormFactor += LTC_EdgeVectorFormFactor( coords[ 2 ], coords[ 3 ] );
 	vectorFormFactor += LTC_EdgeVectorFormFactor( coords[ 3 ], coords[ 0 ] );
 
+	vec3 texColor = vec3(1.0);
+
+	if( bTextured )
+		texColor = FetchDiffuseFilteredTexture(rectAreaTexture, coordsOrig[0], coordsOrig[1], coordsOrig[2], coordsOrig[3], vectorFormFactor);
+
 	// adjust for horizon clipping
 	vec3 result = vec3( LTC_ClippedSphereFormFactor( vectorFormFactor ) );
 
-	return result;
+	return texColor * result;
 
 }
 
