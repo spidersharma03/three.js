@@ -1,5 +1,6 @@
 import { REVISION, MaxEquation, MinEquation, RGB_ETC1_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT5_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT1_Format, RGB_S3TC_DXT1_Format, SrcAlphaSaturateFactor, OneMinusDstColorFactor, DstColorFactor, OneMinusDstAlphaFactor, DstAlphaFactor, OneMinusSrcAlphaFactor, SrcAlphaFactor, OneMinusSrcColorFactor, SrcColorFactor, OneFactor, ZeroFactor, ReverseSubtractEquation, SubtractEquation, AddEquation, DepthFormat, DepthStencilFormat, LuminanceAlphaFormat, LuminanceFormat, RGBAFormat, RGBFormat, AlphaFormat, HalfFloatType, FloatType, UnsignedIntType, IntType, UnsignedShortType, ShortType, ByteType, UnsignedInt248Type, UnsignedShort565Type, UnsignedShort5551Type, UnsignedShort4444Type, UnsignedByteType, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestFilter, MirroredRepeatWrapping, ClampToEdgeWrapping, RepeatWrapping, FrontFaceDirectionCW, NoBlending, BackSide, DoubleSide, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, NoColors, FlatShading, LinearToneMapping } from '../constants';
 import { Matrix4 } from '../math/Matrix4';
+import { _Math } from '../math/Math';
 import { WebGLUniforms } from './webgl/WebGLUniforms';
 import { UniformsUtils } from './shaders/UniformsUtils';
 import { ShaderLib } from './shaders/ShaderLib';
@@ -2451,7 +2452,9 @@ function WebGLRenderer( parameters ) {
 					uniforms.shadowBias = light.shadow.bias;
 					uniforms.spreadAngle = light.shadow.spreadAngle;
 					uniforms.shadowMapSize = light.shadow.mapSize;
-					uniforms.shadowCameraParams = light.shadow.cameraParams;
+					uniforms.shadowCameraParams.x = Math.abs( light.shadow.camera.right - light.shadow.camera.left );
+					uniforms.shadowCameraParams.y = light.shadow.camera.near;
+					uniforms.shadowCameraParams.z = light.shadow.camera.far;
 
 				}
 
@@ -2485,7 +2488,9 @@ function WebGLRenderer( parameters ) {
 					uniforms.shadowBias = light.shadow.bias;
 					uniforms.shadowRadius = light.shadow.radius;
 					uniforms.shadowMapSize = light.shadow.mapSize;
-					uniforms.shadowCameraParams = light.shadow.cameraParams;
+					uniforms.shadowCameraParams.x = _Math.DEG2RAD * light.shadow.camera.fov;
+					uniforms.shadowCameraParams.y = light.shadow.camera.near;
+					uniforms.shadowCameraParams.z = light.shadow.camera.far;
 
 				}
 

@@ -54,7 +54,7 @@
 		}
 
 		mat2 createRotationMatrix( const in vec2 randomSeed ) {
-			float angle = rand( randomSeed ) * PI2;
+			float angle = rand( randomSeed + cameraPosition.x + cameraPosition.y + cameraPosition.z ) * PI2;
 			float c = cos( angle ), s = sin( angle );
 			return mat2( c, s, -s, c );
 		}
@@ -150,8 +150,9 @@
 				float lightFrustrumWidth = 2.0 * cameraNear * tan(shadowCameraParams.x * 0.5);
 				filterRadius = penumbraRatio * ( shadowRadius/lightFrustrumWidth ) * cameraNear / zReceiverLightSpace;
 			}
+			
 			// STEP 3: filtering
-			return percentCloserFilter( shadowMap, uv, receiverLightZ, filterRadius, uv );
+			return  percentCloserFilter( shadowMap, uv, receiverLightZ, filterRadius, uv );
 		}
 
 	#endif

@@ -20,8 +20,6 @@ function LightShadow( camera ) {
 	this.map = null;
 	this.matrix = new Matrix4();
 
-	this.cameraFovNearFar = new Vector3( 2 * _Math.DEG2RAD, 0.5, 500 );
-
 };
 
 Object.assign( LightShadow.prototype, {
@@ -35,13 +33,9 @@ Object.assign( LightShadow.prototype, {
 
 		this.mapSize.copy( source.mapSize );
 
-		this.cameraFovNearFar.copy( source.cameraFovNearFar );
-
 		return this;
 
 	},
-
-
 
 	clone: function () {
 

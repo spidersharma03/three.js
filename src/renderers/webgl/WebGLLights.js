@@ -26,7 +26,6 @@ function WebGLLights() {
 			switch ( light.type ) {
 
 				case 'DirectionalLight':
-					console.warn( "ShadowSpreadAngle initilized but may not match other names used.")
 					uniforms = {
 						direction: new Vector3(),
 						color: new Color(),
@@ -41,7 +40,6 @@ function WebGLLights() {
 					break;
 
 				case 'SpotLight':
-					console.warn( "shadowCameraFovNearFar and shadowCameraParams are both initilized but may not match other names used.")
 					uniforms = {
 						position: new Vector3(),
 						direction: new Vector3(),
@@ -55,7 +53,6 @@ function WebGLLights() {
 						shadowBias: 0,
 						shadowRadius: 1,
 						shadowMapSize: new Vector2(),
-						shadowCameraFovNearFar: new Vector3(),
 						shadowCameraParams: new Vector3()
 					};
 					break;

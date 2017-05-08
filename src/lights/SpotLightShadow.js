@@ -9,9 +9,7 @@ import { Vector3 } from '../math/Vector3';
 
 function SpotLightShadow() {
 
-	var fov = 50;
-	this.cameraParams = new Vector3( fov, 10.5, 1000 );
-	LightShadow.call( this, new PerspectiveCamera( this.cameraParams.x, 1, this.cameraParams.y, this.cameraParams.z ) );
+	LightShadow.call( this, new PerspectiveCamera() );
 
 }
 
@@ -28,10 +26,6 @@ SpotLightShadow.prototype = Object.assign( Object.create( LightShadow.prototype 
 		var far = light.distance || 500;
 
 		var camera = this.camera;
-
-		this.cameraParams.x = fov * _Math.DEG2RAD;
-		this.cameraParams.y = light.shadow.camera.near;
-		this.cameraParams.z = far;
 
 		camera.fov = fov;
 		camera.aspect = aspect;
