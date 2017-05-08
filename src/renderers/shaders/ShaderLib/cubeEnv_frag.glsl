@@ -35,7 +35,7 @@ void main() {
 
 	#elif defined( ENVMAP_TYPE_CUBE_UV )
 
-		envMapColor = textureCubeUV( queryReflectVec, roughness );
+		envMapColor = textureCubeUV( queryReflectVec, queryReflectVec, roughness );
 		envMapColor.rgb *= envMapIntensity;
 
 	#endif

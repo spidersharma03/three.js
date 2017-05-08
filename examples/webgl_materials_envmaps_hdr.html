@@ -34,6 +34,7 @@
 		<script src="../build/three.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/RGBELoader.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
 		<script src="js/loaders/HDRCubeTextureLoader.js"></script>
 
 		<script src="js/Detector.js"></script>
@@ -119,8 +120,29 @@
 				torusMesh1.position.x = 0.0;
 				torusMesh1.castShadow = true;
 				torusMesh1.receiveShadow = true;
-				scene.add( torusMesh1 );
+				// scene.add( torusMesh1 );
 				objects.push( torusMesh1 );
+
+				var loader = new THREE.OBJLoader();
+
+				// load a resource
+				loader.load(
+					// resource URL
+					'./models/obj/totem.obj',
+					// Function when resource is loaded
+					function ( object ) {
+						objects.push( object );
+						object.scale.set(50, 50, 50);
+						object.position.y = -20;
+						object.traverse( function(obj){
+							if( obj instanceof THREE.Mesh){
+								obj.material = standardMaterial;
+								standardMaterial.needsUpdate = true;
+							}
+						})
+						scene.add( object );
+					}
+				);
 
 				floorMaterial = new THREE.MeshStandardMaterial( {
 					map: null,
@@ -147,8 +169,32 @@
 					//standardMaterial.map = map;
 					//standardMaterial.roughnessMap = map;
 					//standardMaterial.bumpMap = map;
+					// map.minFilter = THREE.LinearFilter;
+					// map.magFilter = THREE.LinearFilter;
+					// map.generateMipmaps = false;
+					// map.anisotropy = 4;
+					// map.repeat.set( 9, 2 );
+					// standardMaterial.map = map;
+					// standardMaterial.metalnessMap = map;
+					standardMaterial.roughnessMap = map;
+					// standardMaterial.bumpMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
+
+				// textureLoader.load( "./textures/waternormals.jpg", function( map ) {
+				// 	map.wrapS = THREE.RepeatWrapping;
+				// 	map.wrapT = THREE.RepeatWrapping;
+				// 	// map.minFilter = THREE.LinearFilter;
+				// 	// map.magFilter = THREE.LinearFilter;
+				// 	// map.generateMipmaps = false;
+				// 	//map.anisotropy = 4;
+				// 	map.repeat.set( 9, 2 );
+				// 	// standardMaterial.map = map;
+				// 	// standardMaterial.roughnessMap = map;
+				// 	standardMaterial.normalMap = map;
+				// 	standardMaterial.normalScale = new THREE.Vector2(0.1, 0.1);
+				// 	standardMaterial.needsUpdate = true;
+				// } );
 
 				var genCubeUrls = function( prefix, postfix ) {
 					return [
@@ -171,10 +217,11 @@
 
 				} );
 
-				var ldrUrls = genCubeUrls( "./textures/cube/pisa/", ".png" );
+				var ldrUrls = genCubeUrls( "./textures/cube/SwedishRoyalCastle/", ".jpg" );
 				new THREE.CubeTextureLoader().load( ldrUrls, function ( ldrCubeMap ) {
 
 					ldrCubeMap.encoding = THREE.GammaEncoding;
+					ldrCubeMap.generateMipmaps = true;
 
 					var pmremGenerator = new THREE.PMREMGenerator( ldrCubeMap );
 					pmremGenerator.update( renderer );
@@ -211,7 +258,7 @@
 				spotLight.angle = Math.PI / 7;
 				spotLight.penumbra = 0.8;
 				spotLight.castShadow = true;
-				scene.add( spotLight );
+				// scene.add( spotLight );
 
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -235,7 +282,7 @@
 				container.appendChild( stats.dom );
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.target.set( 0, 0, 0 );
+				// controls.target.set( 0, 0, 0 );
 				controls.update();
 
 				window.addEventListener( 'resize', onWindowResize, false );
