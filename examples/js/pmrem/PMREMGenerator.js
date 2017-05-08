@@ -15,13 +15,13 @@ THREE.PMREMGenerator = function( sourceTexture, samplesPerLevel, resolution ) {
 
 	this.sourceTexture = sourceTexture;
 	this.resolution = ( resolution !== undefined ) ? resolution : 256; // NODE: 256 is currently hard coded in the glsl code for performance reasons
-	this.samplesPerLevel = ( samplesPerLevel !== undefined ) ? samplesPerLevel : 16;
+	this.samplesPerLevel = ( samplesPerLevel !== undefined ) ? samplesPerLevel : 256;
 
 	var monotonicEncoding = ( sourceTexture.encoding === THREE.LinearEncoding ) ||
 		( sourceTexture.encoding === THREE.GammaEncoding ) || ( sourceTexture.encoding === THREE.sRGBEncoding );
 
-	this.sourceTexture.minFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.NearestFilter;
-	this.sourceTexture.magFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.NearestFilter;
+	this.sourceTexture.minFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.LinearFilter;
+	this.sourceTexture.magFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.LinearFilter;
 	this.sourceTexture.generateMipmaps = this.sourceTexture.generateMipmaps && monotonicEncoding;
 
 	this.cubeLods = [];

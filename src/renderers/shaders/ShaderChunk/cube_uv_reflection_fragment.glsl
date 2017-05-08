@@ -22,14 +22,17 @@ int getFaceFromDirection(vec3 direction) {
 #define cubeUV_maxLods1  (log2(cubeUV_textureSize*0.25) - 1.0)
 #define cubeUV_rangeClamp (exp2((6.0 - 1.0) * 2.0))
 
-vec2 MipLevelInfo( vec3 vec, float roughnessLevel, float roughness ) {
+vec2 MipLevelInfo( vec3 vec, vec3 normal, float roughnessLevel, float roughness ) {
 	float scale = exp2(cubeUV_maxLods1 - roughnessLevel);
-	float dxRoughness = dFdx(roughness);
-	float dyRoughness = dFdy(roughness);
-	vec3 dx = dFdx( vec * scale * dxRoughness );
-	vec3 dy = dFdy( vec * scale * dyRoughness );
+	//float dxRoughness = dFdx(roughness);
+	//float dyRoughness = dFdy(roughness);
+	vec3 dx = dFdx( vec ) * 128.0;
+	vec3 dy = dFdy( vec ) * 128.0;
 	float d = max( dot( dx, dx ), dot( dy, dy ) );
 	// Clamp the value to the max mip level counts. hard coded to 6 mips
+	d = pow( d, 0.5);
+	//const float c = 10.0;
+	//d = 1.0/(1.0 + exp(-c*d));
 	d = clamp(d, 1.0, cubeUV_rangeClamp);
 	float mipLevel = 0.5 * log2(d);
 	return vec2(floor(mipLevel), fract(mipLevel));
@@ -99,29 +102,50 @@ vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel) {
 
 #define cubeUV_maxLods3 (log2(cubeUV_textureSize*0.25) - 3.0)
 
-vec4 textureCubeUV(vec3 reflectedDirection, float roughness ) {
+vec4 textureCubeUV(vec3 reflectedDirection, vec3 normal, float roughness ) {
 	float roughnessVal = roughness* cubeUV_maxLods3;
 	float r1 = floor(roughnessVal);
 	float r2 = r1 + 1.0;
 	float t = fract(roughnessVal);
-	vec2 mipInfo = MipLevelInfo(reflectedDirection, r1, roughness);
+	vec2 mipInfo = MipLevelInfo(reflectedDirection, normal, r1, roughness);
 	float s = mipInfo.y;
-	float level0 = mipInfo.x;
+	float level0 = 0.0;//mipInfo.x;
 	float level1 = level0 + 1.0;
 	level1 = level1 > 5.0 ? 5.0 : level1;
 
 	// round to nearest mipmap if we are not interpolating.
-	level0 += min( floor( s + 0.5 ), 5.0 );
-
+	//level0 += min( floor( s + 0.5 ), 5.0 );
+	r1 += mipInfo.x;
+	r2 = r1 + 1.0;
 	// Tri linear interpolation.
 	vec2 uv_10 = getCubeUV(reflectedDirection, r1, level0);
 	vec4 color10 = envMapTexelToLinear(texture2D(envMap, uv_10));
 
 	vec2 uv_20 = getCubeUV(reflectedDirection, r2, level0);
 	vec4 color20 = envMapTexelToLinear(texture2D(envMap, uv_20));
+	//s = s * smoothstep( 0.0, 1.0, s);
+	vec4 result = mix(color10, color20, s);
 
-	vec4 result = mix(color10, color20, t);
+	/*const vec4 red = vec4(1.0, 0.0, 0.0, 1.0);
+	const vec4 green = vec4(0.0, 1.0, 0.0, 1.0);
+	const vec4 blue = vec4(0.0, 0.0, 1.0, 1.0);
+	const vec4 yellow = vec4(1.0, 1.0, 0.0, 1.0);
+	const vec4 pink = vec4(1.0, 0.0, 1.0, 1.0);
+	const vec4 black = vec4(0.0, 0.0, 0.0, 1.0);
 
+	if( r1 == 0.0 )
+		return mix(red, green, s);
+	else if( r1 == 1.0 )
+		return mix(green, blue, s);
+	else if( r1 == 2.0 )
+		return mix(blue, yellow, s);
+	else if( r1 == 3.0 )
+		return mix(yellow, pink, s);
+	else if( r1 == 4.0 )
+		return mix(pink, black, s);
+	else
+		return vec4(0.0, 0.0, 0.0, 1.0);*/
+	//return vec4(vec3(r1), 1.0);
 	return vec4(result.rgb, 1.0);
 }
 
