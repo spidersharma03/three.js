@@ -307,7 +307,8 @@ FilteredESM.prototype = {
         gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\
       }",
 
-      fragmentShader: "#include <packing>\
+      fragmentShader: "#include <common>\
+        #include <packing>\
         varying vec3 normalEyeSpace;\
         varying vec3 lightVector;\
         varying vec4 shadowCoord;\
@@ -345,8 +346,8 @@ FilteredESM.prototype = {
 		      lightDepth *= -((nearFarPlanes.y - nearFarPlanes.x)/(nearFarPlanes.y + nearFarPlanes.x));\
           float lightDist = -lightDepth;\
           vec2 shadowCoord2d = shadowCoord.xy/shadowCoord.w;\
-          const int mode = 1;\
-          const float shadowRadius = 4.0;\
+          const int mode = 3;\
+          const float shadowRadius = 3.0;\
           float shadowValue = 0.0;\
           if( mode == 0 )\
             shadowValue = texture2DCompare(shadowMap, shadowCoord2d, lightDist);\
@@ -368,7 +369,7 @@ FilteredESM.prototype = {
       				texture2DCompare( shadowMap, shadowCoord2d + vec2( dx1, dy1 ), lightDist )\
       			) * ( 1.0 / 9.0 );\
           }\
-          else {\
+          else if( mode == 2 ) {\
             vec2 texelSize = vec2( 1.0 ) / shadowMapSize;\
        			float dx0 = - texelSize.x * shadowRadius;\
        			float dy0 = - texelSize.y * shadowRadius;\
@@ -385,6 +386,76 @@ FilteredESM.prototype = {
        				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( 0.0, dy1 ), lightDist ) +\
        				texture2DShadowLerp( shadowMap, shadowMapSize, shadowCoord2d + vec2( dx1, dy1 ), lightDist )\
        			) * ( 1.0 / 9.0 );\
+          }\
+          else if( mode == 3) {\
+            vec2 texelSize = vec2( 1.0 ) / shadowMapSize * shadowRadius;\
+            float angle = rand( shadowCoord2d.xy ) * PI2;\
+      			float s = sin(angle);\
+      			float c = cos(angle);\
+            mat2 rotMat = mat2(c, s, -s, c);\
+            vec2 poissonDisk[9];\
+            poissonDisk[0] = rotMat * vec2(-0.8501424193382263, -0.19906921684741974) * texelSize;\
+            poissonDisk[1] = rotMat * vec2(0.8849607706069946, -0.7307224869728088) * texelSize;\
+            poissonDisk[2] = rotMat * vec2(0.39123865962028503, 0.38425564765930176) * texelSize;\
+            poissonDisk[3] = rotMat * vec2(-0.552024781703949, 0.4089665710926056) * texelSize;\
+            poissonDisk[4] = rotMat * vec2(0.4074988067150116, -0.9593819856643677) * texelSize;\
+            poissonDisk[5] = rotMat * vec2(-0.652350664138794, -0.8474057912826538) * texelSize;\
+            poissonDisk[6] = rotMat * vec2(0.018581848591566086, -0.33853137493133545) * texelSize;\
+	          poissonDisk[7] = rotMat * vec2(0.9713944244384766, -0.19928623735904694) * texelSize;\
+	          poissonDisk[8] = rotMat * vec2(0.5182867050170898, 0.9150800943374634) * texelSize;\
+            shadowValue = ( \
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[0], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[1], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[2], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[3], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[4], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[5], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[6], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[7], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[8], lightDist )\
+      			) * ( 1.0 / 9.0 );\
+          }\
+          else {\
+            vec2 texelSize = vec2( 1.0 ) / shadowMapSize * shadowRadius;\
+            float angle = rand( shadowCoord2d.xy ) * PI2;\
+      			float s = sin(angle);\
+      			float c = cos(angle);\
+            mat2 rotMat = mat2(c, s, -s, c);\
+            vec2 poissonDisk[16];\
+            poissonDisk[0] = rotMat * vec2(-0.94201624, -0.39906216 ) * texelSize;\
+			      poissonDisk[1] = rotMat * vec2( 0.94558609, -0.76890725 ) * texelSize;\
+			      poissonDisk[2] = rotMat * vec2( -0.094184101, -0.92938870 ) * texelSize;\
+			      poissonDisk[3] = rotMat * vec2( 0.34495938, 0.29387760 ) * texelSize;\
+			      poissonDisk[4] = rotMat * vec2( -0.91588581, 0.45771432 ) * texelSize;\
+			      poissonDisk[5] = rotMat * vec2( -0.81544232, -0.87912464 ) * texelSize;\
+			      poissonDisk[6] = rotMat * vec2( -0.38277543, 0.27676845 ) * texelSize;\
+			      poissonDisk[7] = rotMat * vec2( 0.97484398, 0.75648379 ) * texelSize;\
+			      poissonDisk[8] = rotMat * vec2( 0.44323325, -0.97511554 ) * texelSize;\
+			      poissonDisk[9] = rotMat * vec2( 0.53742981, -0.47373420 ) * texelSize;\
+			      poissonDisk[10] = rotMat * vec2( -0.26496911, -0.41893023 ) * texelSize;\
+			      poissonDisk[11] = rotMat * vec2( 0.79197514, 0.19090188 ) * texelSize;\
+			      poissonDisk[12] = rotMat * vec2( -0.24188840, 0.99706507 ) * texelSize;\
+			      poissonDisk[13] = rotMat * vec2( -0.81409955, 0.91437590 ) * texelSize;\
+			      poissonDisk[14] = rotMat * vec2( 0.19984126, 0.78641367 ) * texelSize;\
+			      poissonDisk[15] = rotMat * vec2( 0.14383161, -0.14100790 ) * texelSize;\
+            shadowValue = ( \
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[0], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[1], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[2], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[3], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[4], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[5], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[6], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[7], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[8], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[9], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[10], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[11], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[12], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[13], lightDist ) +\
+              texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[14], lightDist ) +\
+      				texture2DCompare( shadowMap, shadowCoord2d + poissonDisk[15], lightDist )\
+      			) * ( 1.0 / 16.0 );\
           }\
           \
           float prevShadow = unpackRGBAToDepth(texture2D( shadowBuffer, gl_FragCoord.xy/windowSize ));\
