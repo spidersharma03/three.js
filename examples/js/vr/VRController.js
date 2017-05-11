@@ -61,15 +61,23 @@ THREE.VRController = function ( id, index ) {
 
 		gamepad = findGamepad( id, index );
 
-		if ( gamepad !== undefined && gamepad.pose && gamepad.pose.position !== null && gamepad.pose.orientation !== null ) {
+		if ( gamepad !== undefined && gamepad.pose ) {
 
 			//  Position and orientation.
 
 			var pose = gamepad.pose;
-
-			scope.position.fromArray( pose.position );
-			scope.quaternion.fromArray( pose.orientation );
-			scope.matrix.compose( scope.position, scope.quaternion, scope.scale );
+			if(gamepad.pose.position !== null){
+ 				scope.position.fromArray( pose.position );
+ 			} else {
+ 	          	scope.position.fromArray( [0, 1, 0.5] );
+            }
+ 
+            if(gamepad.pose.orientation !== null){
+ 				scope.quaternion.fromArray( pose.orientation );
+ 			} else {
+ 				scope.quaternion.set(0,0,0,1);
+ 			}
+ 			scope.matrix.compose( scope.position, scope.quaternion, scope.scale );
 			scope.matrix.multiplyMatrices( scope.standingMatrix, scope.matrix );
 			scope.matrix.decompose( scope.position, scope.quaternion, scope.scale );
 			scope.matrixWorldNeedsUpdate = true;
