@@ -1,3 +1,6 @@
+console.log( "Be sure to run 'npm run dev' to ensure three.js is up to date.");
+console.log( "Be sure to run 'node build.js' to create three.extras.js" );
+
 var version = process.argv[2];
 if( version === undefined ) {
 	console.error( "expecting command line argument of a semver");
