@@ -473,8 +473,7 @@ function WebGLUniforms( gl, program, renderer ) {
 			path = info.name,
 			addr = gl.getUniformLocation( program, path );
 
-		parseUniform( info, addr, this );
-		console.log( info, path, addr );
+		parseUniform( info, addr, this );	
 
 	}
 
