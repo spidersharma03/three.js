@@ -69,7 +69,7 @@ THREE.VRController = function ( id, index ) {
 			if(gamepad.pose.position !== null){
  				scope.position.fromArray( pose.position );
  			} else {
- 	          	scope.position.fromArray( [0, 1, 0.5] );
+ 	          	scope.position.fromArray( [0, 1, 0.0] );
             }
  
             if(gamepad.pose.orientation !== null){
