@@ -598,13 +598,13 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 
 				currentBlendEquation = blendEquation;
 				currentBlendEquationAlpha = blendEquationAlpha;
-				console.log("setting custom blend state", blendEquation, blendEquationAlpha );
+				//console.log("setting custom blend state", blendEquation, blendEquationAlpha );
 			}
 
 			if ( blendSrc !== currentBlendSrc || blendDst !== currentBlendDst || blendSrcAlpha !== currentBlendSrcAlpha || blendDstAlpha !== currentBlendDstAlpha ) {
 
 				gl.blendFuncSeparate( paramThreeToGL( blendSrc ), paramThreeToGL( blendDst ), paramThreeToGL( blendSrcAlpha ), paramThreeToGL( blendDstAlpha ) );
-				console.log("setting custom blend state", blendSrc, blendDst, blendSrcAlpha, blendDstAlpha );
+				//console.log("setting custom blend state", blendSrc, blendDst, blendSrcAlpha, blendDstAlpha );
 
 				currentBlendSrc = blendSrc;
 				currentBlendDst = blendDst;
