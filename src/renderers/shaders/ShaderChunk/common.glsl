@@ -13,13 +13,21 @@ float pow2( const in float x ) { return x*x; }
 float pow3( const in float x ) { return x*x*x; }
 float pow4( const in float x ) { float x2 = x*x; return x2*x2; }
 float average( const in vec3 color ) { return dot( color, vec3( 0.3333 ) ); }
+
 // expects values in the range of [0,1]x[0,1], returns values in the [0,1] range.
 // do not collapse into a single function per: http://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/
-highp float rand( const in vec2 uv ) {
+highp float rand_OLD( const in vec2 uv ) {
 	const highp float a = 12.9898, b = 78.233, c = 43758.5453;
 	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );
 	return fract(sin(sn) * c);
 }
+highp float rand_NEW( const in vec2 p ) {
+	vec2 p2  = fract(p * vec2(5.3987, 5.4421));
+	p2 += dot(p2.yx, p2.xy + vec2(21.5351, 14.3137));
+	float pxy = p2.x * p2.y;
+	return ( fract(pxy * 95.4307) + fract(pxy * 75.04961) ) * 0.5;
+}
+#define rand rand_NEW
 
 struct IncidentLight {
 	vec3 color;
