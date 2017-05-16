@@ -245,10 +245,11 @@ THREE.PMREMGenerator.prototype = {
 					vec3 vect;\n\
 					float weight = 0.0;\n\
 					for( int i = 0; i < NumSamples; i ++ ) {\n\
-						float sini = sin(float(i));\n\
-						float cosi = cos(float(i));\n\
+						float alpha = ( float(i) ) / float(NumSamples);\n\
+						float sini = sin(alpha * PI * 2.0);\n\
+						float cosi = cos(alpha * PI * 2.0);\n\
 						float r = rand(vec2(sini, cosi));\n\
-						vect = ImportanceSampleGGX(vec2(float(i) / float(NumSamples), r), vecSpace, roughness);\n\
+						vect = ImportanceSampleGGX(vec2(alpha, r), vecSpace, roughness);\n\
 						float dotProd = dot(vect, normalize(sampleDirection));\n\
 						weight += dotProd;\n\
 						vec3 color = envMapTexelToLinear(textureCube(envMap,vect)).rgb;\n\
@@ -302,10 +303,10 @@ THREE.PMREMCubeUVPacker = function( cubeTextureLods, numLods ) {
 		type: sourceTexture.type,
 		generateMipmaps: sourceTexture.generateMipmaps,
 		anisotropy: sourceTexture.anisotropy,
-		encoding: sourceTexture.encoding
+		encoding: ( sourceTexture.encoding === THREE.RGBEEncoding ) ? THREE.RGBM16Encoding : sourceTexture.encoding
 	};
 
-	if( sourceTexture.encoding === THREE.RGBM16Encoding ) {
+	if( params.encoding === THREE.RGBM16Encoding ) {
 		params.magFilter = THREE.LinearFilter;
 		params.minFilter = THREE.LinearFilter;
 	}
@@ -1566,6 +1567,7 @@ THREE.LuminosityHighPassShader = {
 
 /**
  * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / http://clara.io/
  */
 
 THREE.EffectComposer = function ( renderer, renderTarget ) {
@@ -1578,19 +1580,22 @@ THREE.EffectComposer = function ( renderer, renderTarget ) {
 			minFilter: THREE.LinearFilter,
 			magFilter: THREE.LinearFilter,
 			format: THREE.RGBAFormat,
-			stencilBuffer: false
+			stencilBuffer: true
 		};
 		var size = renderer.getSize();
 		renderTarget = new THREE.WebGLRenderTarget( size.width, size.height, parameters );
 		renderTarget.texture.name = "EffectComposer.rt1";
+		renderTarget.texture.generateMipmaps = false;
 	}
 
 	this.renderTarget1 = renderTarget;
 	this.renderTarget2 = renderTarget.clone();
 	this.renderTarget2.texture.name = "EffectComposer.rt2";
+	this.renderTarget2.texture.generateMipmaps = false;
 
 	this.writeBuffer = this.renderTarget1;
 	this.readBuffer = this.renderTarget2;
+	this.tempBufferMap = {};
 
 	this.passes = [];
 
@@ -1609,6 +1614,16 @@ Object.assign( THREE.EffectComposer.prototype, {
 		this.readBuffer = this.writeBuffer;
 		this.writeBuffer = tmp;
 
+	},
+
+	requestBuffer: function( key ) {
+		if( ! this.tempBufferMap[ key ] ) {
+			var sharedRenderTarget = this.renderTarget1.clone();
+			sharedRenderTarget.texture.name = "EffectComposer.buffer[" + key + "]";
+			sharedRenderTarget.texture.generateMipmaps = false;
+			this.tempBufferMap[ key ] = sharedRenderTarget;
+		}
+		return this.tempBufferMap[ key ];		
 	},
 
 	addPass: function ( pass ) {
@@ -1694,13 +1709,44 @@ Object.assign( THREE.EffectComposer.prototype, {
 
 		this.writeBuffer = this.renderTarget1;
 		this.readBuffer = this.renderTarget2;
+	},
+
+	dispose: function() {
+
+		for (var key in this.tempBufferMap) {
+
+    		if (this.tempBufferMap.hasOwnProperty(key)) {
+				
+				this.tempBufferMap[key].dispose();
+
+	    	}
+
+		}	
+		
+		for ( var i = 0; i < this.passes.length; i ++ ) {
+
+			this.passes[i].dispose();
+
+		}
 
 	},
+
 
 	setSize: function ( width, height ) {
 
 		this.renderTarget1.setSize( width, height );
 		this.renderTarget2.setSize( width, height );
+
+		for (var key in this.tempBufferMap) {
+
+    		if (this.tempBufferMap.hasOwnProperty(key)) {
+				
+				this.tempBufferMap[key].setSize( width, height );
+
+	    	}
+
+		}	
+
 
 		for ( var i = 0; i < this.passes.length; i ++ ) {
 
@@ -1733,6 +1779,8 @@ Object.assign( THREE.Pass.prototype, {
 
 	setSize: function( width, height ) {},
 
+	dispose: function() {},
+
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
 
 		console.error( "THREE.Pass: .render() must be implemented in derived pass." );
@@ -1745,6 +1793,7 @@ Object.assign( THREE.Pass.prototype, {
 
 /**
  * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / http://clara.io/
  */
 
 THREE.RenderPass = function ( scene, camera, overrideMaterial, clearColor, clearAlpha ) {
@@ -1753,6 +1802,8 @@ THREE.RenderPass = function ( scene, camera, overrideMaterial, clearColor, clear
 
 	this.scene = scene;
 	this.camera = camera;
+
+	this.renderOver = false;
 
 	this.overrideMaterial = overrideMaterial;
 
@@ -1763,7 +1814,25 @@ THREE.RenderPass = function ( scene, camera, overrideMaterial, clearColor, clear
 	this.clearDepth = false;
 	this.needsSwap = false;
 
+	if ( THREE.CopyShader === undefined ) console.error( "THREE.SSAARenderPass relies on THREE.CopyShader" );
+
+	this.overMaterial = new THREE.ShaderMaterial( THREE.CopyShader );
+	this.overMaterial.uniforms = THREE.UniformsUtils.clone( this.overMaterial.uniforms );
+	this.overMaterial.blending = THREE.NormalBlending;
+	this.overMaterial.premultipliedAlpha = true;
+	this.overMaterial.transparent = true;
+	this.overMaterial.depthTest = false;
+	this.overMaterial.depthWrite = false;
+
+	this.camera2 = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	this.scene2	= new THREE.Scene();
+	this.quad2 = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), this.copyMaterial );
+	this.quad2.frustumCulled = false; // Avoid getting clipped
+	this.scene2.add( this.quad2 );
+	
 };
+
+
 
 THREE.RenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
 
@@ -1777,23 +1846,41 @@ THREE.RenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype 
 		this.scene.overrideMaterial = this.overrideMaterial;
 
 		var oldClearColor, oldClearAlpha;
-
-		if ( this.clearColor !== undefined ) {
-
-			oldClearColor = renderer.getClearColor();
-			oldClearAlpha = renderer.getClearAlpha();
-
-			renderer.setClearColor( this.clearColor, this.clearAlpha );
-
-		}
+		oldClearColor = renderer.getClearColor();
+		oldClearAlpha = renderer.getClearAlpha();
 
 		if ( this.clearDepth ) {
 
 			renderer.clearDepth();
 
 		}
+	
+		if( this.renderOver ) {
 
-		renderer.renderOverride( this.overrideMaterial, this.scene, this.camera, this.renderToScreen ? null : readBuffer, this.clear );
+			renderer.setClearColor( 0x000000, 0 );
+			renderer.renderOverride( this.overrideMaterial, this.scene, this.camera, writeBuffer, true );
+
+			this.overMaterial.uniforms[ 'tDiffuse' ].value = writeBuffer.texture;
+
+			if ( this.clearColor !== undefined ) {
+	
+				renderer.setClearColor( this.clearColor, this.clearAlpha );
+
+			}
+
+			renderer.renderOverride( this.overMaterial, this.scene2, this.camera2, this.renderToScreen ? null : readBuffer, this.clear );
+		}
+		else {
+
+			if ( this.clearColor !== undefined ) {
+	
+				renderer.setClearColor( this.clearColor, this.clearAlpha );
+
+			}
+			renderer.renderOverride( this.overrideMaterial, this.scene, this.camera, this.renderToScreen ? null : readBuffer, this.clear );
+
+		}
+
 
 		if ( this.clearColor ) {
 
@@ -1807,7 +1894,6 @@ THREE.RenderPass.prototype = Object.assign( Object.create( THREE.Pass.prototype 
 	}
 
 } );
-
 // File:examples/js/postprocessing/MaskPass.js
 
 /**
@@ -2537,19 +2623,14 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 		if ( this.sampleRenderTarget ) {
 			this.sampleRenderTarget.dispose();
 			this.sampleRenderTarget = null;
-		}
-		if ( this.accumulateRenderTarget ) {
-			this.accumulateRenderTarget.dispose();
-			this.accumulateRenderTarget = null;
-		}
+		}	
 
 	},
 
 	setSize: function ( width, height ) {
 
 		if ( this.sampleRenderTarget ) this.sampleRenderTarget.setSize( width, height );
-		if ( this.accumulateRenderTarget ) this.accumulateRenderTarget.setSize( width, height );
-
+	
 	},
 
 	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
@@ -2557,9 +2638,7 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 		if ( ! this.sampleRenderTarget ) {
 
 			this.sampleRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat, name: "SSAARenderPass.sample" } );
-			this.accumulateRenderTarget = new THREE.WebGLRenderTarget( readBuffer.width, readBuffer.height,
-				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat, name: "SSAARenderPass.accumulation" } );
+				{ minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat, type: THREE.UnsignedByteType, name: "SSAARenderPass.sample" } );
 
 		}
 
@@ -2602,12 +2681,12 @@ THREE.SSAARenderPass.prototype = Object.assign( Object.create( THREE.Pass.protot
 
 			this.addMaterial.uniforms[ "opacity" ].value = sampleWeight;
 			renderer.render( this.scene, this.camera, this.sampleRenderTarget, true );
-			renderer.renderPass( this.addMaterial, this.accumulateRenderTarget, ( i === 0 ) );
+			renderer.renderPass( this.addMaterial, writeBuffer, ( i === 0 ) );
 		}
 
 		if ( this.camera.clearViewOffset ) this.camera.clearViewOffset();
 
-		this.overMaterial.uniforms[ "tDiffuse" ].value = this.accumulateRenderTarget.texture;
+		this.overMaterial.uniforms[ "tDiffuse" ].value = writeBuffer.texture;
 
 		renderer.setClearColor( this.clearColor, this.clearAlpha );
 		renderer.renderPass( this.overMaterial, this.renderToScreen ? null : readBuffer, this.clear );
@@ -2654,7 +2733,6 @@ THREE.SSAARenderPass.JitterVectors = [
 		[ 2, 5 ], [ 7, 5 ], [ 5, 6 ], [ 3, 7 ]
 	]
 ];
-
 // File:examples/js/postprocessing/ClearPass.js
 
 /**
@@ -2757,6 +2835,18 @@ THREE.TexturePass.prototype = Object.assign( Object.create( THREE.Pass.prototype
 		this.uniforms[ "opacity" ].value = this.opacity;
 		this.uniforms[ "tDiffuse" ].value = this.map;
 		this.material.transparent = ( this.opacity < 1.0 );
+
+		if (this.map) {
+
+			var rectSize = renderer.getSize();
+			var width = this.map.image.width / rectSize.width || 1;
+			var height = this.map.image.height / rectSize.height || 1;
+			var min = Math.min(width, height);
+			width = (1 / min) * width;
+			height = (1 / min) * height;
+			this.quad.scale.set(width, height, 1);
+
+		}
 
 		renderer.render( this.scene, this.camera, this.renderToScreen ? null : readBuffer, this.clear );
 
@@ -5096,6 +5186,358 @@ THREE.Color.prototype.toJSON = function() {
   return { r: this.r, g: this.g, b: this.b };
 }
 
+// File:examples/js/loaders/RGBELoader.js
+
+/**
+ * @author Nikos M. / https://github.com/foo123/
+ */
+
+// https://github.com/mrdoob/three.js/issues/5552
+// http://en.wikipedia.org/wiki/RGBE_image_format
+
+THREE.HDRLoader = THREE.RGBELoader = function ( manager ) {
+
+	this.manager = ( manager !== undefined ) ? manager : THREE.DefaultLoadingManager;
+
+};
+
+// extend THREE.DataTextureLoader
+THREE.RGBELoader.prototype = Object.create( THREE.DataTextureLoader.prototype );
+
+// adapted from http://www.graphics.cornell.edu/~bjw/rgbe.html
+THREE.RGBELoader.prototype._parser = function( buffer ) {
+
+	var
+		/* return codes for rgbe routines */
+		RGBE_RETURN_SUCCESS =  0,
+		RGBE_RETURN_FAILURE = - 1,
+
+		/* default error routine.  change this to change error handling */
+		rgbe_read_error     = 1,
+		rgbe_write_error    = 2,
+		rgbe_format_error   = 3,
+		rgbe_memory_error   = 4,
+		rgbe_error = function( rgbe_error_code, msg ) {
+
+			switch ( rgbe_error_code ) {
+				case rgbe_read_error: console.error( "THREE.RGBELoader Read Error: " + ( msg || '' ) );
+					break;
+				case rgbe_write_error: console.error( "THREE.RGBELoader Write Error: " + ( msg || '' ) );
+					break;
+				case rgbe_format_error:  console.error( "THREE.RGBELoader Bad File Format: " + ( msg || '' ) );
+					break;
+				default:
+				case rgbe_memory_error:  console.error( "THREE.RGBELoader: Error: " + ( msg || '' ) );
+			}
+			return RGBE_RETURN_FAILURE;
+
+		},
+
+		/* offsets to red, green, and blue components in a data (float) pixel */
+		RGBE_DATA_RED      = 0,
+		RGBE_DATA_GREEN    = 1,
+		RGBE_DATA_BLUE     = 2,
+
+		/* number of floats per pixel, use 4 since stored in rgba image format */
+		RGBE_DATA_SIZE     = 4,
+
+		/* flags indicating which fields in an rgbe_header_info are valid */
+		RGBE_VALID_PROGRAMTYPE      = 1,
+		RGBE_VALID_FORMAT           = 2,
+		RGBE_VALID_DIMENSIONS       = 4,
+
+		NEWLINE = "\n",
+
+		fgets = function( buffer, lineLimit, consume ) {
+
+			lineLimit = ! lineLimit ? 1024 : lineLimit;
+			var p = buffer.pos,
+				i = - 1, len = 0, s = '', chunkSize = 128,
+				chunk = String.fromCharCode.apply( null, new Uint16Array( buffer.subarray( p, p + chunkSize ) ) )
+			;
+			while ( ( 0 > ( i = chunk.indexOf( NEWLINE ) ) ) && ( len < lineLimit ) && ( p < buffer.byteLength ) ) {
+
+				s += chunk; len += chunk.length;
+				p += chunkSize;
+				chunk += String.fromCharCode.apply( null, new Uint16Array( buffer.subarray( p, p + chunkSize ) ) );
+
+			}
+
+			if ( - 1 < i ) {
+
+				/*for (i=l-1; i>=0; i--) {
+					byteCode = m.charCodeAt(i);
+					if (byteCode > 0x7f && byteCode <= 0x7ff) byteLen++;
+					else if (byteCode > 0x7ff && byteCode <= 0xffff) byteLen += 2;
+					if (byteCode >= 0xDC00 && byteCode <= 0xDFFF) i--; //trail surrogate
+				}*/
+				if ( false !== consume ) buffer.pos += len + i + 1;
+				return s + chunk.slice( 0, i );
+
+			}
+			return false;
+
+		},
+
+		/* minimal header reading.  modify if you want to parse more information */
+		RGBE_ReadHeader = function( buffer ) {
+
+			var line, match,
+
+				// regexes to parse header info fields
+				magic_token_re = /^#\?(\S+)$/,
+				gamma_re = /^\s*GAMMA\s*=\s*(\d+(\.\d+)?)\s*$/,
+				exposure_re = /^\s*EXPOSURE\s*=\s*(\d+(\.\d+)?)\s*$/,
+				format_re = /^\s*FORMAT=(\S+)\s*$/,
+				dimensions_re = /^\s*\-Y\s+(\d+)\s+\+X\s+(\d+)\s*$/,
+
+				// RGBE format header struct
+				header = {
+
+					valid: 0,                         /* indicate which fields are valid */
+
+					string: '',                       /* the actual header string */
+
+					comments: '',                     /* comments found in header */
+
+					programtype: 'RGBE',              /* listed at beginning of file to identify it
+													* after "#?".  defaults to "RGBE" */
+
+					format: '',                       /* RGBE format, default 32-bit_rle_rgbe */
+
+					gamma: 1.0,                       /* image has already been gamma corrected with
+													* given gamma.  defaults to 1.0 (no correction) */
+
+					exposure: 1.0,                    /* a value of 1.0 in an image corresponds to
+													* <exposure> watts/steradian/m^2.
+													* defaults to 1.0 */
+
+					width: 0, height: 0               /* image dimensions, width/height */
+
+				}
+			;
+
+			if ( buffer.pos >= buffer.byteLength || ! ( line = fgets( buffer ) ) ) {
+
+				return rgbe_error( rgbe_read_error, "no header found" );
+
+			}
+			/* if you want to require the magic token then uncomment the next line */
+			if ( ! ( match = line.match( magic_token_re ) ) ) {
+
+				return rgbe_error( rgbe_format_error, "bad initial token" );
+
+			}
+			header.valid |= RGBE_VALID_PROGRAMTYPE;
+			header.programtype = match[ 1 ];
+			header.string += line + "\n";
+
+			while ( true ) {
+
+				line = fgets( buffer );
+				if ( false === line ) break;
+				header.string += line + "\n";
+
+				if ( '#' === line.charAt( 0 ) ) {
+
+					header.comments += line + "\n";
+					continue; // comment line
+
+				}
+
+				if ( match = line.match( gamma_re ) ) {
+
+					header.gamma = parseFloat( match[ 1 ], 10 );
+
+				}
+				if ( match = line.match( exposure_re ) ) {
+
+					header.exposure = parseFloat( match[ 1 ], 10 );
+
+				}
+				if ( match = line.match( format_re ) ) {
+
+					header.valid |= RGBE_VALID_FORMAT;
+					header.format = match[ 1 ];//'32-bit_rle_rgbe';
+
+				}
+				if ( match = line.match( dimensions_re ) ) {
+
+					header.valid |= RGBE_VALID_DIMENSIONS;
+					header.height = parseInt( match[ 1 ], 10 );
+					header.width = parseInt( match[ 2 ], 10 );
+
+				}
+
+				if ( ( header.valid & RGBE_VALID_FORMAT ) && ( header.valid & RGBE_VALID_DIMENSIONS ) ) break;
+
+			}
+
+			if ( ! ( header.valid & RGBE_VALID_FORMAT ) ) {
+
+				return rgbe_error( rgbe_format_error, "missing format specifier" );
+
+			}
+			if ( ! ( header.valid & RGBE_VALID_DIMENSIONS ) ) {
+
+				return rgbe_error( rgbe_format_error, "missing image size specifier" );
+
+			}
+
+			return header;
+
+		},
+
+		RGBE_ReadPixels_RLE = function( buffer, w, h ) {
+
+			var data_rgba, offset, pos, count, byteValue,
+				scanline_buffer, ptr, ptr_end, i, l, off, isEncodedRun,
+				scanline_width = w, num_scanlines = h, rgbeStart
+			;
+
+			if (
+				// run length encoding is not allowed so read flat
+				( ( scanline_width < 8 ) || ( scanline_width > 0x7fff ) ) ||
+				// this file is not run length encoded
+				( ( 2 !== buffer[ 0 ] ) || ( 2 !== buffer[ 1 ] ) || ( buffer[ 2 ] & 0x80 ) )
+			) {
+
+				// return the flat buffer
+				return new Uint8Array( buffer );
+
+			}
+
+			if ( scanline_width !== ( ( buffer[ 2 ] << 8 ) | buffer[ 3 ] ) ) {
+
+				return rgbe_error( rgbe_format_error, "wrong scanline width" );
+
+			}
+
+			data_rgba = new Uint8Array( 4 * w * h );
+
+			if ( ! data_rgba || ! data_rgba.length ) {
+
+				return rgbe_error( rgbe_memory_error, "unable to allocate buffer space" );
+
+			}
+
+			offset = 0; pos = 0; ptr_end = 4 * scanline_width;
+			rgbeStart = new Uint8Array( 4 );
+			scanline_buffer = new Uint8Array( ptr_end );
+
+			// read in each successive scanline
+			while ( ( num_scanlines > 0 ) && ( pos < buffer.byteLength ) ) {
+
+				if ( pos + 4 > buffer.byteLength ) {
+
+					return rgbe_error( rgbe_read_error );
+
+				}
+
+				rgbeStart[ 0 ] = buffer[ pos ++ ];
+				rgbeStart[ 1 ] = buffer[ pos ++ ];
+				rgbeStart[ 2 ] = buffer[ pos ++ ];
+				rgbeStart[ 3 ] = buffer[ pos ++ ];
+
+				if ( ( 2 != rgbeStart[ 0 ] ) || ( 2 != rgbeStart[ 1 ] ) || ( ( ( rgbeStart[ 2 ] << 8 ) | rgbeStart[ 3 ] ) != scanline_width ) ) {
+
+					return rgbe_error( rgbe_format_error, "bad rgbe scanline format" );
+
+				}
+
+				// read each of the four channels for the scanline into the buffer
+				// first red, then green, then blue, then exponent
+				ptr = 0;
+				while ( ( ptr < ptr_end ) && ( pos < buffer.byteLength ) ) {
+
+					count = buffer[ pos ++ ];
+					isEncodedRun = count > 128;
+					if ( isEncodedRun ) count -= 128;
+
+					if ( ( 0 === count ) || ( ptr + count > ptr_end ) ) {
+
+						return rgbe_error( rgbe_format_error, "bad scanline data" );
+
+					}
+
+					if ( isEncodedRun ) {
+
+						// a (encoded) run of the same value
+						byteValue = buffer[ pos ++ ];
+						for ( i = 0; i < count; i ++ ) {
+
+							scanline_buffer[ ptr ++ ] = byteValue;
+
+						}
+						//ptr += count;
+
+					} else {
+
+						// a literal-run
+						scanline_buffer.set( buffer.subarray( pos, pos + count ), ptr );
+						ptr += count; pos += count;
+
+					}
+
+				}
+
+
+				// now convert data from buffer into rgba
+				// first red, then green, then blue, then exponent (alpha)
+				l = scanline_width; //scanline_buffer.byteLength;
+				for ( i = 0; i < l; i ++ ) {
+
+					off = 0;
+					data_rgba[ offset ] = scanline_buffer[ i + off ];
+					off += scanline_width; //1;
+					data_rgba[ offset + 1 ] = scanline_buffer[ i + off ];
+					off += scanline_width; //1;
+					data_rgba[ offset + 2 ] = scanline_buffer[ i + off ];
+					off += scanline_width; //1;
+					data_rgba[ offset + 3 ] = scanline_buffer[ i + off ];
+					offset += 4;
+
+				}
+
+				num_scanlines --;
+
+			}
+
+			return data_rgba;
+
+		}
+	;
+
+	var byteArray = new Uint8Array( buffer ),
+		byteLength = byteArray.byteLength;
+	byteArray.pos = 0;
+	var rgbe_header_info = RGBE_ReadHeader( byteArray );
+
+	if ( RGBE_RETURN_FAILURE !== rgbe_header_info ) {
+
+		var w = rgbe_header_info.width,
+			h = rgbe_header_info.height
+			, image_rgba_data = RGBE_ReadPixels_RLE( byteArray.subarray( byteArray.pos ), w, h )
+		;
+		if ( RGBE_RETURN_FAILURE !== image_rgba_data ) {
+
+			return {
+				width: w, height: h,
+				data: image_rgba_data,
+				header: rgbe_header_info.string,
+				gamma: rgbe_header_info.gamma,
+				exposure: rgbe_header_info.exposure,
+				format: THREE.RGBEFormat, // handled as THREE.RGBAFormat in shaders
+				type: THREE.UnsignedByteType
+			};
+
+		}
+
+	}
+	return null;
+
+};
+
 // File:examples/js/cameras/CombinedCamera.js
 
 /**
@@ -5124,6 +5566,7 @@ THREE.CombinedCamera = function ( width, height, fov, near, far) {
 
 	this.aspect =  width / height;
 	this.zoom = 1;
+	this.focus = 10;
 	this.view = null;
 	this.hyperfocusOffset = 0;
 	this.hyperfocusScale = 0.5;
@@ -5149,6 +5592,7 @@ THREE.CombinedCamera.prototype.toPerspective = function () {
 	this.cameraP.fov =  this.fov;
 	this.cameraP.zoom = this.zoom;
 	this.cameraP.view = this.view;
+	this.cameraP.focus = this.focus;
 
 	this.cameraP.updateProjectionMatrix();
 
@@ -5235,8 +5679,8 @@ THREE.CombinedCamera.prototype.copy = function ( source ) {
 	this.hyperfocusOffset = source.hyperfocusOffset;
 	this.hyperfocusScale = source.hyperfocusScale;
 
-	this.cameraO = source.cameraO.copy();
-	this.cameraP = source.cameraP.copy();
+	this.cameraO.copy( source.cameraO );
+	this.cameraP.copy( source.cameraP );
 
 	this.inOrthographicMode = source.inOrthographicMode;
 	this.inPerspectiveMode = source.inPerspectiveMode;
@@ -5414,6 +5858,1585 @@ THREE.CombinedCamera.prototype.toPerspectiveView = function() {
 	this.position.z = 4;
 
 };
+
+// File:examples/js/effects/ParallaxBarrierEffect.js
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author marklundin / http://mark-lundin.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+THREE.ParallaxBarrierEffect = function ( renderer ) {
+
+	  var _camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  var _scene = new THREE.Scene();
+
+  var _stereo = new THREE.StereoCamera();
+
+  var _params = { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat };
+
+  var _renderTargetL = new THREE.WebGLRenderTarget(512, 512, _params);
+  var _renderTargetR = new THREE.WebGLRenderTarget(512, 512, _params);
+
+  var _material = new THREE.ShaderMaterial({
+
+    uniforms: {
+
+      'mapLeft': { value: _renderTargetL.texture },
+      'mapRight': { value: _renderTargetR.texture },
+      'resolution': { value: new THREE.Vector2( 512, 512 ) },
+
+    },
+
+    vertexShader: [
+
+      'varying vec2 vUv;',
+
+      'void main() {',
+
+      ' vUv = vec2( uv.x, uv.y );',
+      ' gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+
+      '}',
+
+    ].join('\n'),
+
+    fragmentShader: [
+
+      'uniform sampler2D mapLeft;',
+      'uniform sampler2D mapRight;',
+      'uniform vec2 resolution;',
+      'varying vec2 vUv;',
+
+      'void main() {',
+
+      ' vec2 uv = vUv;',
+
+      ' if ( ( mod( gl_FragCoord.x + 1.0, 2.0 ) ) > 1.00 ) {',
+
+      '   gl_FragColor = texture2D( mapLeft, uv );',
+
+      ' } else {',
+
+      '   gl_FragColor = texture2D( mapRight, uv - vec2( resolution.x, 0 ) );',
+
+      ' }',
+
+      '}',
+
+    ].join('\n'),
+
+  });
+
+  var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), _material);
+  _scene.add(mesh);
+
+  this.setSize = function (width, height) {
+
+    renderer.setSize(width, height);
+
+    var pixelRatio = renderer.getPixelRatio();
+
+    _material.uniforms['resolution'].value.set( 1.0 / width, 1.0 / height );
+
+    _renderTargetL.setSize(width * pixelRatio / 2 + 1, height * pixelRatio);
+    _renderTargetR.setSize(width * pixelRatio / 2 + 1, height * pixelRatio);
+
+  };
+
+  this.render = function (scene, camera) {
+
+    scene.updateMatrixWorld();
+
+    if (camera.parent === null) camera.updateMatrixWorld();
+
+    _stereo.update(camera);
+
+    renderer.render(scene, _stereo.cameraL, _renderTargetL, true);
+    renderer.render(scene, _stereo.cameraR, _renderTargetR, true);
+    renderer.render(_scene, _camera);
+
+  };
+
+};
+
+// File:examples/js/effects/StereoEffect.js
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @authod mrdoob / http://mrdoob.com/
+ * @authod arodic / http://aleksandarrodic.com/
+ * @authod fonserbc / http://fonserbc.github.io/
+*/
+
+THREE.StereoEffect = function ( renderer ) {
+
+	var _stereo = new THREE.StereoCamera();
+	_stereo.aspect = 0.5;
+
+	this.setEyeSeparation = function ( eyeSep ) {
+
+		_stereo.eyeSep = eyeSep;
+
+	};
+
+	this.setSize = function ( width, height ) {
+
+		renderer.setSize( width, height );
+
+	};
+
+	this.render = function ( scene, camera ) {
+
+		scene.updateMatrixWorld();
+
+		if ( camera.parent === null ) camera.updateMatrixWorld();
+
+		_stereo.update( camera );
+
+		var size = renderer.getSize();
+
+		if ( renderer.autoClear ) renderer.clear();
+		renderer.setScissorTest( true );
+
+		renderer.setScissor( 0, 0, size.width / 2, size.height );
+		renderer.setViewport( 0, 0, size.width / 2, size.height );
+		renderer.render( scene, _stereo.cameraL );
+
+		renderer.setScissor( size.width / 2, 0, size.width / 2, size.height );
+		renderer.setViewport( size.width / 2, 0, size.width / 2, size.height );
+		renderer.render( scene, _stereo.cameraR );
+
+		renderer.setScissorTest( false );
+
+	};
+
+};
+
+// File:examples/js/shaders/FXAAShader.js
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author davidedc / http://www.sketchpatch.net/
+ *
+ * NVIDIA FXAA by Timothy Lottes
+ * http://timothylottes.blogspot.com/2011/06/fxaa3-source-released.html
+ * - WebGL port by @supereggbert
+ * http://www.glge.org/demos/fxaa/
+ */
+
+THREE.FXAAShader = {
+
+	uniforms: {
+
+		"tDiffuse":   { value: null },
+		"resolution": { value: new THREE.Vector2( 1 / 1024, 1 / 512 ) }
+
+	},
+
+	vertexShader: [
+
+		"void main() {",
+
+			"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join( "\n" ),
+
+	fragmentShader: [
+
+		"uniform sampler2D tDiffuse;",
+		"uniform vec2 resolution;",
+
+		"#define FXAA_REDUCE_MIN   (1.0/128.0)",
+		"#define FXAA_REDUCE_MUL   (1.0/8.0)",
+		"#define FXAA_SPAN_MAX     8.0",
+
+		"void main() {",
+
+			"vec3 rgbNW = texture2D( tDiffuse, ( gl_FragCoord.xy + vec2( -1.0, -1.0 ) ) * resolution ).xyz;",
+			"vec3 rgbNE = texture2D( tDiffuse, ( gl_FragCoord.xy + vec2( 1.0, -1.0 ) ) * resolution ).xyz;",
+			"vec3 rgbSW = texture2D( tDiffuse, ( gl_FragCoord.xy + vec2( -1.0, 1.0 ) ) * resolution ).xyz;",
+			"vec3 rgbSE = texture2D( tDiffuse, ( gl_FragCoord.xy + vec2( 1.0, 1.0 ) ) * resolution ).xyz;",
+			"vec4 rgbaM  = texture2D( tDiffuse,  gl_FragCoord.xy  * resolution );",
+			"vec3 rgbM  = rgbaM.xyz;",
+			"vec3 luma = vec3( 0.299, 0.587, 0.114 );",
+
+			"float lumaNW = dot( rgbNW, luma );",
+			"float lumaNE = dot( rgbNE, luma );",
+			"float lumaSW = dot( rgbSW, luma );",
+			"float lumaSE = dot( rgbSE, luma );",
+			"float lumaM  = dot( rgbM,  luma );",
+			"float lumaMin = min( lumaM, min( min( lumaNW, lumaNE ), min( lumaSW, lumaSE ) ) );",
+			"float lumaMax = max( lumaM, max( max( lumaNW, lumaNE) , max( lumaSW, lumaSE ) ) );",
+
+			"vec2 dir;",
+			"dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));",
+			"dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));",
+
+			"float dirReduce = max( ( lumaNW + lumaNE + lumaSW + lumaSE ) * ( 0.25 * FXAA_REDUCE_MUL ), FXAA_REDUCE_MIN );",
+
+			"float rcpDirMin = 1.0 / ( min( abs( dir.x ), abs( dir.y ) ) + dirReduce );",
+			"dir = min( vec2( FXAA_SPAN_MAX,  FXAA_SPAN_MAX),",
+				  "max( vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX),",
+						"dir * rcpDirMin)) * resolution;",
+			"vec4 rgbA = (1.0/2.0) * (",
+        	"texture2D(tDiffuse,  gl_FragCoord.xy  * resolution + dir * (1.0/3.0 - 0.5)) +",
+			"texture2D(tDiffuse,  gl_FragCoord.xy  * resolution + dir * (2.0/3.0 - 0.5)));",
+    		"vec4 rgbB = rgbA * (1.0/2.0) + (1.0/4.0) * (",
+			"texture2D(tDiffuse,  gl_FragCoord.xy  * resolution + dir * (0.0/3.0 - 0.5)) +",
+      		"texture2D(tDiffuse,  gl_FragCoord.xy  * resolution + dir * (3.0/3.0 - 0.5)));",
+    		"float lumaB = dot(rgbB, vec4(luma, 0.0));",
+
+			"if ( ( lumaB < lumaMin ) || ( lumaB > lumaMax ) ) {",
+
+				"gl_FragColor = rgbA;",
+
+			"} else {",
+				"gl_FragColor = rgbB;",
+
+			"}",
+
+		"}"
+
+	].join( "\n" )
+
+};
+
+// File:examples/js/postprocessing/OutlinePass.js
+
+/**
+ * @author spidersharma / http://eduperiment.com/
+ */
+
+THREE.OutlinePass = function ( resolution, scene, camera, selectedObjects ) {
+
+	this.renderScene = scene;
+	this.renderCamera = camera;
+	this.selectedObjects = selectedObjects !== undefined ? selectedObjects : [];
+	this.visibleEdgeColor = new THREE.Color( 1, 1, 1 );
+	this.hiddenEdgeColor = new THREE.Color( 0.1, 0.04, 0.02 );
+	this.edgeGlow = 0.0;
+	this.usePatternTexture = false;
+	this.edgeThickness = 1.0;
+	this.edgeStrength = 3.0;
+	this.downSampleRatio = 2;
+	this.pulsePeriod = 0;
+
+	THREE.Pass.call( this );
+
+	this.resolution = ( resolution !== undefined ) ? new THREE.Vector2( resolution.x, resolution.y ) : new THREE.Vector2( 256, 256 );
+
+	var pars = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
+
+	var resx = Math.round( this.resolution.x / this.downSampleRatio );
+	var resy = Math.round( this.resolution.y / this.downSampleRatio );
+
+	this.maskBufferMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+	this.maskBufferMaterial.side = THREE.DoubleSide;
+	this.renderTargetMaskBuffer = new THREE.WebGLRenderTarget( this.resolution.x, this.resolution.y, pars );
+	this.renderTargetMaskBuffer.texture.name = "OutlinePass.mask";
+	this.renderTargetMaskBuffer.texture.generateMipmaps = false;
+
+	this.depthMaterial = new THREE.MeshDepthMaterial();
+	this.depthMaterial.side = THREE.DoubleSide;
+	this.depthMaterial.depthPacking = THREE.RGBADepthPacking;
+	this.depthMaterial.blending = THREE.NoBlending;
+
+	this.prepareMaskMaterial = this.getPrepareMaskMaterial();
+	this.prepareMaskMaterial.side = THREE.DoubleSide;
+
+	this.renderTargetDepthBuffer = new THREE.WebGLRenderTarget( this.resolution.x, this.resolution.y, pars );
+	this.renderTargetDepthBuffer.texture.name = "OutlinePass.depth";
+	this.renderTargetDepthBuffer.texture.generateMipmaps = false;
+
+	this.renderTargetMaskDownSampleBuffer = new THREE.WebGLRenderTarget( resx, resy, pars );
+	this.renderTargetMaskDownSampleBuffer.texture.name = "OutlinePass.depthDownSample";
+	this.renderTargetMaskDownSampleBuffer.texture.generateMipmaps = false;
+
+	this.renderTargetBlurBuffer1 = new THREE.WebGLRenderTarget( resx, resy, pars );
+	this.renderTargetBlurBuffer1.texture.name = "OutlinePass.blur1";
+	this.renderTargetBlurBuffer1.texture.generateMipmaps = false;
+
+	this.renderTargetBlurBuffer2 = new THREE.WebGLRenderTarget( Math.round( resx / 2 ), Math.round( resy / 2 ), pars );
+	this.renderTargetBlurBuffer2.texture.name = "OutlinePass.blur2";
+	this.renderTargetBlurBuffer2.texture.generateMipmaps = false;
+
+	this.edgeDetectionMaterial = this.getEdgeDetectionMaterial();
+	this.renderTargetEdgeBuffer1 = new THREE.WebGLRenderTarget( resx, resy, pars );
+	this.renderTargetEdgeBuffer1.texture.name = "OutlinePass.edge1";
+	this.renderTargetEdgeBuffer1.texture.generateMipmaps = false;
+
+	this.renderTargetEdgeBuffer2 = new THREE.WebGLRenderTarget( Math.round( resx / 2 ), Math.round( resy / 2 ), pars );
+	this.renderTargetEdgeBuffer2.texture.name = "OutlinePass.edge2";
+	this.renderTargetEdgeBuffer2.texture.generateMipmaps = false;
+
+	var MAX_EDGE_THICKNESS = 4;
+	var MAX_EDGE_GLOW = 4;
+
+	this.separableBlurMaterial1 = this.getSeperableBlurMaterial( MAX_EDGE_THICKNESS );
+	this.separableBlurMaterial1.uniforms[ "texSize" ].value = new THREE.Vector2( resx, resy );
+	this.separableBlurMaterial1.uniforms[ "kernelRadius" ].value = 1;
+	this.separableBlurMaterial2 = this.getSeperableBlurMaterial( MAX_EDGE_GLOW );
+	this.separableBlurMaterial2.uniforms[ "texSize" ].value = new THREE.Vector2( Math.round( resx / 2 ), Math.round( resy / 2 ) );
+	this.separableBlurMaterial2.uniforms[ "kernelRadius" ].value = MAX_EDGE_GLOW;
+
+	// Overlay material
+	this.overlayMaterial = this.getOverlayMaterial();
+
+	// copy material
+	if ( THREE.CopyShader === undefined )
+		console.error( "THREE.OutlinePass relies on THREE.CopyShader" );
+
+	var copyShader = THREE.CopyShader;
+
+	this.copyUniforms = THREE.UniformsUtils.clone( copyShader.uniforms );
+	this.copyUniforms[ "opacity" ].value = 1.0;
+
+	this.materialCopy = new THREE.ShaderMaterial( {
+		uniforms: this.copyUniforms,
+		vertexShader: copyShader.vertexShader,
+		fragmentShader: copyShader.fragmentShader,
+		blending: THREE.NoBlending,
+		depthTest: false,
+		depthWrite: false,
+		transparent: true
+	} );
+
+	this.enabled = true;
+	this.needsSwap = false;
+
+	this.oldClearColor = new THREE.Color();
+	this.oldClearAlpha = 1;
+
+	this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+	this.scene = new THREE.Scene();
+
+	this.quad = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2 ), null );
+	this.quad.frustumCulled = false; // Avoid getting clipped
+	this.scene.add( this.quad );
+
+	this.tempPulseColor1 = new THREE.Color();
+	this.tempPulseColor2 = new THREE.Color();
+	this.textureMatrix = new THREE.Matrix4();
+
+};
+
+THREE.OutlinePass.prototype = Object.assign( Object.create( THREE.Pass.prototype ), {
+
+	constructor: THREE.OutlinePass,
+
+	dispose: function () {
+
+		this.renderTargetMaskBuffer.dispose();
+		this.renderTargetDepthBuffer.dispose();
+		this.renderTargetMaskDownSampleBuffer.dispose();
+		this.renderTargetBlurBuffer1.dispose();
+		this.renderTargetBlurBuffer2.dispose();
+		this.renderTargetEdgeBuffer1.dispose();
+		this.renderTargetEdgeBuffer2.dispose();
+
+	},
+
+	setSize: function ( width, height ) {
+
+		this.renderTargetMaskBuffer.setSize( width, height );
+
+		var resx = Math.round( width / this.downSampleRatio );
+		var resy = Math.round( height / this.downSampleRatio );
+		this.renderTargetMaskDownSampleBuffer.setSize( resx, resy );
+		this.renderTargetBlurBuffer1.setSize( resx, resy );
+		this.renderTargetEdgeBuffer1.setSize( resx, resy );
+		this.separableBlurMaterial1.uniforms[ "texSize" ].value = new THREE.Vector2( resx, resy );
+
+		resx = Math.round( resx / 2 );
+		resy = Math.round( resy / 2 );
+
+		this.renderTargetBlurBuffer2.setSize( resx, resy );
+		this.renderTargetEdgeBuffer2.setSize( resx, resy );
+
+		this.separableBlurMaterial2.uniforms[ "texSize" ].value = new THREE.Vector2( resx, resy );
+
+	},
+
+	changeVisibilityOfSelectedObjects: function ( bVisible ) {
+
+		function gatherSelectedMeshesCallBack( object ) {
+
+			if ( object instanceof THREE.Mesh ) object.visible = bVisible;
+
+		}
+
+		for ( var i = 0; i < this.selectedObjects.length; i ++ ) {
+
+			var selectedObject = this.selectedObjects[ i ];
+			selectedObject.traverse( gatherSelectedMeshesCallBack );
+
+		}
+
+	},
+
+	changeVisibilityOfNonSelectedObjects: function ( bVisible ) {
+
+		var selectedMeshes = [];
+
+		function gatherSelectedMeshesCallBack( object ) {
+
+			if ( object instanceof THREE.Mesh ) selectedMeshes.push( object );
+
+		}
+
+		for ( var i = 0; i < this.selectedObjects.length; i ++ ) {
+
+			var selectedObject = this.selectedObjects[ i ];
+			selectedObject.traverse( gatherSelectedMeshesCallBack );
+
+		}
+
+		function VisibilityChangeCallBack( object ) {
+
+			if ( object instanceof THREE.Mesh ) {
+
+				var bFound = false;
+
+				for ( var i = 0; i < selectedMeshes.length; i ++ ) {
+
+					var selectedObjectId = selectedMeshes[ i ].id;
+
+					if ( selectedObjectId === object.id ) {
+
+						bFound = true;
+						break;
+
+					}
+
+				}
+
+				if ( ! bFound ) {
+
+					var visibility = object.visible;
+
+					if ( ! bVisible || object.bVisible ) object.visible = bVisible;
+
+					object.bVisible = visibility;
+
+				}
+
+			}
+
+		}
+
+		this.renderScene.traverse( VisibilityChangeCallBack );
+
+	},
+
+	updateTextureMatrix: function () {
+
+		this.textureMatrix.set( 0.5, 0.0, 0.0, 0.5,
+														0.0, 0.5, 0.0, 0.5,
+														0.0, 0.0, 0.5, 0.5,
+														0.0, 0.0, 0.0, 1.0 );
+		this.textureMatrix.multiply( this.renderCamera.projectionMatrix );
+		this.textureMatrix.multiply( this.renderCamera.matrixWorldInverse );
+
+	},
+
+	render: function ( renderer, writeBuffer, readBuffer, delta, maskActive ) {
+
+		if ( this.selectedObjects.length === 0 ) return;
+
+		this.oldClearColor.copy( renderer.getClearColor() );
+		this.oldClearAlpha = renderer.getClearAlpha();
+		var oldAutoClear = renderer.autoClear;
+
+		renderer.autoClear = false;
+
+		if ( maskActive ) renderer.context.disable( renderer.context.STENCIL_TEST );
+
+		renderer.setClearColor( 0xffffff, 1 );
+
+		// Make selected objects invisible
+		this.changeVisibilityOfSelectedObjects( false );
+
+		// 1. Draw Non Selected objects in the depth buffer
+		this.renderScene.overrideMaterial = this.depthMaterial;
+		renderer.render( this.renderScene, this.renderCamera, this.renderTargetDepthBuffer, true );
+
+		// Make selected objects visible
+		this.changeVisibilityOfSelectedObjects( true );
+
+		// Update Texture Matrix for Depth compare
+		this.updateTextureMatrix();
+
+		// Make non selected objects invisible, and draw only the selected objects, by comparing the depth buffer of non selected objects
+		this.changeVisibilityOfNonSelectedObjects( false );
+		this.renderScene.overrideMaterial = this.prepareMaskMaterial;
+		this.prepareMaskMaterial.uniforms[ "cameraNearFar" ].value = new THREE.Vector2( this.renderCamera.near, this.renderCamera.far );
+		this.prepareMaskMaterial.uniforms[ "depthTexture" ].value = this.renderTargetDepthBuffer.texture;
+		this.prepareMaskMaterial.uniforms[ "textureMatrix" ].value = this.textureMatrix;
+		renderer.render( this.renderScene, this.renderCamera, this.renderTargetMaskBuffer, true );
+		this.renderScene.overrideMaterial = null;
+		this.changeVisibilityOfNonSelectedObjects( true );
+
+		// 2. Downsample to Half resolution
+		this.quad.material = this.materialCopy;
+		this.copyUniforms[ "tDiffuse" ].value = this.renderTargetMaskBuffer.texture;
+		renderer.render( this.scene, this.camera, this.renderTargetMaskDownSampleBuffer, true );
+
+		this.tempPulseColor1.copy( this.visibleEdgeColor );
+		this.tempPulseColor2.copy( this.hiddenEdgeColor );
+
+		if ( this.pulsePeriod > 0 ) {
+
+			var scalar = ( 1 + 0.25 ) / 2 + Math.cos( performance.now() * 0.01 / this.pulsePeriod ) * ( 1.0 - 0.25 ) / 2;
+			this.tempPulseColor1.multiplyScalar( scalar );
+			this.tempPulseColor2.multiplyScalar( scalar );
+
+		}
+
+		// 3. Apply Edge Detection Pass
+		this.quad.material = this.edgeDetectionMaterial;
+		this.edgeDetectionMaterial.uniforms[ "maskTexture" ].value = this.renderTargetMaskDownSampleBuffer.texture;
+		this.edgeDetectionMaterial.uniforms[ "texSize" ].value = new THREE.Vector2( this.renderTargetMaskDownSampleBuffer.width, this.renderTargetMaskDownSampleBuffer.height );
+		this.edgeDetectionMaterial.uniforms[ "visibleEdgeColor" ].value = this.tempPulseColor1;
+		this.edgeDetectionMaterial.uniforms[ "hiddenEdgeColor" ].value = this.tempPulseColor2;
+		renderer.render( this.scene, this.camera, this.renderTargetEdgeBuffer1, true );
+
+		// 4. Apply Blur on Half res
+		this.quad.material = this.separableBlurMaterial1;
+		this.separableBlurMaterial1.uniforms[ "colorTexture" ].value = this.renderTargetEdgeBuffer1.texture;
+		this.separableBlurMaterial1.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionX;
+		this.separableBlurMaterial1.uniforms[ "kernelRadius" ].value = this.edgeThickness;
+		renderer.render( this.scene, this.camera, this.renderTargetBlurBuffer1, true );
+		this.separableBlurMaterial1.uniforms[ "colorTexture" ].value = this.renderTargetBlurBuffer1.texture;
+		this.separableBlurMaterial1.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionY;
+		//renderer.render( this.scene, this.camera, this.renderTargetEdgeBuffer1, true );
+
+		// Apply Blur on quarter res
+		this.quad.material = this.separableBlurMaterial2;
+		this.separableBlurMaterial2.uniforms[ "colorTexture" ].value = this.renderTargetEdgeBuffer1.texture;
+		this.separableBlurMaterial2.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionX;
+		renderer.render( this.scene, this.camera, this.renderTargetBlurBuffer2, true );
+		this.separableBlurMaterial2.uniforms[ "colorTexture" ].value = this.renderTargetBlurBuffer2.texture;
+		this.separableBlurMaterial2.uniforms[ "direction" ].value = THREE.OutlinePass.BlurDirectionY;
+		renderer.render( this.scene, this.camera, this.renderTargetEdgeBuffer2, true );
+
+		// Blend it additively over the input texture
+		this.quad.material = this.overlayMaterial;
+		this.overlayMaterial.uniforms[ "maskTexture" ].value = this.renderTargetMaskBuffer.texture;
+		this.overlayMaterial.uniforms[ "edgeTexture1" ].value = this.renderTargetEdgeBuffer1.texture;
+		this.overlayMaterial.uniforms[ "edgeTexture2" ].value = this.renderTargetEdgeBuffer2.texture;
+		this.overlayMaterial.uniforms[ "patternTexture" ].value = this.patternTexture;
+		this.overlayMaterial.uniforms[ "edgeStrength" ].value = this.edgeStrength;
+		this.overlayMaterial.uniforms[ "edgeGlow" ].value = this.edgeGlow;
+		this.overlayMaterial.uniforms[ "usePatternTexture" ].value = this.usePatternTexture;
+
+
+		if ( maskActive ) renderer.context.enable( renderer.context.STENCIL_TEST );
+
+		renderer.render( this.scene, this.camera, this.renderToScreen ? null : readBuffer, false );
+
+		renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
+		renderer.autoClear = oldAutoClear;
+
+	},
+
+	getPrepareMaskMaterial: function () {
+
+		return new THREE.ShaderMaterial( {
+
+			uniforms: {
+				"depthTexture": { value: null },
+				"cameraNearFar": { value: new THREE.Vector2( 0.5, 0.5 ) },
+				"textureMatrix": { value: new THREE.Matrix4() }
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\
+				varying vec4 projTexCoord;\
+				varying vec4 vPosition;\
+				uniform mat4 textureMatrix;\
+				void main() {\
+					vUv = uv;\
+					vPosition = modelViewMatrix * vec4( position, 1.0 );\
+					vec4 worldPosition = modelMatrix * vec4( position, 1.0 );\
+					projTexCoord = textureMatrix * worldPosition;\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"#include <packing>\
+				varying vec2 vUv;\
+				varying vec4 vPosition;\
+				varying vec4 projTexCoord;\
+				uniform sampler2D depthTexture;\
+				uniform vec2 cameraNearFar;\
+				\
+				void main() {\
+					float depth = unpackRGBAToDepth(texture2DProj( depthTexture, projTexCoord ));\
+					float viewZ = -perspectiveDepthToViewZ( depth, cameraNearFar.x, cameraNearFar.y );\
+					float depthTest = (-vPosition.z > viewZ) ? 1.0 : 0.0;\
+					gl_FragColor = vec4(0.0, depthTest, 1.0, 1.0);\
+				}"
+		} );
+
+	},
+
+	getEdgeDetectionMaterial: function () {
+
+		return new THREE.ShaderMaterial( {
+
+			uniforms: {
+				"maskTexture": { value: null },
+				"texSize": { value: new THREE.Vector2( 0.5, 0.5 ) },
+				"visibleEdgeColor": { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) },
+				"hiddenEdgeColor": { value: new THREE.Vector3( 1.0, 1.0, 1.0 ) },
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"varying vec2 vUv;\
+				uniform sampler2D maskTexture;\
+				uniform vec2 texSize;\
+				uniform vec3 visibleEdgeColor;\
+				uniform vec3 hiddenEdgeColor;\
+				\
+				void main() {\n\
+					vec2 invSize = 1.0 / texSize;\
+					vec4 uvOffset = vec4(1.0, 0.0, 0.0, 1.0) * vec4(invSize, invSize);\
+					vec4 c1 = texture2D( maskTexture, vUv + uvOffset.xy);\
+					vec4 c2 = texture2D( maskTexture, vUv - uvOffset.xy);\
+					vec4 c3 = texture2D( maskTexture, vUv + uvOffset.yw);\
+					vec4 c4 = texture2D( maskTexture, vUv - uvOffset.yw);\
+					float diff1 = (c1.r - c2.r)*0.5;\
+					float diff2 = (c3.r - c4.r)*0.5;\
+					float d = length( vec2(diff1, diff2) );\
+					float a1 = min(c1.g, c2.g);\
+					float a2 = min(c3.g, c4.g);\
+					float visibilityFactor = min(a1, a2);\
+					vec3 edgeColor = 1.0 - visibilityFactor > 0.001 ? visibleEdgeColor : hiddenEdgeColor;\
+					gl_FragColor = vec4(edgeColor, 1.0) * vec4(d);\
+				}"
+		} );
+
+	},
+
+	getSeperableBlurMaterial: function ( maxRadius ) {
+
+		return new THREE.ShaderMaterial( {
+
+			defines: {
+				"MAX_RADIUS": maxRadius,
+			},
+
+			uniforms: {
+				"colorTexture": { value: null },
+				"texSize": { value: new THREE.Vector2( 0.5, 0.5 ) },
+				"direction": { value: new THREE.Vector2( 0.5, 0.5 ) },
+				"kernelRadius": { value: 1.0 }
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"#include <common>\
+				varying vec2 vUv;\
+				uniform sampler2D colorTexture;\
+				uniform vec2 texSize;\
+				uniform vec2 direction;\
+				uniform float kernelRadius;\
+				\
+				float gaussianPdf(in float x, in float sigma) {\
+					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma;\
+				}\
+				void main() {\
+					vec2 invSize = 1.0 / texSize;\
+					float weightSum = gaussianPdf(0.0, kernelRadius);\
+					vec3 diffuseSum = texture2D( colorTexture, vUv).rgb * weightSum;\
+					vec2 delta = direction * invSize * kernelRadius/float(MAX_RADIUS);\
+					vec2 uvOffset = delta;\
+					for( int i = 1; i <= MAX_RADIUS; i ++ ) {\
+						float w = gaussianPdf(uvOffset.x, kernelRadius);\
+						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset).rgb;\
+						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset).rgb;\
+						diffuseSum += ((sample1 + sample2) * w);\
+						weightSum += (2.0 * w);\
+						uvOffset += delta;\
+					}\
+					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);\
+				}"
+		} );
+
+	},
+
+	getOverlayMaterial: function () {
+
+		return new THREE.ShaderMaterial( {
+
+			uniforms: {
+				"maskTexture": { value: null },
+				"edgeTexture1": { value: null },
+				"edgeTexture2": { value: null },
+				"patternTexture": { value: null },
+				"edgeStrength": { value: 1.0 },
+				"edgeGlow": { value: 1.0 },
+				"usePatternTexture": { value: 0.0 }
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"varying vec2 vUv;\
+				uniform sampler2D maskTexture;\
+				uniform sampler2D edgeTexture1;\
+				uniform sampler2D edgeTexture2;\
+				uniform sampler2D patternTexture;\
+				uniform float edgeStrength;\
+				uniform float edgeGlow;\
+				uniform bool usePatternTexture;\
+				\
+				void main() {\
+					vec4 edgeValue1 = texture2D(edgeTexture1, vUv);\
+					vec4 edgeValue2 = texture2D(edgeTexture2, vUv);\
+					vec4 maskColor = texture2D(maskTexture, vUv);\
+					vec4 patternColor = texture2D(patternTexture, 6.0 * vUv);\
+					float visibilityFactor = 1.0 - maskColor.g > 0.0 ? 1.0 : 0.5;\
+					vec4 edgeValue = edgeValue1 + edgeValue2 * edgeGlow;\
+					vec4 finalColor = edgeStrength * maskColor.r * edgeValue;\
+					if(usePatternTexture)\
+						finalColor += + visibilityFactor * (1.0 - maskColor.r) * (1.0 - patternColor.r);\
+					gl_FragColor = finalColor;\
+				}",
+			blending: THREE.AdditiveBlending,
+			depthTest: false,
+			depthWrite: false,
+			transparent: true
+		} );
+
+	}
+
+} );
+
+THREE.OutlinePass.BlurDirectionX = new THREE.Vector2( 1.0, 0.0 );
+THREE.OutlinePass.BlurDirectionY = new THREE.Vector2( 0.0, 1.0 );
+
+// File:examples/js/effects/VREffect.js
+
+/**
+ * @author dmarcos / https://github.com/dmarcos
+ * @author mrdoob / http://mrdoob.com
+ *
+ * WebVR Spec: http://mozvr.github.io/webvr-spec/webvr.html
+ *
+ * Firefox: http://mozvr.com/downloads/
+ * Chromium: https://webvr.info/get-chrome
+ *
+ */
+
+THREE.VREffect = function( renderer, onError ) {
+
+	var vrDisplay, vrDisplays;
+	var eyeTranslationL = new THREE.Vector3();
+	var eyeTranslationR = new THREE.Vector3();
+	var renderRectL, renderRectR;
+
+	var frameData = null;
+
+	if ( 'VRFrameData' in window ) {
+
+		frameData = new window.VRFrameData();
+
+	}
+
+	function gotVRDisplays( displays ) {
+
+		vrDisplays = displays;
+
+		if ( displays.length > 0 ) {
+
+			vrDisplay = displays[ 0 ];
+
+		} else {
+
+			if ( onError ) onError( 'HMD not available' );
+
+		}
+
+	}
+
+	if ( navigator.getVRDisplays ) {
+
+		navigator.getVRDisplays().then( gotVRDisplays ).catch( function() {
+
+			console.warn( 'THREE.VREffect: Unable to get VR Displays' );
+
+		} );
+
+	}
+
+	//
+
+	this.isPresenting = false;
+	this.scale = 1;
+
+	var scope = this;
+
+	var rendererSize = renderer.getSize();
+	var rendererUpdateStyle = false;
+	var rendererPixelRatio = renderer.getPixelRatio();
+
+	this.getVRDisplay = function() {
+
+		return vrDisplay;
+
+	};
+
+	this.setVRDisplay = function( value ) {
+
+		vrDisplay = value;
+
+	};
+
+	this.getVRDisplays = function() {
+
+		console.warn( 'THREE.VREffect: getVRDisplays() is being deprecated.' );
+		return vrDisplays;
+
+	};
+
+	this.setSize = function( width, height, updateStyle ) {
+
+		rendererSize = { width: width, height: height };
+		rendererUpdateStyle = updateStyle;
+
+		if ( scope.isPresenting ) {
+
+			var eyeParamsL = vrDisplay.getEyeParameters( 'left' );
+			renderer.setPixelRatio( 1 );
+			renderer.setSize( eyeParamsL.renderWidth * 2, eyeParamsL.renderHeight, false );
+
+		} else {
+
+			renderer.setPixelRatio( rendererPixelRatio );
+			renderer.setSize( width, height, updateStyle );
+
+		}
+
+	};
+
+	// VR presentation
+
+	var canvas = renderer.domElement;
+	var defaultLeftBounds = [ 0.0, 0.0, 0.5, 1.0 ];
+	var defaultRightBounds = [ 0.5, 0.0, 0.5, 1.0 ];
+
+	function onVRDisplayPresentChange() {
+
+		var wasPresenting = scope.isPresenting;
+		scope.isPresenting = vrDisplay !== undefined && vrDisplay.isPresenting;
+
+		if ( scope.isPresenting ) {
+
+			var eyeParamsL = vrDisplay.getEyeParameters( 'left' );
+			var eyeWidth = eyeParamsL.renderWidth;
+			var eyeHeight = eyeParamsL.renderHeight;
+
+			if ( ! wasPresenting ) {
+
+				rendererPixelRatio = renderer.getPixelRatio();
+				rendererSize = renderer.getSize();
+
+				renderer.setPixelRatio( 1 );
+				renderer.setSize( eyeWidth * 2, eyeHeight, false );
+
+			}
+
+		} else if ( wasPresenting ) {
+
+			renderer.setPixelRatio( rendererPixelRatio );
+			renderer.setSize( rendererSize.width, rendererSize.height, rendererUpdateStyle );
+
+		}
+
+	}
+
+	window.addEventListener( 'vrdisplaypresentchange', onVRDisplayPresentChange, false );
+
+	this.setFullScreen = function( boolean ) {
+
+		return new Promise( function( resolve, reject ) {
+
+			if ( vrDisplay === undefined ) {
+
+				reject( new Error( 'No VR hardware found.' ) );
+				return;
+
+			}
+
+			if ( scope.isPresenting === boolean ) {
+
+				resolve();
+				return;
+
+			}
+
+			if ( boolean ) {
+
+				resolve( vrDisplay.requestPresent( [ { source: canvas } ] ) );
+
+			} else {
+
+				resolve( vrDisplay.exitPresent() );
+
+			}
+
+		} );
+
+	};
+
+	this.requestPresent = function() {
+
+		return this.setFullScreen( true );
+
+	};
+
+	this.exitPresent = function() {
+
+		return this.setFullScreen( false );
+
+	};
+
+	this.requestAnimationFrame = function( f ) {
+
+		if ( vrDisplay !== undefined ) {
+
+			return vrDisplay.requestAnimationFrame( f );
+
+		} else {
+
+			return window.requestAnimationFrame( f );
+
+		}
+
+	};
+
+	this.cancelAnimationFrame = function( h ) {
+
+		if ( vrDisplay !== undefined ) {
+
+			vrDisplay.cancelAnimationFrame( h );
+
+		} else {
+
+			window.cancelAnimationFrame( h );
+
+		}
+
+	};
+
+	this.submitFrame = function() {
+
+		if ( vrDisplay !== undefined && scope.isPresenting ) {
+
+			vrDisplay.submitFrame();
+
+		}
+
+	};
+
+	this.autoSubmitFrame = true;
+
+	// render
+
+	var cameraL = new THREE.PerspectiveCamera();
+	cameraL.layers.enable( 1 );
+
+	var cameraR = new THREE.PerspectiveCamera();
+	cameraR.layers.enable( 2 );
+
+	this.render = function( scene, camera, renderTarget, forceClear ) {
+
+		if ( vrDisplay && scope.isPresenting ) {
+
+			var autoUpdate = scene.autoUpdate;
+
+			if ( autoUpdate ) {
+
+				scene.updateMatrixWorld();
+				scene.autoUpdate = false;
+
+			}
+
+			var eyeParamsL = vrDisplay.getEyeParameters( 'left' );
+			var eyeParamsR = vrDisplay.getEyeParameters( 'right' );
+
+			eyeTranslationL.fromArray( eyeParamsL.offset );
+			eyeTranslationR.fromArray( eyeParamsR.offset );
+
+			if ( Array.isArray( scene ) ) {
+
+				console.warn( 'THREE.VREffect.render() no longer supports arrays. Use object.layers instead.' );
+				scene = scene[ 0 ];
+
+			}
+
+			// When rendering we don't care what the recommended size is, only what the actual size
+			// of the backbuffer is.
+			var size = renderer.getSize();
+			var layers = vrDisplay.getLayers();
+			var leftBounds;
+			var rightBounds;
+
+			if ( layers.length ) {
+
+				var layer = layers[ 0 ];
+
+				leftBounds = layer.leftBounds !== null && layer.leftBounds.length === 4 ? layer.leftBounds : defaultLeftBounds;
+				rightBounds = layer.rightBounds !== null && layer.rightBounds.length === 4 ? layer.rightBounds : defaultRightBounds;
+
+			} else {
+
+				leftBounds = defaultLeftBounds;
+				rightBounds = defaultRightBounds;
+
+			}
+
+			renderRectL = {
+				x: Math.round( size.width * leftBounds[ 0 ] ),
+				y: Math.round( size.height * leftBounds[ 1 ] ),
+				width: Math.round( size.width * leftBounds[ 2 ] ),
+				height: Math.round( size.height * leftBounds[ 3 ] )
+			};
+			renderRectR = {
+				x: Math.round( size.width * rightBounds[ 0 ] ),
+				y: Math.round( size.height * rightBounds[ 1 ] ),
+				width: Math.round( size.width * rightBounds[ 2 ] ),
+				height: Math.round( size.height * rightBounds[ 3 ] )
+			};
+
+			if ( renderTarget ) {
+
+				renderer.setRenderTarget( renderTarget );
+				renderTarget.scissorTest = true;
+
+			} else {
+
+				renderer.setRenderTarget( null );
+				renderer.setScissorTest( true );
+
+			}
+
+			if ( renderer.autoClear || forceClear ) renderer.clear();
+
+			if ( camera.parent === null ) camera.updateMatrixWorld();
+
+			camera.matrixWorld.decompose( cameraL.position, cameraL.quaternion, cameraL.scale );
+			camera.matrixWorld.decompose( cameraR.position, cameraR.quaternion, cameraR.scale );
+
+			var scale = this.scale;
+			cameraL.translateOnAxis( eyeTranslationL, scale );
+			cameraR.translateOnAxis( eyeTranslationR, scale );
+
+			if ( vrDisplay.getFrameData ) {
+
+				vrDisplay.depthNear = camera.near;
+				vrDisplay.depthFar = camera.far;
+
+				vrDisplay.getFrameData( frameData );
+
+				cameraL.projectionMatrix.elements = frameData.leftProjectionMatrix;
+				cameraR.projectionMatrix.elements = frameData.rightProjectionMatrix;
+
+			} else {
+
+				cameraL.projectionMatrix = fovToProjection( eyeParamsL.fieldOfView, true, camera.near, camera.far );
+				cameraR.projectionMatrix = fovToProjection( eyeParamsR.fieldOfView, true, camera.near, camera.far );
+
+			}
+
+			// render left eye
+			if ( renderTarget ) {
+
+				renderTarget.viewport.set( renderRectL.x, renderRectL.y, renderRectL.width, renderRectL.height );
+				renderTarget.scissor.set( renderRectL.x, renderRectL.y, renderRectL.width, renderRectL.height );
+
+			} else {
+
+				renderer.setViewport( renderRectL.x, renderRectL.y, renderRectL.width, renderRectL.height );
+				renderer.setScissor( renderRectL.x, renderRectL.y, renderRectL.width, renderRectL.height );
+
+			}
+			renderer.render( scene, cameraL, renderTarget, forceClear );
+
+			// render right eye
+			if ( renderTarget ) {
+
+				renderTarget.viewport.set( renderRectR.x, renderRectR.y, renderRectR.width, renderRectR.height );
+				renderTarget.scissor.set( renderRectR.x, renderRectR.y, renderRectR.width, renderRectR.height );
+
+			} else {
+
+				renderer.setViewport( renderRectR.x, renderRectR.y, renderRectR.width, renderRectR.height );
+				renderer.setScissor( renderRectR.x, renderRectR.y, renderRectR.width, renderRectR.height );
+
+			}
+			renderer.render( scene, cameraR, renderTarget, forceClear );
+
+			if ( renderTarget ) {
+
+				renderTarget.viewport.set( 0, 0, size.width, size.height );
+				renderTarget.scissor.set( 0, 0, size.width, size.height );
+				renderTarget.scissorTest = false;
+				renderer.setRenderTarget( null );
+
+			} else {
+
+				renderer.setViewport( 0, 0, size.width, size.height );
+				renderer.setScissorTest( false );
+
+			}
+
+			if ( autoUpdate ) {
+
+				scene.autoUpdate = true;
+
+			}
+
+			if ( scope.autoSubmitFrame ) {
+
+				scope.submitFrame();
+
+			}
+
+			return;
+
+		}
+
+		// Regular render mode if not HMD
+
+		renderer.render( scene, camera, renderTarget, forceClear );
+
+	};
+
+	this.dispose = function() {
+
+		window.removeEventListener( 'vrdisplaypresentchange', onVRDisplayPresentChange, false );
+
+	};
+
+	//
+
+	function fovToNDCScaleOffset( fov ) {
+
+		var pxscale = 2.0 / ( fov.leftTan + fov.rightTan );
+		var pxoffset = ( fov.leftTan - fov.rightTan ) * pxscale * 0.5;
+		var pyscale = 2.0 / ( fov.upTan + fov.downTan );
+		var pyoffset = ( fov.upTan - fov.downTan ) * pyscale * 0.5;
+		return { scale: [ pxscale, pyscale ], offset: [ pxoffset, pyoffset ] };
+
+	}
+
+	function fovPortToProjection( fov, rightHanded, zNear, zFar ) {
+
+		rightHanded = rightHanded === undefined ? true : rightHanded;
+		zNear = zNear === undefined ? 0.01 : zNear;
+		zFar = zFar === undefined ? 10000.0 : zFar;
+
+		var handednessScale = rightHanded ? - 1.0 : 1.0;
+
+		// start with an identity matrix
+		var mobj = new THREE.Matrix4();
+		var m = mobj.elements;
+
+		// and with scale/offset info for normalized device coords
+		var scaleAndOffset = fovToNDCScaleOffset( fov );
+
+		// X result, map clip edges to [-w,+w]
+		m[ 0 * 4 + 0 ] = scaleAndOffset.scale[ 0 ];
+		m[ 0 * 4 + 1 ] = 0.0;
+		m[ 0 * 4 + 2 ] = scaleAndOffset.offset[ 0 ] * handednessScale;
+		m[ 0 * 4 + 3 ] = 0.0;
+
+		// Y result, map clip edges to [-w,+w]
+		// Y offset is negated because this proj matrix transforms from world coords with Y=up,
+		// but the NDC scaling has Y=down (thanks D3D?)
+		m[ 1 * 4 + 0 ] = 0.0;
+		m[ 1 * 4 + 1 ] = scaleAndOffset.scale[ 1 ];
+		m[ 1 * 4 + 2 ] = - scaleAndOffset.offset[ 1 ] * handednessScale;
+		m[ 1 * 4 + 3 ] = 0.0;
+
+		// Z result (up to the app)
+		m[ 2 * 4 + 0 ] = 0.0;
+		m[ 2 * 4 + 1 ] = 0.0;
+		m[ 2 * 4 + 2 ] = zFar / ( zNear - zFar ) * - handednessScale;
+		m[ 2 * 4 + 3 ] = ( zFar * zNear ) / ( zNear - zFar );
+
+		// W result (= Z in)
+		m[ 3 * 4 + 0 ] = 0.0;
+		m[ 3 * 4 + 1 ] = 0.0;
+		m[ 3 * 4 + 2 ] = handednessScale;
+		m[ 3 * 4 + 3 ] = 0.0;
+
+		mobj.transpose();
+
+		return mobj;
+
+	}
+
+	function fovToProjection( fov, rightHanded, zNear, zFar ) {
+
+		var DEG2RAD = Math.PI / 180.0;
+
+		var fovPort = {
+			upTan: Math.tan( fov.upDegrees * DEG2RAD ),
+			downTan: Math.tan( fov.downDegrees * DEG2RAD ),
+			leftTan: Math.tan( fov.leftDegrees * DEG2RAD ),
+			rightTan: Math.tan( fov.rightDegrees * DEG2RAD )
+		};
+
+		return fovPortToProjection( fovPort, rightHanded, zNear, zFar );
+
+	}
+
+};
+
+// File:examples/js/controls/VRControls.js
+
+/**
+ * @author dmarcos / https://github.com/dmarcos
+ * @author mrdoob / http://mrdoob.com
+ */
+
+THREE.VRControls = function ( object, onError ) {
+
+	var scope = this;
+
+	var vrDisplay, vrDisplays;
+
+	var standingMatrix = new THREE.Matrix4();
+
+	var frameData = null;
+
+	if ( 'VRFrameData' in window ) {
+
+		frameData = new VRFrameData();
+
+	}
+
+	function gotVRDisplays( displays ) {
+
+		vrDisplays = displays;
+
+		if ( displays.length > 0 ) {
+
+			vrDisplay = displays[ 0 ];
+
+		} else {
+
+			if ( onError ) onError( 'VR input not available.' );
+
+		}
+
+	}
+
+	if ( navigator.getVRDisplays ) {
+
+		navigator.getVRDisplays().then( gotVRDisplays ).catch ( function () {
+
+			console.warn( 'THREE.VRControls: Unable to get VR Displays' );
+
+		} );
+
+	}
+
+	// the Rift SDK returns the position in meters
+	// this scale factor allows the user to define how meters
+	// are converted to scene units.
+
+	this.scale = 1;
+
+	// If true will use "standing space" coordinate system where y=0 is the
+	// floor and x=0, z=0 is the center of the room.
+	this.standing = false;
+
+	// Distance from the users eyes to the floor in meters. Used when
+	// standing=true but the VRDisplay doesn't provide stageParameters.
+	this.userHeight = 1.6;
+
+	this.getVRDisplay = function () {
+
+		return vrDisplay;
+
+	};
+
+	this.setVRDisplay = function ( value ) {
+
+		vrDisplay = value;
+
+	};
+
+	this.getVRDisplays = function () {
+
+		console.warn( 'THREE.VRControls: getVRDisplays() is being deprecated.' );
+		return vrDisplays;
+
+	};
+
+	this.getStandingMatrix = function () {
+
+		return standingMatrix;
+
+	};
+
+	this.update = function () {
+
+		if ( vrDisplay ) {
+
+			var pose;
+
+			if ( vrDisplay.getFrameData ) {
+
+				vrDisplay.getFrameData( frameData );
+				pose = frameData.pose;
+
+			} else if ( vrDisplay.getPose ) {
+
+				pose = vrDisplay.getPose();
+
+			}
+
+			if ( pose.orientation !== null ) {
+
+				object.quaternion.fromArray( pose.orientation );
+
+			} else {
+
+				object.quaternion.set( 0, 0, 0, 1 );
+
+			}
+
+			if ( pose.position !== null ) {
+
+				object.position.fromArray( pose.position );
+
+			} else {
+
+				object.position.set( 0, 0, 0 );
+
+			}
+
+			if ( this.standing ) {
+
+				if ( vrDisplay.stageParameters ) {
+
+					object.updateMatrix();
+
+					standingMatrix.fromArray( vrDisplay.stageParameters.sittingToStandingTransform );
+					object.applyMatrix( standingMatrix );
+
+				} else {
+
+					object.position.setY( object.position.y + this.userHeight );
+
+				}
+
+			}
+
+			object.position.multiplyScalar( scope.scale );
+
+		}
+
+	};
+
+	this.resetPose = function () {
+
+		if ( vrDisplay ) {
+
+			vrDisplay.resetPose();
+
+		}
+
+	};
+
+	this.resetSensor = function () {
+
+		console.warn( 'THREE.VRControls: .resetSensor() is now .resetPose().' );
+		this.resetPose();
+
+	};
+
+	this.zeroSensor = function () {
+
+		console.warn( 'THREE.VRControls: .zeroSensor() is now .resetPose().' );
+		this.resetPose();
+
+	};
+
+	this.dispose = function () {
+
+		vrDisplay = null;
+
+	};
+
+};
+
+// File:examples/js/vr/VRController.js
+
+/**
+ * @author mrdoob / http://mrdoob.com
+ * @author stewdio / http://stewd.io
+ */
+
+THREE.VRController = function ( id, index ) {
+
+	THREE.Object3D.call( this );
+
+	var scope = this;
+	var gamepad;
+
+	var axes = [ 0, 0 ];
+	var thumbpadIsPressed = false;
+	var triggerIsPressed = false;
+	var gripsArePressed = false;
+	var menuIsPressed = false;
+	if ( index === undefined ) index = 0;
+	function findGamepad( id ) {
+
+		// Iterate across gamepads as Vive Controllers may not be
+		// in position 0 and 1.
+
+		var gamepads = navigator.getGamepads();
+
+		for ( var i = 0, j = 0; i < 4; i ++ ) {
+
+			var gamepad = gamepads[ i ];
+
+			if ( gamepad && gamepad.id === id ) {
+
+				if ( j === index ) return gamepad;
+
+				j ++;
+
+			}
+
+		}
+
+	}
+
+	this.matrixAutoUpdate = false;
+	this.standingMatrix = new THREE.Matrix4();
+
+	this.getGamepad = function () {
+
+		return gamepad;
+
+	};
+
+	this.getButtonState = function ( button ) {
+
+		if ( button === 'thumbpad' ) return thumbpadIsPressed;
+		if ( button === 'trigger' ) return triggerIsPressed;
+		if ( button === 'grips' ) return gripsArePressed;
+		if ( button === 'menu' ) return menuIsPressed;
+
+	};
+
+	this.update = function () {
+
+		gamepad = findGamepad( id, index );
+
+		if ( gamepad !== undefined && gamepad.pose && gamepad.pose.position !== null && gamepad.pose.orientation !== null ) {
+
+			//  Position and orientation.
+
+			var pose = gamepad.pose;
+
+			scope.position.fromArray( pose.position );
+			scope.quaternion.fromArray( pose.orientation );
+			scope.matrix.compose( scope.position, scope.quaternion, scope.scale );
+			scope.matrix.multiplyMatrices( scope.standingMatrix, scope.matrix );
+			scope.matrix.decompose( scope.position, scope.quaternion, scope.scale );
+			scope.matrixWorldNeedsUpdate = true;
+			scope.visible = true;
+
+		} else {
+
+			scope.visible = false;
+
+		}
+
+		//  Thumbpad and Buttons.
+		if( gamepad ){
+
+			if ( gamepad.axes && (axes[ 0 ] !== gamepad.axes[ 0 ] || axes[ 1 ] !== gamepad.axes[ 1 ]) ) {
+
+				axes[ 0 ] = gamepad.axes[ 0 ]; //  X axis: -1 = Left, +1 = Right.
+				axes[ 1 ] = gamepad.axes[ 1 ]; //  Y axis: -1 = Bottom, +1 = Top.
+				scope.dispatchEvent( { type: 'axischanged', axes: axes } );
+
+			}
+
+			if ( gamepad.buttons[ 0 ] && thumbpadIsPressed !== gamepad.buttons[ 0 ].pressed ) {
+
+				thumbpadIsPressed = gamepad.buttons[ 0 ].pressed;
+				var event = new Event( thumbpadIsPressed ? 'thumbpaddown' : 'thumbpadup');
+				//window.dispatchEvent( { type: thumbpadIsPressed ? 'thumbpaddown' : 'thumbpadup' } );
+				window.dispatchEvent(event);
+			}
+
+			if ( gamepad.buttons[ 1 ] && triggerIsPressed !== gamepad.buttons[ 1 ].pressed ) {
+
+				triggerIsPressed = gamepad.buttons[ 1 ].pressed;
+				//scope.dispatchEvent( { type: triggerIsPressed ? 'triggerdown' : 'triggerup' } );
+				var event = new Event( triggerIsPressed ? 'triggerdown' : 'triggerup');
+				window.dispatchEvent(event);
+
+			}
+
+			if ( gamepad.buttons[ 2 ] && gripsArePressed !== gamepad.buttons[ 2 ].pressed ) {
+
+				gripsArePressed = gamepad.buttons[ 2 ].pressed;
+				//scope.dispatchEvent( { type: gripsArePressed ? 'gripsdown' : 'gripsup' } );
+				var event = new Event( gripsArePressed ? 'gripsdown' : 'gripsup');
+				window.dispatchEvent(event);
+
+			}
+
+			if ( gamepad.buttons[ 3 ] && menuIsPressed !== gamepad.buttons[ 3 ].pressed ) {
+
+				menuIsPressed = gamepad.buttons[ 3 ].pressed;
+				//scope.dispatchEvent( { type: menuIsPressed ? 'menudown' : 'menuup' } );
+				var event = new Event( menuIsPressed ? 'menudown' : 'menuup' );
+				window.dispatchEvent(event);
+
+			}
+
+	    }
+	};
+
+};
+
+THREE.VRController.prototype = Object.create( THREE.Object3D.prototype );
+THREE.VRController.prototype.constructor = THREE.VRController;
 
 
 module.exports = THREE;
