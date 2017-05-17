@@ -30,6 +30,7 @@ import { WebGLState } from './webgl/WebGLState';
 import { WebGLCapabilities } from './webgl/WebGLCapabilities';
 import { BufferGeometry } from '../core/BufferGeometry';
 import { WebGLExtensions } from './webgl/WebGLExtensions';
+import { WebGLDepthPrePass } from './webgl/WebGLDepthPrePass';
 import { Vector3 } from '../math/Vector3';
 // import { Sphere } from '../math/Sphere';
 import { WebGLClipping } from './webgl/WebGLClipping';
@@ -352,6 +353,9 @@ function WebGLRenderer( parameters ) {
 
 	this.shadowMap = shadowMap;
 
+	var depthPrepass = new WebGLDepthPrePass( this );
+
+	this.depthPrepass = depthPrepass;
 
 	// Plugins
 
@@ -1235,6 +1239,8 @@ function WebGLRenderer( parameters ) {
 
 		var opaqueObjects = currentRenderList.opaque;
 		var transparentObjects = currentRenderList.transparent;
+
+		depthPrepass.render( opaqueObjects, camera );
 
 		if ( scene.overrideMaterial ) {
 

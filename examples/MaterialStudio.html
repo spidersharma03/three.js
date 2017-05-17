@@ -344,6 +344,7 @@
 				scene = new THREE.Scene();
 
 				renderer = new THREE.WebGLRenderer();
+				renderer.depthPrepass.enable();
 				// renderer.sortObjects = false;
         renderer.gammaInput = true;
 				renderer.gammaOutput = true;
