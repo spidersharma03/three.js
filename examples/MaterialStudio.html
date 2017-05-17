@@ -100,11 +100,13 @@
 				sceneMaterials.push( material );
 
 				let y = 1;
-				let n = 5;
+				let n = 2;
 				for( let i=0; i< n; i++ ) {
 					let mesh = addShape( material, 0, y, 0, -Math.PI/2, 0, 0, 1 );
 					mesh.name = "Test" + i;
 					mesh.material = floorMaterial.clone();
+					// mesh.material.depthWrite = false;
+					mesh.material.side = THREE.DoubleSide;
 					mesh.material.extensions = { shaderTextureLOD: true };
 					y += 0.5
 				}
@@ -344,7 +346,13 @@
 				scene = new THREE.Scene();
 
 				renderer = new THREE.WebGLRenderer();
-				renderer.depthPrepass.enable();
+
+				if ( !renderer.extensions.get( 'WEBGL_depth_texture' ) ) {
+					supportsExtension = false;
+					document.querySelector( '#error' ).style.display = 'block';
+					return;
+				}
+
 				// renderer.sortObjects = false;
         renderer.gammaInput = true;
 				renderer.gammaOutput = true;
@@ -354,6 +362,7 @@
         renderer.toneMappingExposure = 5;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setClearColor(0xaaaaaa);
 				document.body.appendChild( renderer.domElement );
 				document.body.appendChild( profilerDiv );
 
@@ -382,10 +391,32 @@
         setupRoom();
 				createTestObject();
 
+				target = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight );
+				target.texture.format = THREE.RGBFormat;
+				target.texture.minFilter = THREE.NearestFilter;
+				target.texture.magFilter = THREE.NearestFilter;
+				target.texture.generateMipmaps = false;
+				target.stencilBuffer = false;
+				target.depthBuffer = true;
+				target.depthTexture = new THREE.DepthTexture();
+				target.depthTexture.type = THREE.UnsignedShortType;
+				basicMaterial = new THREE.MeshDepthMaterial();
+
+				composer.renderTarget1.depthTexture = target.depthTexture;
+				composer.renderTarget2.depthTexture = target.depthTexture;
+
+
 				window.addEventListener( 'resize', onWindowResize, false );
 
 				cubeCamera = new THREE.CubeCamera( 1, 100000, 256 );
 				scene.add( cubeCamera );
+
+				sceneOrtho = new THREE.Scene();
+				cameraOrtho = new THREE.OrthographicCamera(-1,1,1,-1,-0.01,100);
+				//sceneOrtho.add(cameraOrtho);
+				var geometry = new THREE.PlaneGeometry(2,2);
+			  planeMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+				sceneOrtho.add(planeMesh);
 			}
 
 			function onWindowResize() {
@@ -417,14 +448,29 @@
 
 				profiler.start();
 
-				composer.render();
+				renderer.autoClear = false;
+				//
+				scene.overrideMaterial = basicMaterial;
+				basicMaterial.colorWrite = false;
+				renderer.render( scene, camera, target, true );
+				scene.overrideMaterial = null;
+
+				renderer.autoClearDepth = false;
+				// renderer.depthPrepass.enable();
+				renderer.render( scene, camera, target, true );
+				// renderer.depthPrepass.disable();
+				renderer.autoClearDepth = true;
+				// composer.render();
+
+				planeMesh.material.map = target.texture;
+				renderer.render( sceneOrtho, cameraOrtho, null, true);
 
 				profiler.end();
 
 				if( profiler.available() ) {
 					profilerDiv.innerHTML = Number(profiler.value()).toFixed(2) + " ms";
 				}
-				if( reflectionUpdateCount < 3 ) {
+				if( false ) {
 					// renderer.autoClear = false;
 					rectLightHelper1.visible = false;
 					rectLightHelper2.visible = false;
