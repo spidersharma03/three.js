@@ -62,7 +62,7 @@
 
 			var container, stats;
 			var composer, copyPass, ssaaRenderPass;
-	
+
 			var params = {
 				envMap: "HDR",
 				projection: 'normal',
@@ -101,7 +101,7 @@
 				renderer.toneMapping = THREE.ReinhardToneMapping;
   				renderer.physicallyCorrectLights = true;
 				renderer.setClearColor( new THREE.Color( 0xffffff ) );
-				
+
 				standardMaterial = new THREE.MeshPhysicalMaterial( {
 					map: null,
 					bumpScale: - 0.05,
@@ -164,7 +164,7 @@
 				textureLoader.load( "./textures/roughness_map.jpg", function( map ) {
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
-					map.anisotropy = 4;
+					// map.anisotropy = 4;
 					map.repeat.set( 9, 2 );
 					//standardMaterial.map = map;
 					//standardMaterial.roughnessMap = map;

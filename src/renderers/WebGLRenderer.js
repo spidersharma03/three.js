@@ -2796,6 +2796,14 @@ function WebGLRenderer( parameters ) {
 
 		var framebuffer = properties.get( renderTarget ).__webglFramebuffer;
 
+		var framebuffer = properties.get( renderTarget ).__webglFramebuffer;
+
+    var isCube = ( renderTarget && renderTarget.isWebGLRenderTargetCube );
+
+    if ( isCube ) {
+      framebuffer = framebuffer[renderTarget.activeCubeFace];
+    }
+		
 		if ( framebuffer ) {
 
 			var restore = false;

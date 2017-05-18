@@ -43,7 +43,7 @@ vec2 MipLevelInfo( vec3 vec, vec3 normal, float roughnessLevel, float roughness 
 
 vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel) {
 	mipLevel = roughnessLevel > cubeUV_maxLods2 - 3.0 ? 0.0 : mipLevel;
-	float a = 16.0 * cubeUV_rcpTextureSize;
+	float a = 8.0 * cubeUV_rcpTextureSize;
 
 	vec2 exp2_packed = exp2( vec2( roughnessLevel, mipLevel ) );
 	vec2 rcp_exp2_packed = vec2( 1.0 ) / exp2_packed;

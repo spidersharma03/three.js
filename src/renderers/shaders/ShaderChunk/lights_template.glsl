@@ -131,7 +131,7 @@ IncidentLight directLight;
 
 	#endif
 
-	#if defined( USE_ENVMAP ) && defined( PHYSICAL ) && defined( ENVMAP_TYPE_CUBE_UV )
+	#if defined( USE_ENVMAP ) && defined( PHYSICAL ) && ( defined( ENVMAP_TYPE_CUBE_UV ) || defined( ENVMAP_TYPE_CUBE ) )
 
 		// TODO, replace 8 with the real maxMIPLevel
 	 	irradiance += getLightProbeIndirectIrradiance( /*lightProbe,*/ geometry, 8 );
