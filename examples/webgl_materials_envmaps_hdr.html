@@ -176,7 +176,7 @@
 					// map.repeat.set( 9, 2 );
 					// standardMaterial.map = map;
 					// standardMaterial.metalnessMap = map;
-					standardMaterial.roughnessMap = map;
+					// standardMaterial.roughnessMap = map;
 					// standardMaterial.bumpMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
@@ -210,10 +210,11 @@
 					var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
 					pmremGenerator.update( renderer );
 
-					var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
-					pmremCubeUVPacker.update( renderer );
+					// var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+					// pmremCubeUVPacker.update( renderer );
 
-					hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+					// hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+					hdrCubeRenderTarget = pmremGenerator.readCubeTextureWithLOD(renderer);
 
 				} );
 
@@ -226,10 +227,11 @@
 					var pmremGenerator = new THREE.PMREMGenerator( ldrCubeMap );
 					pmremGenerator.update( renderer );
 
-					var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
-					pmremCubeUVPacker.update( renderer );
+					// var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+					// pmremCubeUVPacker.update( renderer );
 
-					ldrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+					// ldrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+					ldrCubeRenderTarget = pmremGenerator.readCubeTextureWithLOD(renderer);
 
 				} );
 
@@ -270,10 +272,15 @@
 				ssaaRenderPass.clear = true;
 				ssaaRenderPass.sampleLevel = 2;
 				ssaaRenderPass.unbiased = false;
-				composer.addPass( ssaaRenderPass );
+				// composer.addPass( ssaaRenderPass );
+				effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
 				copyPass = new THREE.ShaderPass( THREE.CopyShader );
-				copyPass.renderToScreen = true;
-				composer.addPass( copyPass );
+				renderPass = new THREE.RenderPass( scene, camera);
+				composer.addPass( renderPass );
+				effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth ), 1 / (window.innerHeight ));
+				effectFXAA.renderToScreen = true;
+				composer.addPass( effectFXAA );
+				// composer.addPass( copyPass );
 
 				renderer.gammaInput = true;
 				renderer.gammaOutput = true;
@@ -337,8 +344,8 @@
 					switch( params.envMap ) {
 
 						case 'None': newEnvMap = null; break;
-						case 'LDR': newEnvMap = ldrCubeRenderTarget ? ldrCubeRenderTarget.texture : null; break;
-						case 'HDR': newEnvMap = hdrCubeRenderTarget ? hdrCubeRenderTarget.texture : null; break;
+						case 'LDR': newEnvMap = ldrCubeRenderTarget ? ldrCubeRenderTarget : null; break;
+						case 'HDR': newEnvMap = hdrCubeRenderTarget ? hdrCubeRenderTarget : null; break;
 						case 'RGBM16': newEnvMap = rgbmCubeRenderTarget ? rgbmCubeRenderTarget.texture : null; break;
 
 					}
@@ -348,7 +355,8 @@
 						standardMaterial.envMap = newEnvMap;
 						standardMaterial.needsUpdate = true;
 						floorMaterial.emissive = new THREE.Color( 1, 1, 1 );
-						floorMaterial.emissiveMap = newEnvMap;
+						if( params.envMap === 'RGBM16')
+							floorMaterial.emissiveMap = newEnvMap;
 						floorMaterial.needsUpdate = true;
 
 					}
@@ -383,7 +391,7 @@
 				for ( var i = 0, l = objects.length; i < l; i ++ ) {
 
 					var object = objects[ i ];
-					object.rotation.y += 0.005;
+					// object.rotation.y += 0.005;
 
 				}
 

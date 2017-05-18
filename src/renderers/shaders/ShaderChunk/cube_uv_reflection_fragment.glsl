@@ -19,11 +19,9 @@ int getFaceFromDirection(vec3 direction) {
 	}
 	return face;
 }
-#define cubeUV_maxLods1  (log2(cubeUV_textureSize*0.25) - 1.0)
 #define cubeUV_rangeClamp (exp2((6.0 - 1.0) * 2.0))
 
 vec2 MipLevelInfo( vec3 vec, vec3 normal, float roughnessLevel, float roughness ) {
-	float scale = exp2(cubeUV_maxLods1 - roughnessLevel);
 	//float dxRoughness = dFdx(roughness);
 	//float dyRoughness = dFdy(roughness);
 	vec3 dx = dFdx( vec ) * 128.0;
@@ -38,24 +36,20 @@ vec2 MipLevelInfo( vec3 vec, vec3 normal, float roughnessLevel, float roughness 
 	return vec2(floor(mipLevel), fract(mipLevel));
 }
 
-#define cubeUV_maxLods2 (log2(cubeUV_textureSize*0.25) - 2.0)
 #define cubeUV_rcpTextureSize (1.0 / cubeUV_textureSize)
 
-vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel) {
-	mipLevel = roughnessLevel > cubeUV_maxLods2 - 3.0 ? 0.0 : mipLevel;
-	float a = 8.0 * cubeUV_rcpTextureSize;
+vec2 getCubeUV(vec3 direction, float roughnessLevel) {
+	float a = 16.0 * cubeUV_rcpTextureSize;
 
-	vec2 exp2_packed = exp2( vec2( roughnessLevel, mipLevel ) );
+	vec2 exp2_packed = exp2( vec2( roughnessLevel, 0.0 ) );
 	vec2 rcp_exp2_packed = vec2( 1.0 ) / exp2_packed;
 	// float powScale = exp2(roughnessLevel + mipLevel);
 	float powScale = exp2_packed.x * exp2_packed.y;
 	// float scale =  1.0 / exp2(roughnessLevel + 2.0 + mipLevel);
 	float scale = rcp_exp2_packed.x * rcp_exp2_packed.y * 0.25;
 	// float mipOffset = 0.75*(1.0 - 1.0/exp2(mipLevel))/exp2(roughnessLevel);
-	float mipOffset = 0.75*(1.0 - rcp_exp2_packed.y) * rcp_exp2_packed.x;
 
-	bool bRes = mipLevel == 0.0;
-	scale =  bRes && (scale < a) ? a : scale;
+	scale = (scale < a) ? a : scale;
 
 	vec3 r;
 	vec2 offset;
@@ -65,33 +59,33 @@ vec2 getCubeUV(vec3 direction, float roughnessLevel, float mipLevel) {
 
 	if( face == 0) {
 		r = vec3(direction.x, -direction.z, direction.y);
-		offset = vec2(0.0+mipOffset,0.75 * rcpPowScale);
-		offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;
+		offset = vec2(0.0,0.75 * rcpPowScale);
+		offset.y = (offset.y < 2.0*a) ?  a : offset.y;
 	}
 	else if( face == 1) {
 		r = vec3(direction.y, direction.x, direction.z);
-		offset = vec2(scale+mipOffset, 0.75 * rcpPowScale);
-		offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;
+		offset = vec2(scale, 0.75 * rcpPowScale);
+		offset.y = (offset.y < 2.0*a) ?  a : offset.y;
 	}
 	else if( face == 2) {
 		r = vec3(direction.z, direction.x, direction.y);
-		offset = vec2(2.0*scale+mipOffset, 0.75 * rcpPowScale);
-		offset.y = bRes && (offset.y < 2.0*a) ?  a : offset.y;
+		offset = vec2(2.0*scale, 0.75 * rcpPowScale);
+		offset.y = (offset.y < 2.0*a) ?  a : offset.y;
 	}
 	else if( face == 3) {
 		r = vec3(direction.x, direction.z, direction.y);
-		offset = vec2(0.0+mipOffset,0.5 * rcpPowScale);
-		offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;
+		offset = vec2(0.0,0.5 * rcpPowScale);
+		offset.y = (offset.y < 2.0*a) ?  0.0 : offset.y;
 	}
 	else if( face == 4) {
 		r = vec3(direction.y, direction.x, -direction.z);
-		offset = vec2(scale+mipOffset, 0.5 * rcpPowScale);
-		offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;
+		offset = vec2(scale, 0.5 * rcpPowScale);
+		offset.y = (offset.y < 2.0*a) ?  0.0 : offset.y;
 	}
 	else {
 		r = vec3(direction.z, -direction.x, direction.y);
-		offset = vec2(2.0*scale+mipOffset, 0.5 * rcpPowScale);
-		offset.y = bRes && (offset.y < 2.0*a) ?  0.0 : offset.y;
+		offset = vec2(2.0*scale, 0.5 * rcpPowScale);
+		offset.y = (offset.y < 2.0*a) ?  0.0 : offset.y;
 	}
 	r = normalize(r);
 	float texelOffset = 0.5 * cubeUV_rcpTextureSize;
@@ -118,10 +112,10 @@ vec4 textureCubeUV(vec3 reflectedDirection, vec3 normal, float roughness ) {
 	r1 += mipInfo.x;
 	r2 = r1 + 1.0;
 	// Tri linear interpolation.
-	vec2 uv_10 = getCubeUV(reflectedDirection, r1, level0);
+	vec2 uv_10 = getCubeUV(reflectedDirection, r1);
 	vec4 color10 = envMapTexelToLinear(texture2D(envMap, uv_10));
 
-	vec2 uv_20 = getCubeUV(reflectedDirection, r2, level0);
+	vec2 uv_20 = getCubeUV(reflectedDirection, r2);
 	vec4 color20 = envMapTexelToLinear(texture2D(envMap, uv_20));
 	//s = s * smoothstep( 0.0, 1.0, s);
 	vec4 result = mix(color10, color20, s);
