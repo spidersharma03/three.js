@@ -106,8 +106,8 @@
 				standardMaterial = new THREE.MeshPhysicalMaterial( {
 					map: null,
 					bumpScale: - 0.05,
-					color: 0xff4444,
-					metalness: 0.0,
+					color: 0xffffff,
+					metalness: 1.0,
 					roughness: 0.0,
 					reflectivity: 0.5,
 					shading: THREE.SmoothShading,
@@ -115,7 +115,7 @@
 					premultipliedAlpha: true,
 					side: THREE.DoubleSide
 				} );
-
+				standardMaterial.extensions = { derivatives: true};
 				var geometry = new THREE.SphereGeometry( 25.0, 24, 24 );
 				var torusMesh1 = new THREE.Mesh( geometry, standardMaterial );
 				torusMesh1.position.x = 0.0;

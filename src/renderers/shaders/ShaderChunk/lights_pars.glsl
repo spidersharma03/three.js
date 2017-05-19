@@ -225,6 +225,25 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 	}
 
+#if !defined( ENVMAP_TYPE_CUBE_UV )
+
+	#define cubeUV_textureSize (1024.0)
+	#define cubeUV_rangeClamp (exp2((6.0 - 1.0) * 2.0))
+	#define cubeUV_maxLods3 (log2(cubeUV_textureSize*0.25) - 3.0)
+
+	vec2 MipLevelInfo( vec3 vec ) {
+		vec3 dx = dFdx( vec ) * 128.0;
+		vec3 dy = dFdy( vec ) * 128.0;
+		float d = max( dot( dx, dx ), dot( dy, dy ) );
+		d = pow( d, 0.5);
+		// Clamp the value to the max mip level counts. hard coded to 6 mips
+		d = clamp(d, 1.0, cubeUV_rangeClamp);
+		float mipLevel = 0.5 * log2(d);
+		return vec2(floor(mipLevel), fract(mipLevel));
+	}
+
+#endif
+
 	vec3 getLightProbeIndirectRadiance( /*const in SpecularLightProbe specularLightProbe,*/ const in GeometricContext geometry, const in float blinnShininessExponent, const in int maxMIPLevel ) {
 
 		#ifdef ENVMAP_MODE_REFLECTION
@@ -247,7 +266,17 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 				float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );
 
-				vec4 envMapColor = textureCubeLodEXT( envMap, vec3(-queryReflectVec.x, queryReflectVec.y, queryReflectVec.z), specularMIPLevel );
+				queryReflectVec.x *= -1.0;
+
+				vec2 mipInfo = MipLevelInfo(queryReflectVec);
+				float r1 = specularMIPLevel + mipInfo.x;
+				float r2 = r1 + 1.0;
+				r1 = min( r1, cubeUV_maxLods3);
+				r2 = min( r2, cubeUV_maxLods3);
+
+				vec4 envMapColor1 = textureCubeLodEXT( envMap, queryReflectVec, r1 );
+				vec4 envMapColor2 = textureCubeLodEXT( envMap, queryReflectVec, r2 );
+				vec4 envMapColor = mix( envMapColor1, envMapColor2, mipInfo.y );
 
 			#else
 
@@ -262,7 +291,8 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
 			vec3 worldNormal = inverseTransformDirection( geometry.normal, viewMatrix );
 			vec3 queryReflectVec = vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
-			vec4 envMapColor = textureCubeUV(queryReflectVec, worldNormal, BlinnExponentToGGXRoughness(blinnShininessExponent));
+			float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );
+			vec4 envMapColor = textureCubeUV(queryReflectVec, worldNormal, specularMIPLevel);
 
 		#elif defined( ENVMAP_TYPE_EQUIREC )
 

@@ -21,16 +21,12 @@ int getFaceFromDirection(vec3 direction) {
 }
 #define cubeUV_rangeClamp (exp2((6.0 - 1.0) * 2.0))
 
-vec2 MipLevelInfo( vec3 vec, vec3 normal, float roughnessLevel, float roughness ) {
-	//float dxRoughness = dFdx(roughness);
-	//float dyRoughness = dFdy(roughness);
+vec2 MipLevelInfo( vec3 vec ) {
 	vec3 dx = dFdx( vec ) * 128.0;
 	vec3 dy = dFdy( vec ) * 128.0;
 	float d = max( dot( dx, dx ), dot( dy, dy ) );
-	// Clamp the value to the max mip level counts. hard coded to 6 mips
 	d = pow( d, 0.5);
-	//const float c = 10.0;
-	//d = 1.0/(1.0 + exp(-c*d));
+	// Clamp the value to the max mip level counts. hard coded to 6 mips
 	d = clamp(d, 1.0, cubeUV_rangeClamp);
 	float mipLevel = 0.5 * log2(d);
 	return vec2(floor(mipLevel), fract(mipLevel));
@@ -86,11 +82,11 @@ vec2 getCubeUV(vec3 direction, float roughnessLevel) {
 #define cubeUV_maxLods3 (log2(cubeUV_textureSize*0.25) - 3.0)
 
 vec4 textureCubeUV(vec3 reflectedDirection, vec3 normal, float roughness ) {
-	float roughnessVal = roughness * cubeUV_maxLods3;
-	float r1 = floor(roughnessVal);
+	//float roughnessVal = roughness * cubeUV_maxLods3;
+	float r1 = floor(roughness);
 	float r2 = r1 + 1.0;
-	float t = fract(roughnessVal);
-	vec2 mipInfo = MipLevelInfo(reflectedDirection, normal, r1, roughness);
+	float t = fract(roughness);
+	vec2 mipInfo = MipLevelInfo(reflectedDirection);
 	float s = mipInfo.y;
 
 	// round to nearest mipmap if we are not interpolating.
