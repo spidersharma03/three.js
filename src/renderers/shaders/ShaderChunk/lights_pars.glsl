@@ -185,7 +185,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 			#ifdef TEXTURE_LOD_EXT
 
-				vec4 envMapColor = textureCubeLodEXT( envMap, queryVec, float( 5 ) );
+				vec4 envMapColor = textureCubeLodEXT( envMap, vec3(-queryVec.x, queryVec.y, queryVec.z), float( 5 ) );
 
 			#else
 
@@ -239,17 +239,19 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 		reflectVec = inverseTransformDirection( reflectVec, viewMatrix );
 
-		float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );
-
 		#ifdef ENVMAP_TYPE_CUBE
 
 			vec3 queryReflectVec = vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
 
 			#ifdef TEXTURE_LOD_EXT
 
+				float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );
+
 				vec4 envMapColor = textureCubeLodEXT( envMap, vec3(-queryReflectVec.x, queryReflectVec.y, queryReflectVec.z), specularMIPLevel );
 
 			#else
+
+				float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, maxMIPLevel );
 
 				vec4 envMapColor = textureCube( envMap, queryReflectVec, specularMIPLevel );
 

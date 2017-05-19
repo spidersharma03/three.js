@@ -88,9 +88,10 @@
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0.0, 40, 40 * 3.5 );
+				camera.position.set( 0.0, 0, 40 * 3.5 );
 
 				scene = new THREE.Scene();
+				scene.add(camera);
 
 				renderer = new THREE.WebGLRenderer( {
 					antialias: false,
@@ -106,7 +107,7 @@
 					map: null,
 					bumpScale: - 0.05,
 					color: 0xff4444,
-					metalness: 1.0,
+					metalness: 0.0,
 					roughness: 0.0,
 					reflectivity: 0.5,
 					shading: THREE.SmoothShading,
@@ -289,8 +290,9 @@
 				container.appendChild( stats.dom );
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				// controls.enableZoom = false;
 				// controls.target.set( 0, 0, 0 );
-				controls.update();
+				// controls.update();
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
@@ -324,7 +326,7 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-
+				controls.update();
 				stats.begin();
 				render();
 				stats.end();

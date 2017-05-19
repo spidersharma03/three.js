@@ -38,7 +38,7 @@ THREE.PMREMGenerator = function( sourceTexture, samplesPerLevel, resolution ) {
 
 	// how many LODs fit in the given CubeUV Texture.
 	this.numLods = Math.log( size ) / Math.log( 2 ) - 2;  // IE11 doesn't support Math.log2
-	var minLodSize = 16;
+	var minLodSize = 8;
 
 	for ( var i = 0; i < this.numLods; i ++ ) {
 
@@ -61,25 +61,6 @@ THREE.PMREMGenerator = function( sourceTexture, samplesPerLevel, resolution ) {
 
 	this.shader.uniforms[ 'envMap' ].value = this.sourceTexture;
 	this.shader.envMap = this.sourceTexture;
-
-	this.cubeTextureLod = new THREE.CubeTexture();
-  var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
-  for(var i = 0; i < 6; i ++) {
-    var size = this.resolution;
-    var dataTexture = new THREE.DataTexture();
-    this.cubeTextureLod.image[i] = dataTexture;
-    for( var j = 0; j < numMipLevels; j++ ) {
-      var buffer = new Uint8Array(4 * size * size);
-      dataTexture.mipmaps[j] = { data:buffer, width:size, height:size };
-      size /= 2;
-    }
-  }
-  this.cubeTextureLod.format = this.sourceTexture.format;
-  this.cubeTextureLod.minFilter = THREE.LinearMipMapLinearFilter;
-  this.cubeTextureLod.magFilter = THREE.LinearFilter;
-  this.cubeTextureLod.generateMipmaps = false;
-  this.cubeTextureLod.anisotropy = this.sourceTexture.anisotropy;
-  this.cubeTextureLod.encoding = this.sourceTexture.encoding;
 };
 
 THREE.PMREMGenerator.prototype = {
@@ -88,29 +69,60 @@ THREE.PMREMGenerator.prototype = {
 
 	readCubeTextureWithLOD ( renderer ) {
 
-    for(var i = 0; i < 6; i ++) {
+		if( renderer.extensions.get('EXT_shader_texture_lod') ) {
 
-      var dataTexture = this.cubeTextureLod.image[i];
-      var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
-      var size = this.cubeLods[0].width;
+			if( !this.cubeTextureLod ) {
 
-			for(var j = 0; j < numMipLevels; j ++) {
+				this.cubeTextureLod = new THREE.CubeTexture();
+			  var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
 
-        var renderTarget = j < this.numLods ? this.cubeLods[j] : this.cubeLods[this.numLods-1];
-        renderTarget.activeCubeFace = i;
-        renderer.setRenderTarget( renderTarget );
+			  for(var i = 0; i < 6; i ++) {
+			    var size = this.resolution;
+			    var dataTexture = new THREE.DataTexture();
+			    this.cubeTextureLod.image[i] = dataTexture;
+			    for( var j = 0; j < numMipLevels; j++ ) {
+			      var buffer = new Uint8Array(4 * size * size);
+			      dataTexture.mipmaps[j] = { data:buffer, width:size, height:size };
+			      size /= 2;
+			    }
+			  }
 
-				var buffer = dataTexture.mipmaps[j].data;
+				this.cubeTextureLod.format = this.sourceTexture.format;
+			  this.cubeTextureLod.minFilter = THREE.LinearMipMapLinearFilter;
+			  this.cubeTextureLod.magFilter = THREE.LinearFilter;
+			  this.cubeTextureLod.generateMipmaps = false;
+			  this.cubeTextureLod.anisotropy = this.sourceTexture.anisotropy;
+			  this.cubeTextureLod.encoding = this.sourceTexture.encoding;
 
-				if(j < this.numLods) {
-          renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
-        }
+		  }
 
-				size /= 2;
-      }
-    }
-    this.cubeTextureLod.needsUpdate = true;
-    return this.cubeTextureLod;
+			for(var i = 0; i < 6; i ++) {
+
+	      var dataTexture = this.cubeTextureLod.image[i];
+	      var numMipLevels = Math.log2(this.cubeLods[0].width) + 1;
+	      var size = this.cubeLods[0].width;
+
+				for(var j = 0; j < numMipLevels; j ++) {
+
+	        var renderTarget = j < this.numLods ? this.cubeLods[j] : this.cubeLods[this.numLods-1];
+	        renderTarget.activeCubeFace = i;
+	        renderer.setRenderTarget( renderTarget );
+
+					var buffer = dataTexture.mipmaps[j].data;
+
+					if(j < this.numLods) {
+	          renderer.readRenderTargetPixels( renderTarget, 0, 0, renderTarget.width, renderTarget.height, buffer);
+	        }
+
+					size /= 2;
+	      }
+	    }
+	    this.cubeTextureLod.needsUpdate = true;
+	    return this.cubeTextureLod;
+
+		} else {
+			console.warn("PMREMGenerator::Texture LOD Support Not Available.");
+		}
   },
 	/*
 	 * Prashant Sharma / spidersharma03: More thought and work is needed here.
