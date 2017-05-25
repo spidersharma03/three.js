@@ -166,7 +166,7 @@
 					map.wrapS = THREE.RepeatWrapping;
 					map.wrapT = THREE.RepeatWrapping;
 					// map.anisotropy = 4;
-					map.repeat.set( 9, 2 );
+					map.repeat.set( 1, 2 );
 					//standardMaterial.map = map;
 					//standardMaterial.roughnessMap = map;
 					//standardMaterial.bumpMap = map;
@@ -177,7 +177,7 @@
 					// map.repeat.set( 9, 2 );
 					// standardMaterial.map = map;
 					// standardMaterial.metalnessMap = map;
-					// standardMaterial.roughnessMap = map;
+					standardMaterial.roughnessMap = map;
 					// standardMaterial.bumpMap = map;
 					standardMaterial.needsUpdate = true;
 				} );
