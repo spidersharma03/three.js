@@ -2411,7 +2411,7 @@ function WebGLRenderer( parameters ) {
 				// (a) intensity controls irradiance of entire light
 				uniforms.color
 					.copy( color )
-					.multiplyScalar( intensity / ( light.width * light.height ) );
+					.multiplyScalar( intensity );
 
 				// (b) intensity controls the radiance per light area
 				// uniforms.color.copy( color ).multiplyScalar( intensity );

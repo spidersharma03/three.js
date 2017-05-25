@@ -88,7 +88,10 @@ IncidentLight directLight;
 	for ( int i = 0; i < NUM_RECT_AREA_LIGHTS; i ++ ) {
 
 		rectAreaLight = rectAreaLights[ i ];
-		RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight, rectAreaTexture[ i ], rectAreaLight.bTextured );
+
+    if( dot( rectAreaLight.color, rectAreaLight.color) > 1e-02 )
+
+      RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight, rectAreaTexture[ i ], rectAreaLight.bTextured );
 
 	}
 

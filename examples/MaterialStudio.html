@@ -15,6 +15,7 @@
 	<body>
 
 		<script src="../build/three.js"></script>
+		<script src="../src/renderers/webgl/WebGLProfiler.js"></script>
     <script src="js/lights/RectAreaLightUniformsLib.js"></script>
     <script src="js/controls/OrbitControls.js"></script>
 		<script src="js/pmrem/PMREMGenerator.js"></script>
@@ -29,6 +30,7 @@
 		<script src="js/shaders/ConvolutionShader.js"></script>
 		<script src="js/shaders/LuminosityHighPassShader.js"></script>
 		<script src="js/postprocessing/UnrealBloomPass.js"></script>
+		<script src='js/libs/dat.gui.min.js'></script>
 
 		<script>
 
@@ -41,6 +43,11 @@
 
       var roomWidth = 40, roomLength = 40, roomHeight = 28;
 			var wallTileHeight = roomHeight;
+
+			var luminousFluxIndoor1 = 0; // Total Power
+			var luminousFluxIndoor2 = 10; // Total Power
+			var luminousFluxOutDoor = 0; // Total Power
+			var rectLight1, rectLight2, rectLight3;
 
 			var manager = new THREE.LoadingManager();
 			manager.onStart = function ( url, itemsLoaded, itemsTotal ) {
@@ -268,27 +275,28 @@
       }
 
       function setupRoom() {
-        rectLight = new THREE.RectAreaLight( 0xffffff, 100, 10, 10 );
-				rectLight.position.set( 15, 10, 10 );
-				rectLight.lookAt( new THREE.Vector3(0, 5, 0) );
-				rectLightHelper1 = new THREE.RectAreaLightHelper( rectLight );
-				rectLight.add( rectLightHelper1 );
-        scene.add( rectLight );
+        rectLight1 = new THREE.RectAreaLight( 0xffffff, luminousFluxIndoor1, 10, 10 );
+				rectLight1.position.set( 0, 25, -10 );
+				rectLight1.lookAt( new THREE.Vector3(0, 0, -10) );
+				rectLightHelper1 = new THREE.RectAreaLightHelper( rectLight1 );
+				rectLight1.add( rectLightHelper1 );
+        scene.add( rectLight1 );
 
-				rectLight = new THREE.RectAreaLight( 0xffffff, 100, 10, 10 );
-				rectLight.position.set( -15, 10, 10 );
-				rectLight.lookAt( new THREE.Vector3(0, 5, 0) );
-				rectLightHelper2 = new THREE.RectAreaLightHelper( rectLight );
-				rectLight.add( rectLightHelper2 );
-        scene.add( rectLight );
+				rectLight2 = new THREE.RectAreaLight( 0xffffff, luminousFluxIndoor2, 10, 10 );
+				rectLight2.position.set( 0, 25, 10 );
+				rectLight2.lookAt( new THREE.Vector3(0, 0, 10) );
+				rectLightHelper2 = new THREE.RectAreaLightHelper( rectLight2 );
+				rectLight2.add( rectLightHelper2 );
+        scene.add( rectLight2 );
 
-				rectLight = new THREE.RectAreaLight( 0xffaa22, 700, 20, 20 );
-				rectLight.position.set( 0, 10, 20 );
-				rectLight.lookAt( new THREE.Vector3(0, 10, 0) );
-				rectLightHelper3 = new THREE.RectAreaLightHelper( rectLight );
-				rectLight.add( rectLightHelper3 );
-        scene.add( rectLight );
+				rectLight3 = new THREE.RectAreaLight( 0xffaa22, luminousFluxOutDoor, 20, 20 );
+				rectLight3.position.set( 0, 10, 20 );
+				rectLight3.lookAt( new THREE.Vector3(0, 10, 0) );
+				rectLightHelper3 = new THREE.RectAreaLightHelper( rectLight3 );
+				rectLight3.add( rectLightHelper3 );
+        scene.add( rectLight3 );
 
+				renderer.toneMappingWhitePoint = 0.5 * (luminousFluxIndoor1 + luminousFluxIndoor2 + luminousFluxOutDoor );
 				// load a resource
 				loader.load(
 					// resource URL
@@ -296,12 +304,12 @@
 					// Function when resource is loaded
 					function ( texture ) {
 						texture.flipY = false;
-						rectLight.areaTexture = texture;
-						rectLight.areaTexture.needsUpdate = true;
+						rectLight3.areaTexture = texture;
+						rectLight3.areaTexture.needsUpdate = true;
 						areaLightTextureFilter = new THREE.AreaLightTextureFilter(texture);
-						rectLight.areaTexture = areaLightTextureFilter.createFilteredTexture(renderer);
-						rectLightHelper3.children[0].material.map = rectLight.areaTexture;
-						rectLightHelper3.children[1].material.map = rectLight.areaTexture;
+						rectLight3.areaTexture = areaLightTextureFilter.createFilteredTexture(renderer);
+						rectLightHelper3.children[0].material.map = rectLight3.areaTexture;
+						rectLightHelper3.children[1].material.map = rectLight3.areaTexture;
 						rectLightHelper3.children[0].material.needsUpdate = true;
 						rectLightHelper3.children[1].material.needsUpdate = true;
 					},
@@ -344,8 +352,8 @@
 				renderer.gammaOutput = true;
 				renderer.gammaFactor = 2.2;
         renderer.toneMapping = THREE.Uncharted2ToneMapping;
-        renderer.toneMappingWhitePoint = 10;
-        renderer.toneMappingExposure = 5;
+        renderer.toneMappingWhitePoint = 40;
+        renderer.toneMappingExposure = 1;
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
@@ -359,7 +367,7 @@
 				var copyShader = new THREE.ShaderPass(THREE.CopyShader);
 				copyShader.renderToScreen = true;
 
-		    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.99);//1.0, 9, 0.5, 512);
+		    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 1.0, 0.99);//1.0, 9, 0.5, 512);
 				composer = new THREE.EffectComposer(renderer);
 		    composer.setSize(window.innerWidth, window.innerHeight);
 		    composer.addPass(renderScene);
@@ -377,6 +385,35 @@
 
 				cubeCamera = new THREE.CubeCamera( 1, 100000, 256 );
 				scene.add( cubeCamera );
+
+				var gui = new dat.GUI();
+
+				var params = {
+					Flux1: luminousFluxIndoor1,
+					Flux2: luminousFluxIndoor2,
+					Flux3: luminousFluxOutDoor
+				}
+
+				function changeLuminiousFlux(index, flux) {
+					if( index === 0) {
+						luminousFluxIndoor1 = flux;
+						rectLight1.intensity = flux;
+					}
+					if( index === 1) {
+						luminousFluxIndoor2 = flux;
+						rectLight2.intensity = flux;
+					}
+					if( index === 2) {
+						luminousFluxOutDoor = flux;
+						rectLight3.intensity = flux;
+					}
+					renderer.toneMappingWhitePoint = 100.5 * (luminousFluxIndoor1 + luminousFluxIndoor2 + luminousFluxOutDoor );
+					renderer.toneMappingWhitePoint = Math.max( renderer.toneMappingWhitePoint, 1 );
+				}
+
+				gui.add( params, "Flux1", 0, 1000, 1.0 ).onChange( changeLuminiousFlux.bind(this, 0) );
+				gui.add( params, "Flux2", 0, 1000, 1.0 ).onChange( changeLuminiousFlux.bind(this, 1) );
+				gui.add( params, "Flux3", 0, 1000, 1.0 ).onChange( changeLuminiousFlux.bind(this, 2) );
 			}
 
 			function onWindowResize() {
@@ -406,7 +443,18 @@
 				rectLightHelper2.update();
 				rectLightHelper3.update();
 
+				if(this.profiler === undefined){
+					this.profiler = new THREE.WebGLProfiler(renderer);
+				}
+				this.profiler.start();
+
 				composer.render();
+
+				this.profiler.end();
+
+				if( this.profiler.available() ) {
+						console.log( this.profiler.value() );
+				}
 
 				if( reflectionUpdateCount < 3 ) {
 					// renderer.autoClear = false;

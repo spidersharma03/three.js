@@ -79,9 +79,9 @@ RectAreaLightHelper.prototype.update = function () {
 		}
 
 		// update materials
-		var size = this.light.width * this.light.height/4;
-		mesh1.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity/size );
-		mesh2.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity/size );
+		var size = this.light.width * this.light.height;
+		mesh1.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
+		mesh2.material.color.copy( this.light.color ).multiplyScalar( this.light.intensity );
 
 		// calculate new dimensions of the helper
 
