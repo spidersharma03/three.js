@@ -199,7 +199,7 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
 
 			vec3 queryVec = vec3( flipEnvMap * worldNormal.x, worldNormal.yz );
-			vec4 envMapColor = textureCubeUV( queryVec, queryVec, 1.0 );
+			vec4 envMapColor = textureCubeUV( queryVec, 5.0 ); // 5.0 is hard coded for cube texture size of 256.
 
 		#else
 
@@ -227,13 +227,14 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 #if !defined( ENVMAP_TYPE_CUBE_UV )
 
-	#define cubeUV_textureSize (1024.0)
-	#define cubeUV_rangeClamp (exp2((6.0 - 1.0) * 2.0))
-	#define cubeUV_maxLods3 (log2(cubeUV_textureSize*0.25) - 3.0)
+	#define CubeTextureSize (256.0)
+	#define cubeUV_maxLods2 (log2(CubeTextureSize) - 2.0)
+	#define cubeUV_maxLods3 (log2(CubeTextureSize) - 3.0)
+	#define cubeUV_rangeClamp (exp2((cubeUV_maxLods2 - 1.0) * 2.0))
 
 	vec2 MipLevelInfo( vec3 vec ) {
-		vec3 dx = dFdx( vec ) * 128.0;
-		vec3 dy = dFdy( vec ) * 128.0;
+		vec3 dx = dFdx( vec ) * CubeTextureSize * 0.5;
+		vec3 dy = dFdy( vec ) * CubeTextureSize * 0.5;
 		float d = max( dot( dx, dx ), dot( dy, dy ) );
 		d = pow( d, 0.5);
 		// Clamp the value to the max mip level counts. hard coded to 6 mips
@@ -291,8 +292,8 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
 			vec3 worldNormal = inverseTransformDirection( geometry.normal, viewMatrix );
 			vec3 queryReflectVec = vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
-			float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );
-			vec4 envMapColor = textureCubeUV(queryReflectVec, worldNormal, specularMIPLevel);
+			float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );// 5 is hard coded for cube texture size of 256.
+			vec4 envMapColor = textureCubeUV(queryReflectVec, specularMIPLevel);
 
 		#elif defined( ENVMAP_TYPE_EQUIREC )
 
