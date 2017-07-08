@@ -233,12 +233,12 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 	#define cubeUV_rangeClamp (exp2((cubeUV_maxLods2 - 1.0) * 2.0))
 
 	vec2 MipLevelInfo( vec3 vec ) {
-		vec3 dx = dFdx( vec ) * CubeTextureSize * 0.5;
-		vec3 dy = dFdy( vec ) * CubeTextureSize * 0.5;
+		vec3 dx = dFdx( vec ) * CubeTextureSize;
+		vec3 dy = dFdy( vec ) * CubeTextureSize;
 		float d = max( dot( dx, dx ), dot( dy, dy ) );
-		d = pow( d, 0.5);
+		//d = pow( d, 0.5);
 		// Clamp the value to the max mip level counts. hard coded to 6 mips
-		d = clamp(d, 1.0, cubeUV_rangeClamp);
+		d = max(d, 1.0);
 		float mipLevel = 0.5 * log2(d);
 		return vec2(floor(mipLevel), fract(mipLevel));
 	}
@@ -275,9 +275,31 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 				r1 = min( r1, cubeUV_maxLods3);
 				r2 = min( r2, cubeUV_maxLods3);
 
+				const vec4 red = vec4(1.0, 0.0, 0.0, 1.0);
+				const vec4 green = vec4(0.0, 1.0, 0.0, 1.0);
+				const vec4 blue = vec4(0.0, 0.0, 1.0, 1.0);
+				const vec4 yellow = vec4(1.0, 1.0, 0.0, 1.0);
+				const vec4 pink = vec4(1.0, 0.0, 1.0, 1.0);
+				const vec4 black = vec4(0.0, 0.0, 0.0, 1.0);
+
+				vec4 envMapColor = vec4(0.0);
+
+				if( r1 <= 1.0 )
+					envMapColor = mix(red, green, mipInfo.y);
+				else if( r1 > 1.0 && r1 <= 2.0 )
+					envMapColor = mix(green, blue, mipInfo.y);
+				else if( r1 > 2.0 && r1 <= 3.0 )
+					envMapColor = mix(blue, yellow, mipInfo.y);
+				else if( r1 > 3.0 && r1 <= 4.0 )
+					envMapColor = mix(yellow, pink, mipInfo.y);
+				else if( r1 > 4.0 && r1 <= 5.0 )
+					envMapColor = mix(pink, black, mipInfo.y);
+				else
+					envMapColor = vec4(0.0, 0.0, 0.0, 1.0);
+
 				vec4 envMapColor1 = textureCubeLodEXT( envMap, queryReflectVec, r1 );
 				vec4 envMapColor2 = textureCubeLodEXT( envMap, queryReflectVec, r2 );
-				vec4 envMapColor = mix( envMapColor1, envMapColor2, mipInfo.y );
+			  //envMapColor = mix( envMapColor1, envMapColor2, mipInfo.y );
 
 			#else
 
