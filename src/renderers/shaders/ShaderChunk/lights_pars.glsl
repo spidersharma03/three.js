@@ -355,8 +355,8 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 		#elif defined( ENVMAP_TYPE_CUBE_UV )
 			vec3 worldNormal = inverseTransformDirection( geometry.normal, viewMatrix );
 			vec3 queryReflectVec = vec3( flipEnvMap * reflectVec.x, reflectVec.yz );
-			float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );
-			vec4 envMapColor = textureCubeUV(queryReflectVec, worldNormal, specularMIPLevel);
+			float specularMIPLevel = getSpecularMIPLevel( blinnShininessExponent, 5 );// 5 is hard coded for cube texture size of 256.
+			vec4 envMapColor = textureCubeUV(queryReflectVec, specularMIPLevel);
 
 		#elif defined( ENVMAP_TYPE_EQUIREC )
 
