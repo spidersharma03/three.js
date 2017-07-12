@@ -232,11 +232,51 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 	#define cubeUV_maxLods3 (log2(CubeTextureSize) - 3.0)
 	#define cubeUV_rangeClamp (exp2((cubeUV_maxLods2 - 1.0) * 2.0))
 
+	vec2 getUVFromDirection(vec3 direction) {
+		vec3 absDirection = abs(direction);
+		vec3 r;
+		int face = -1;
+		if( absDirection.x > absDirection.z ) {
+			if(absDirection.x > absDirection.y )
+				face = direction.x > 0.0 ? 0 : 3;
+			else
+				face = direction.y > 0.0 ? 1 : 4;
+		}
+		else {
+			if(absDirection.z > absDirection.y )
+				face = direction.z > 0.0 ? 2 : 5;
+			else
+				face = direction.y > 0.0 ? 1 : 4;
+		}
+		if( face == 0) {
+			r = vec3(direction.x, -direction.z, direction.y);
+		}
+		else if( face == 1) {
+			r = vec3(direction.y, direction.x, direction.z);
+		}
+		else if( face == 2) {
+			r = vec3(direction.z, direction.x, direction.y);
+		}
+		else if( face == 3) {
+			r = vec3(direction.x, direction.z, direction.y);
+		}
+		else if( face == 4) {
+			r = vec3(direction.y, direction.x, -direction.z);
+		}
+		else {
+			r = vec3(direction.z, -direction.x, direction.y);
+		}
+		//r = normalize(r);
+		vec2 s = ( r.yz / abs( r.x ) + vec2( 1.0 ) ) * 0.5;
+		return s;
+	}
+
 	vec2 MipLevelInfo( vec3 vec ) {
-		vec3 dx = dFdx( vec ) * CubeTextureSize;
-		vec3 dy = dFdy( vec ) * CubeTextureSize;
+		const float scaleFactor = CubeTextureSize/8.0;
+		//vec2 uv = getUVFromDirection( vec );
+		vec3 dx = dFdx( vec ) * scaleFactor;
+		vec3 dy = dFdy( vec ) * scaleFactor;
 		float d = max( dot( dx, dx ), dot( dy, dy ) );
-		//d = pow( d, 0.5);
 		// Clamp the value to the max mip level counts. hard coded to 6 mips
 		d = max(d, 1.0);
 		float mipLevel = 0.5 * log2(d);
@@ -269,37 +309,38 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 				queryReflectVec.x *= -1.0;
 
+				float roughness = BlinnExponentToGGXRoughness( blinnShininessExponent );
 				vec2 mipInfo = MipLevelInfo(queryReflectVec);
-				float r1 = specularMIPLevel + mipInfo.x;
+				float r1 = floor(specularMIPLevel + mipInfo.x);
 				float r2 = r1 + 1.0;
 				r1 = min( r1, cubeUV_maxLods3);
 				r2 = min( r2, cubeUV_maxLods3);
 
-				const vec4 red = vec4(1.0, 0.0, 0.0, 1.0);
-				const vec4 green = vec4(0.0, 1.0, 0.0, 1.0);
-				const vec4 blue = vec4(0.0, 0.0, 1.0, 1.0);
-				const vec4 yellow = vec4(1.0, 1.0, 0.0, 1.0);
-				const vec4 pink = vec4(1.0, 0.0, 1.0, 1.0);
-				const vec4 black = vec4(0.0, 0.0, 0.0, 1.0);
+				const vec4 c1 = vec4(1.0, 0.0, 0.0, 1.0);
+				const vec4 c2 = vec4(0.0, 0.0, 1.0, 1.0);
+				const vec4 c3 = vec4(0.0, 1.0, 0.0, 1.0);
+				const vec4 c4 = vec4(1.0, 1.0, 0.0, 1.0);
+				const vec4 c5 = vec4(1.0, 0.0, 1.0, 1.0);
+				const vec4 c6 = vec4(0.0, 0.0, 0.0, 1.0);
 
 				vec4 envMapColor = vec4(0.0);
 
 				if( r1 <= 1.0 )
-					envMapColor = mix(red, green, mipInfo.y);
+					envMapColor = mix(c1, c2, mipInfo.y);
 				else if( r1 > 1.0 && r1 <= 2.0 )
-					envMapColor = mix(green, blue, mipInfo.y);
+					envMapColor = mix(c2, c3, mipInfo.y);
 				else if( r1 > 2.0 && r1 <= 3.0 )
-					envMapColor = mix(blue, yellow, mipInfo.y);
+					envMapColor = mix(c3, c4, mipInfo.y);
 				else if( r1 > 3.0 && r1 <= 4.0 )
-					envMapColor = mix(yellow, pink, mipInfo.y);
+					envMapColor = mix(c4, c5, mipInfo.y);
 				else if( r1 > 4.0 && r1 <= 5.0 )
-					envMapColor = mix(pink, black, mipInfo.y);
+					envMapColor = mix(c5, c6, mipInfo.y);
 				else
 					envMapColor = vec4(0.0, 0.0, 0.0, 1.0);
 
 				vec4 envMapColor1 = textureCubeLodEXT( envMap, queryReflectVec, r1 );
 				vec4 envMapColor2 = textureCubeLodEXT( envMap, queryReflectVec, r2 );
-			  //envMapColor = mix( envMapColor1, envMapColor2, mipInfo.y );
+			  envMapColor = mix( envMapColor1, envMapColor2, mipInfo.y );
 
 			#else
 
